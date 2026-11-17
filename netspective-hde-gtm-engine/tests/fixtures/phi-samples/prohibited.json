@@ -1,0 +1,117 @@
+[
+  {
+    "id": "ssn-dashed",
+    "kind": "ssn",
+    "rules": ["PHI.SSN"],
+    "content": "Applicant SSN 000-12-3456 was submitted with the request."
+  },
+  {
+    "id": "ssn-nine-digits-with-keyword",
+    "kind": "ssn",
+    "rules": ["PHI.SSN"],
+    "content": "social security number: 000123456"
+  },
+  {
+    "id": "mrn-with-name-labelled",
+    "kind": "mrn_with_name",
+    "rules": ["PHI.MRN_WITH_NAME"],
+    "content": "Patient: Jordan Testcase, MRN: 00123456, admitted for observation."
+  },
+  {
+    "id": "mrn-with-name-last-first",
+    "kind": "mrn_with_name",
+    "rules": ["PHI.MRN_WITH_NAME"],
+    "content": "Testcase, Jordan  MRN 00123456 admitted overnight."
+  },
+  {
+    "id": "dob-with-name-labelled",
+    "kind": "dob_with_name",
+    "rules": ["PHI.DOB_WITH_NAME"],
+    "content": "Name: Avery Exampleton  DOB: 03/14/1971"
+  },
+  {
+    "id": "dob-with-name-written-date",
+    "kind": "dob_with_name",
+    "rules": ["PHI.DOB_WITH_NAME"],
+    "content": "Sam Samplefield, date of birth: March 14, 1971, follow-up due."
+  },
+  {
+    "id": "tabular-csv",
+    "kind": "tabular_rows",
+    "rules": ["PHI.TABULAR_ROWS"],
+    "content": "patient_name,mrn,dob,diagnosis\nJordan Testcase,00123456,1971-03-14,E11.9\nAvery Exampleton,00123457,1980-07-02,I10\n"
+  },
+  {
+    "id": "tabular-tsv",
+    "kind": "tabular_rows",
+    "rules": ["PHI.TABULAR_ROWS"],
+    "content": "first_name\tlast_name\tdob\tzip\nJordan\tTestcase\t1971-03-14\t00000\nAvery\tExampleton\t1980-07-02\t00001\n"
+  },
+  {
+    "id": "tabular-json-rows",
+    "kind": "tabular_rows",
+    "rules": ["PHI.TABULAR_ROWS"],
+    "content": {
+      "rows": [
+        {
+          "patient_name": "Jordan Testcase",
+          "mrn": "00123456",
+          "dob": "1971-03-14"
+        },
+        {
+          "patient_name": "Avery Exampleton",
+          "mrn": "00123457",
+          "dob": "1980-07-02"
+        }
+      ]
+    }
+  },
+  {
+    "id": "nested-ssn",
+    "kind": "ssn",
+    "rules": ["PHI.SSN"],
+    "content": {
+      "outer": {
+        "inner": [
+          {
+            "note": "SSN 000-12-3456 on file"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "cred-private-key",
+    "kind": "credential",
+    "rules": ["CRED.PRIVATE_KEY"],
+    "content": "-----BEGIN PRIVATE KEY-----\nSYNTHETICNOTAREALKEYMATERIAL\n-----END PRIVATE KEY-----"
+  },
+  {
+    "id": "cred-aws-access-key",
+    "kind": "credential",
+    "rules": ["CRED.AWS_ACCESS_KEY"],
+    "content": "access key AKIAIOSFODNN7EXAMPLE in the ticket"
+  },
+  {
+    "id": "cred-bearer-token",
+    "kind": "credential",
+    "rules": ["CRED.BEARER_TOKEN"],
+    "content": "Authorization: Bearer abcdefghijklmnopqrstuvwxyz0123456789"
+  },
+  {
+    "id": "cred-secret-assignment",
+    "kind": "credential",
+    "rules": ["CRED.SECRET_ASSIGNMENT"],
+    "content": "password = Sup3rS3cretValue99"
+  },
+  {
+    "id": "cred-secret-in-json",
+    "kind": "credential",
+    "rules": ["CRED.SECRET_ASSIGNMENT"],
+    "content": {
+      "config": {
+        "api_key": "synthetic-not-real-key-value"
+      }
+    }
+  }
+]

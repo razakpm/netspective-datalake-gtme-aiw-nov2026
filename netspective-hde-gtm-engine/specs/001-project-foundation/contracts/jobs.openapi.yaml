@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Jobs
+  version: 0.1.0
+  description: |
+    Read-only administrator view of background jobs. Requires `jobs.read`. Failed jobs show redacted error
+    details (code, message, stack hash). A job's payload is never returned.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /jobs:
+    get:
+      operationId: listJobs
+      summary: List jobs, newest first
+      parameters:
+        - { in: query, name: state, schema: { $ref: '#/components/schemas/JobState' } }
+        - { in: query, name: queue, schema: { type: string, maxLength: 100 } }
+        - { in: query, name: cursor, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: A page of jobs.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Job' }
+                  nextCursor: { type: [string, 'null'] }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /jobs/queues:
+    get:
+      operationId: listQueues
+      summary: Queue depth per queue
+      responses:
+        '200':
+          description: Queue depths and the configured cap.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/QueueDepth' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /jobs/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string } }
+    get:
+      operationId: getJob
+      summary: One job with redacted error details
+      responses:
+        '200':
+          description: The job.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Job' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  responses:
+    Problem:
+      description: Problem details.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    JobState: { type: string, enum: [queued, running, succeeded, failed] }
+    Job:
+      type: object
+      required: [id, queue, idempotencyKey, state, attempts, maxAttempts, nextRunAt, scheduledBy, createdAt]
+      properties:
+        id: { type: string }
+        queue: { type: string }
+        idempotencyKey: { type: string }
+        state: { $ref: '#/components/schemas/JobState' }
+        attempts: { type: integer }
+        maxAttempts: { type: integer }
+        nextRunAt: { type: string, format: date-time }
+        scheduledBy: { type: string }
+        lastError:
+          type: [object, 'null']
+          required: [code, message, stack_hash]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            stack_hash: { type: string }
+        correlationId: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        finishedAt: { type: [string, 'null'] }
+    QueueDepth:
+      type: object
+      required: [queue, queued, running, failed, depthCap]
+      properties:
+        queue: { type: string }
+        queued: { type: integer }
+        running: { type: integer }
+        failed: { type: integer }
+        depthCap: { type: integer }
+    Problem:
+      type: object
+      required: [type, title, status, correlationId]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }

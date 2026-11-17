@@ -1,0 +1,4 @@
+// Allowed: importing another module through its public entry point.
+import "../accounts/index.js";
+
+export {};

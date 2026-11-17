@@ -1,0 +1,175 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — ICP definitions, fit assessments and overrides
+  version: 0.1.0
+  description: |
+    Versioned ICP definitions (administrator-managed, explicit activation), deterministic fit assessments
+    (rule result is authoritative; an AI suggestion, if present, is labelled and separate) and exclusion
+    overrides. Requires icp.read / icp.assess / icp.manage / icp.override.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /icps:
+    get:
+      operationId: listIcps
+      summary: ICP definitions, all versions, newest first (hypothesis label shown)
+      parameters: [ { in: query, name: icp, schema: { type: string, enum: [icp1, icp2] } } ]
+      responses:
+        '200': { description: "Definitions.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/IcpDefinition' } } } } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: createIcpVersion
+      summary: Save an edited definition as a new inactive (draft) version (administrator)
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [icp, rules], properties: { icp: { type: string, enum: [icp1, icp2] }, rules: { type: object } } } } }
+      responses:
+        '201': { description: "Draft created.", content: { application/json: { schema: { $ref: '#/components/schemas/IcpDefinition' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { description: "Definition cannot be evaluated (for example no criteria).", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /icps/{id}/activate:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: activateIcpVersion
+      summary: Activate a draft version; previous active version is retired (administrator)
+      responses:
+        '200': { description: "Activated.", content: { application/json: { schema: { $ref: '#/components/schemas/IcpDefinition' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /icp-fit-assessments:
+    post:
+      operationId: assessIcpFit
+      summary: Assess an account against one or both ICPs under the active definition; adds history, never rewrites
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [accountId], additionalProperties: false, properties: { accountId: { type: string }, icp: { type: string, enum: [icp1, icp2] } } } } }
+      responses:
+        '201': { description: "Assessments stored.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/Assessment' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    get:
+      operationId: listAssessments
+      summary: Assessment history for an account
+      parameters:
+        - { in: query, name: accountId, required: true, schema: { type: string } }
+        - { in: query, name: icp, schema: { type: string, enum: [icp1, icp2] } }
+      responses:
+        '200': { description: "History, newest first.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/Assessment' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+  /accounts/{id}/exclusion-override:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    put:
+      operationId: setExclusionOverride
+      summary: Grant or revoke an exclusion override as a new version (administrator; rationale required)
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [action, rationale], additionalProperties: false, properties: { action: { type: string, enum: [grant, revoke] }, rationale: { type: string, minLength: 10, maxLength: 1000 } } } } }
+      responses:
+        '200': { description: "Recorded as a new version.", content: { application/json: { schema: { $ref: '#/components/schemas/Override' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: Problem details.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }
+    ImportOutcome: { type: string, enum: [created, updated, unchanged, rejected, flagged, conflict] }
+    ImportRow:
+      type: object
+      required: [rowNumber, outcome, reasonCodes]
+      description: Never contains row content; reason codes only.
+      properties:
+        rowNumber: { type: integer }
+        outcome: { $ref: "#/components/schemas/ImportOutcome" }
+        reasonCodes: { type: array, items: { type: string } }
+        entityId: { type: [string, "null"] }
+        matchedId: { type: [string, "null"] }
+    ImportRun:
+      type: object
+      required: [id, kind, state, rowCount, counts]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [accounts, contacts] }
+        state: { type: string, enum: [queued, running, completed, failed, rejected] }
+        rowCount: { type: integer }
+        counts: { type: object, additionalProperties: { type: integer } }
+        rows: { type: array, items: { $ref: "#/components/schemas/ImportRow" } }
+        fileRejectReason: { type: [string, "null"] }
+
+    FitStatus: { type: string, enum: [strong, possible, weak, excluded, unknown] }
+    IcpDefinition:
+      type: object
+      required: [id, icp, version, state, rules, statusLabel]
+      properties:
+        id: { type: string }
+        icp: { type: string, enum: [icp1, icp2] }
+        version: { type: integer }
+        state: { type: string, enum: [draft, active, retired] }
+        statusLabel: { type: string, enum: [hypothesis, approved] }
+        rules: { type: object }
+        createdBy: { type: string }
+        activatedAt: { type: [string, 'null'] }
+    CriterionResult:
+      type: object
+      required: [criterionId, label, evidenceIds]
+      properties:
+        criterionId: { type: string }
+        label: { type: string }
+        evidenceIds: { type: array, items: { type: string } }
+    Assessment:
+      type: object
+      required: [id, accountId, icp, status, confidence, basis, met, unmet, missing, contradictory, definitionVersion, assessedAt]
+      description: Contains no intent score. Rule result is authoritative.
+      properties:
+        id: { type: string }
+        accountId: { type: string }
+        icp: { type: string, enum: [icp1, icp2] }
+        status: { $ref: '#/components/schemas/FitStatus' }
+        confidence: { type: string, enum: [low, medium, high] }
+        basis: { type: array, minItems: 1, items: { type: object, required: [kind, ref], properties: { kind: { type: string, enum: [account_classification, evidence, missing_info] }, ref: { type: string } } } }
+        met: { type: array, items: { $ref: '#/components/schemas/CriterionResult' } }
+        unmet: { type: array, items: { $ref: '#/components/schemas/CriterionResult' } }
+        missing: { type: array, items: { type: string } }
+        contradictory: { type: array, items: { type: string } }
+        definitionVersion: { type: integer }
+        assessedAt: { type: string }
+        aiSuggestion:
+          type: [object, 'null']
+          description: Advisory only; always labelled; never used by eligibility.
+          properties:
+            label: { type: string, const: "AI-generated, advisory" }
+            suggestedStatus: { $ref: '#/components/schemas/FitStatus' }
+            rationale: { type: string }
+    Override:
+      type: object
+      required: [accountId, action, rationale, decidedBy, decidedAt]
+      properties:
+        accountId: { type: string }
+        action: { type: string, enum: [grant, revoke] }
+        rationale: { type: string }
+        decidedBy: { type: string }
+        decidedAt: { type: string }

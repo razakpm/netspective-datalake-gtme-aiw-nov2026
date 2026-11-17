@@ -1,0 +1,354 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Users and Roles
+  version: 0.1.0
+  description: |
+    User management. Every operation requires the `users.manage` permission (administrator role).
+    Callers without it receive 403 and an audit event with outcome `denied` (FR-005). Every successful
+    change writes exactly one audit event in the same transaction. AI and system actors cannot call these
+    operations (FR-009).
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      summary: List users with status and roles
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/UserStatus'
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: A page of users.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  nextCursor:
+                    type: [string, 'null']
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+    post:
+      operationId: inviteUser
+      summary: Invite an internal user and assign zero or more roles
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteUserRequest'
+      responses:
+        '201':
+          description: User created in `invited` status; invitation expires after the configured period.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '200':
+          description: Same idempotency key replayed; the original result is returned and no second user is created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '409':
+          description: A user with this email already exists.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '413':
+          $ref: '#/components/responses/Problem413'
+        '422':
+          description: Validation failure or request blocked by the PHI guard (content never echoed).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /users/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      operationId: getUser
+      summary: Get one user
+      responses:
+        '200':
+          description: The user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+  /users/{userId}/roles:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    put:
+      operationId: setUserRoles
+      summary: Replace the user's role set (zero or more roles)
+      description: |
+        Changes take effect no later than the user's next request. Rejected with 409 if the change would
+        remove the last active administrator (FR-007).
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roles]
+              properties:
+                roles:
+                  type: array
+                  uniqueItems: true
+                  items:
+                    $ref: '#/components/schemas/RoleKey'
+      responses:
+        '200':
+          description: Updated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '409':
+          description: Would remove the last active administrator.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /users/{userId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    post:
+      operationId: deactivateUser
+      summary: Deactivate a user or revoke an unaccepted invitation
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: User is now `deactivated`; access ends no later than the next request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '409':
+          description: Would deactivate the last active administrator.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /users/{userId}/reactivate:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    post:
+      operationId: reactivateUser
+      summary: Reactivate a deactivated user
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: User reactivated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+  /roles:
+    get:
+      operationId: listRoles
+      summary: List the seven roles and the permissions each holds
+      responses:
+        '200':
+          description: Roles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+components:
+  securitySchemes:
+    oidcBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    UserId:
+      in: path
+      name: userId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: true
+      description: Caller-supplied key, 8–128 characters; a repeat with the same key and body returns the original result, with a different body returns 422.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+  responses:
+    Problem401:
+      description: Missing, invalid or expired token.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Problem403:
+      description: Caller lacks `users.manage`, or is a non-human actor. An audit event with outcome `denied` is recorded.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Problem404:
+      description: User not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Problem413:
+      description: Body exceeds the configured limit; nothing persisted.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    UserStatus:
+      type: string
+      enum: [invited, active, deactivated]
+    RoleKey:
+      type: string
+      enum:
+        - gtm_operator
+        - research_analyst
+        - technical_sme_reviewer
+        - sales_service_lead
+        - campaign_approver
+        - administrator
+        - read_only_executive
+    InviteUserRequest:
+      type: object
+      required: [email]
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+          maxLength: 200
+        roles:
+          type: array
+          uniqueItems: true
+          default: []
+          items:
+            $ref: '#/components/schemas/RoleKey'
+    User:
+      type: object
+      required: [id, email, status, roles, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleKey'
+        invitationExpiresAt:
+          type: [string, 'null']
+          format: date-time
+        lastSignInAt:
+          type: [string, 'null']
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    Role:
+      type: object
+      required: [key, name, permissions]
+      properties:
+        key:
+          $ref: '#/components/schemas/RoleKey'
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+    Problem:
+      type: object
+      required: [type, title, status, correlationId]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        correlationId:
+          type: string

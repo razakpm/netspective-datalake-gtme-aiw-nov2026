@@ -1,0 +1,12 @@
+{
+  "name": "@gtm/providers",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Provider adapter interfaces, fakes, adapters and contract tests",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}

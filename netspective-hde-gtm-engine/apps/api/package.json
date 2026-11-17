@@ -1,0 +1,22 @@
+{
+  "name": "@gtm/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Fastify API and worker (one codebase, HTTP and worker roles)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^9.1.0",
+    "@gtm/db": "workspace:*",
+    "@gtm/domain": "workspace:*",
+    "fastify": "^5.12.8",
+    "jose": "^6.2.17",
+    "pino": "^10.4.0",
+    "uuid": "^14.0.3",
+    "zod": "^4.6.7"
+  }
+}

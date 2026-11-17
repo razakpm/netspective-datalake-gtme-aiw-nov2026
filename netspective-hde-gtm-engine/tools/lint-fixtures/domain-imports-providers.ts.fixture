@@ -1,0 +1,4 @@
+// Deliberate violation: a deterministic domain rule importing the providers package.
+import "@gtm/providers";
+
+export {};

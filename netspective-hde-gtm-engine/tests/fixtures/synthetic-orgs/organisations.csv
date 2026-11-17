@@ -1,0 +1,10 @@
+name,aliases,domains,type,geography,notes,staffed_beds
+Northvale Health Information Exchange,Northvale HIE,northvale-hie.example,health_information_exchange,Midwest region,Regional exchange with repeated sender onboarding delays.,
+Prairie Medicaid Operations,Prairie Medicaid Ops,prairie-medicaid-ops.example,state_medicaid_program_operator,Prairie state,Program operator facing an implementation guide release and change management issue.,
+Riverbend Health,,riverbend-health.example,health_system,River valley,Mid-size health system with a stalled AI pilot.,
+SummitCare Health,Summit Care,summitcare-health.example,health_system,Mountain region,Health system with generic AI interest and no demonstrated data problem.,
+Helixbio Therapeutics,Helixbio,helixbio.example,biotech,Coastal metro,Biotechnology company; excluded organisation type.,
+Lakeshore Health Information Exchange,Lakeshore HIE,lakeshore-hie.example,health_information_exchange,Lake region,Public evidence about this exchange conflicts.,
+Metro Health Partners,,metro-health-partners.example,health_system,Metro area,Confirmed data problem but no economic buyer identified yet.,
+Coastal Health Information Exchange,Coastal HIE,coastal-hie.example,health_information_exchange,Coastal region,Strong problem and a confirmed funding path.,
+Granite Health,,granite-health.example,health_system,Granite state,"Applicant SSN 000-12-3456 was submitted with the request.",

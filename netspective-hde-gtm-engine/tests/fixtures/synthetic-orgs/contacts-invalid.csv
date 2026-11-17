@@ -1,0 +1,7 @@
+name,title,department,business_email,profile_url,account,source,basis,documented_origin
+No Source,Analyst,Data,no.source@northvale-hie.example,,northvale-hie.example,,b2b_legitimate_interest,Missing source
+No Basis,Analyst,Data,no.basis@northvale-hie.example,,northvale-hie.example,public_directory,,Missing basis
+Personal Mailbox,Analyst,Data,someone@gmail.com,,northvale-hie.example,public_directory,b2b_legitimate_interest,Personal mailbox domain
+Unknown Account,Analyst,Data,unknown.account@nowhere.example,,no-such-account.example,public_directory,b2b_legitimate_interest,Account does not exist
+Conflicting Title,Chief Wizard,Data Operations,alex.interop@northvale-hie.example,,northvale-hie.example,public_directory,b2b_legitimate_interest,Same person as the first contact with a different title
+Valid Survivor,Analyst,Data,valid.survivor@northvale-hie.example,,northvale-hie.example,public_directory,b2b_legitimate_interest,This row is valid and must be saved

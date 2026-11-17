@@ -1,0 +1,4 @@
+// Allowed: a vendor SDK imported inside a provider adapter.
+import "nodemailer";
+
+export {};

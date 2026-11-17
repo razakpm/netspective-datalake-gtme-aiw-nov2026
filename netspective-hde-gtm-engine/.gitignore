@@ -1,0 +1,29 @@
+# Dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+.next/
+*.tsbuildinfo
+
+# Environment and secrets: only .env.example is committed (placeholders only)
+.env
+.env.*
+!.env.example
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Local-only runtime data (quarantine, uploads, local file storage fake)
+.local-data/
+
+# Local SQLite database (ADR-015)
+.data/

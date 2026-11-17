@@ -1,0 +1,156 @@
+# CI for the GTM Engine (task T006). The project lives in a subfolder of this repository, so every
+# job runs with that folder as its working directory. Any failing job blocks merge (spec FR-046).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: netspective-hde-gtm-engine
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: netspective-hde-gtm-engine/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: netspective-hde-gtm-engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: netspective-hde-gtm-engine/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: netspective-hde-gtm-engine/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: netspective-hde-gtm-engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: netspective-hde-gtm-engine/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: netspective-hde-gtm-engine/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: netspective-hde-gtm-engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: netspective-hde-gtm-engine/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      # Includes the 80% coverage gate on packages/domain and packages/ai-contracts.
+      - run: pnpm test
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: netspective-hde-gtm-engine/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: netspective-hde-gtm-engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: netspective-hde-gtm-engine/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      # Testcontainers uses the Docker daemon available on the runner (migration and integration tests).
+      - run: pnpm test:integration
+
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: netspective-hde-gtm-engine/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: netspective-hde-gtm-engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: netspective-hde-gtm-engine/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:contracts
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: netspective-hde-gtm-engine/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: netspective-hde-gtm-engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: netspective-hde-gtm-engine/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: netspective-hde-gtm-engine/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: netspective-hde-gtm-engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: netspective-hde-gtm-engine/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level=high
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Run the gitleaks CLI image directly (no third-party action or licence needed).
+      - run: >-
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect
+          --source /repo --config /repo/netspective-hde-gtm-engine/.gitleaks.toml --redact
+
+  openapi-drift:
+    runs-on: ubuntu-latest
+    # Not yet implemented (task T123): the step fails on purpose until then, so it must not block merge.
+    # Remove continue-on-error when T123 lands.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: netspective-hde-gtm-engine/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: netspective-hde-gtm-engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: netspective-hde-gtm-engine/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm openapi:drift

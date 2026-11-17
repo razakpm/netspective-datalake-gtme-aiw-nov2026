@@ -1,0 +1,4 @@
+// Deliberate violation: a vendor SDK imported outside provider adapters.
+import "nodemailer";
+
+export {};

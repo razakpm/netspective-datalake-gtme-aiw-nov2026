@@ -1,0 +1,45 @@
+{
+  "name": "netspective-hde-gtm-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Netspective Healthcare Data Engineering GTM Engine (internal). Synthetic data only in this repository.",
+  "packageManager": "pnpm@10.19.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node scripts/not-implemented.mjs dev T111",
+    "db:migrate": "node scripts/not-implemented.mjs db:migrate T011",
+    "db:seed:synthetic": "node scripts/not-implemented.mjs db:seed:synthetic T110",
+    "admin:bootstrap": "tsx apps/api/src/cli/admin-bootstrap.ts",
+    "audit:verify": "tsx apps/api/src/cli/audit-verify.ts",
+    "audit:retention": "tsx apps/api/src/cli/audit-retention.ts",
+    "webhook:source:upsert": "node scripts/not-implemented.mjs webhook:source:upsert T090",
+    "openapi:drift": "node scripts/not-implemented.mjs openapi:drift T123",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run --project unit --coverage --passWithNoTests",
+    "test:integration": "vitest run --project integration --passWithNoTests",
+    "test:contracts": "vitest run --project contracts --passWithNoTests",
+    "build": "pnpm -r --if-present build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.20.5",
+    "@vitest/coverage-v8": "^5.1.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "eslint": "^10.14.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^7.4.3",
+    "prettier": "^3.10.1",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0",
+    "yaml": "^2.9.1"
+  }
+}

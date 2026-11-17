@@ -1,0 +1,28 @@
+# Operator web UI image.
+# Skeleton from task T005: Next.js is scaffolded with the web tasks (T047 onward); until then this
+# image has nothing to start. Verified by T112 (container smoke test).
+# Build context: the project root (netspective-hde-gtm-engine).
+FROM node:22-slim AS base
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable
+WORKDIR /app
+
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json apps/web/
+COPY packages/domain/package.json packages/domain/
+RUN pnpm install --frozen-lockfile --filter @gtm/web...
+
+FROM deps AS build
+COPY tsconfig.base.json ./
+COPY apps/web apps/web
+COPY packages/domain packages/domain
+RUN pnpm --filter @gtm/web... --if-present build
+
+FROM base AS runtime
+ENV NODE_ENV=production
+COPY --from=build /app /app
+USER node
+EXPOSE 3001
+CMD ["pnpm", "--filter", "@gtm/web", "start"]

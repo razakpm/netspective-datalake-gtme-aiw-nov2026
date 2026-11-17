@@ -1,0 +1,98 @@
+[
+  {
+    "account": "northvale-hie.example",
+    "topic": "sender_onboarding_friction",
+    "status": "observed",
+    "what": "Repeated sender onboarding delays recorded across several data senders.",
+    "whereRef": "https://evidence.example/northvale-onboarding",
+    "observedAt": "2026-10-01T00:00:00Z"
+  },
+  {
+    "account": "northvale-hie.example",
+    "topic": "ig_change_friction",
+    "status": "observed",
+    "what": "Updated implementation guide caused rework for senders.",
+    "whereRef": "https://evidence.example/northvale-ig",
+    "observedAt": "2026-10-05T00:00:00Z"
+  },
+  {
+    "account": "prairie-medicaid-ops.example",
+    "topic": "ig_change_friction",
+    "status": "observed",
+    "what": "Implementation guide release raised a change management issue.",
+    "whereRef": "https://evidence.example/prairie-ig",
+    "observedAt": "2026-10-07T00:00:00Z"
+  },
+  {
+    "account": "riverbend-health.example",
+    "topic": "mid_size_judgement",
+    "status": "derived_interpretation",
+    "what": "Analyst judgement: mid-size regional health system.",
+    "whereRef": "analyst-note-riverbend",
+    "observedAt": "2026-10-09T00:00:00Z"
+  },
+  {
+    "account": "riverbend-health.example",
+    "topic": "stalled_ai_pilot",
+    "status": "buyer_confirmed",
+    "what": "Buyer said the pilot worked on demo data but failed on their own data.",
+    "whereRef": "call-note-riverbend",
+    "observedAt": "2026-10-10T00:00:00Z"
+  },
+  {
+    "account": "riverbend-health.example",
+    "topic": "demonstrated_data_problem",
+    "status": "observed",
+    "what": "Ten data traceability questions could not be answered for the pilot.",
+    "whereRef": "https://evidence.example/riverbend-traceability",
+    "observedAt": "2026-10-11T00:00:00Z"
+  },
+  {
+    "account": "summitcare-health.example",
+    "topic": "generic_ai_interest",
+    "status": "observed",
+    "what": "Public statement of general interest in AI with no specific data problem.",
+    "whereRef": "https://evidence.example/summitcare-ai",
+    "observedAt": "2026-10-12T00:00:00Z"
+  },
+  {
+    "account": "lakeshore-hie.example",
+    "topic": "sender_onboarding_friction",
+    "status": "observed",
+    "what": "One public source reports onboarding delays.",
+    "whereRef": "https://evidence.example/lakeshore-a",
+    "observedAt": "2026-10-13T00:00:00Z"
+  },
+  {
+    "account": "lakeshore-hie.example",
+    "topic": "sender_onboarding_friction",
+    "status": "contradictory",
+    "what": "Another public source reports onboarding is fast.",
+    "whereRef": "https://evidence.example/lakeshore-b",
+    "observedAt": "2026-10-14T00:00:00Z"
+  },
+  {
+    "account": "metro-health-partners.example",
+    "topic": "demonstrated_data_problem",
+    "status": "buyer_confirmed",
+    "what": "Buyer confirmed a data quality problem blocking an analytics project.",
+    "whereRef": "call-note-metro",
+    "observedAt": "2026-10-15T00:00:00Z"
+  },
+  {
+    "account": "coastal-hie.example",
+    "topic": "sender_onboarding_friction",
+    "status": "buyer_confirmed",
+    "what": "Buyer confirmed sender onboarding is the main delay.",
+    "whereRef": "call-note-coastal",
+    "observedAt": "2026-10-16T00:00:00Z"
+  },
+  {
+    "account": "coastal-hie.example",
+    "topic": "economic_buyer_confirmation",
+    "status": "buyer_confirmed",
+    "what": "Executive director confirmed the funding path and ownership of the budget.",
+    "whereRef": "call-note-coastal-2",
+    "observedAt": "2026-10-17T00:00:00Z"
+  }
+]

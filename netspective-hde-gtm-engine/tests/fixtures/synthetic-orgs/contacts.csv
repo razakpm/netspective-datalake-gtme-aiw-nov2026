@@ -1,0 +1,10 @@
+name,title,department,business_email,profile_url,account,source,basis,documented_origin
+Alex Interop,Director of Interoperability,Data Operations,alex.interop@northvale-hie.example,https://profiles.example/alex-interop,northvale-hie.example,public_directory,b2b_legitimate_interest,Listed on the organisation leadership page
+Pat Unsubscribed,Data Operations Manager,Data Operations,pat.unsubscribed@example.org,,northvale-hie.example,first_party_form,consent,Submitted the lead magnet form
+Robin Onboarding,Onboarding Lead,Onboarding,robin.onboarding@prairie-medicaid-ops.example,,prairie-medicaid-ops.example,referral,b2b_legitimate_interest,Introduced by a mutual contact
+Casey Datalead,Chief Data Officer,Executive,casey.datalead@riverbend-health.example,https://profiles.example/casey-datalead,riverbend-health.example,public_directory,b2b_legitimate_interest,Listed on the organisation leadership page
+Sam Pilot,AI Program Manager,Innovation,sam.pilot@riverbend-health.example,,riverbend-health.example,customer_supplied_list,existing_relationship,Supplied by an existing customer
+Jordan Exec,Chief Information Officer,Executive,jordan.exec@summitcare-health.example,,summitcare-health.example,public_directory,b2b_legitimate_interest,Listed on the organisation website
+Taylor Interface,Integration Lead,Engineering,taylor.interface@lakeshore-hie.example,,lakeshore-hie.example,manual_import,b2b_legitimate_interest,Recorded by an operator from a conference programme
+Morgan Analyst,Data Engineering Lead,Engineering,morgan.analyst@metro-health-partners.example,,metro-health-partners.example,manual_import,b2b_legitimate_interest,Recorded by an operator from a conference programme
+Drew Funding,Executive Director,Executive,drew.funding@coastal-hie.example,,coastal-hie.example,referral,existing_relationship,Introduced by an existing customer

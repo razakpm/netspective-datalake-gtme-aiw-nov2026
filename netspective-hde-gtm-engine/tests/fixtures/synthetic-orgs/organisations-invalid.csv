@@ -1,0 +1,6 @@
+name,aliases,domains,type,geography,notes,staffed_beds
+,,missing-name.example,health_system,Nowhere,Row has no name.,
+Bad Type Health,,bad-type.example,not_a_real_type,Nowhere,Type is not in the fixed list.,
+Bad Domain Health,,https://bad-domain.example/path,health_system,Nowhere,Domain must be a bare hostname.,
+Negative Beds Health,,negative-beds.example,health_system,Nowhere,Staffed beds must be zero or more.,-5
+Valid Survivor Health,,valid-survivor.example,health_system,Somewhere,This row is valid and must be saved even though others fail.,300

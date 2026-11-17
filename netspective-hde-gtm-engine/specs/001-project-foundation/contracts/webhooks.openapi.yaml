@@ -1,0 +1,216 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Webhook Ingress
+  version: 0.1.0
+  description: |
+    Generic inbound webhook endpoint. Order of operations (see research R-09):
+    1. enforce body size limit; 2. check timestamp skew and verify the signature over the raw bytes;
+    3. run the PHI guard on body, headers and query; 4. if blocked, persist a metadata-only record and
+    reject; 5. otherwise persist the raw delivery with its verification status, then enqueue processing only
+    when verified; 6. a repeated delivery ID is recorded and acknowledged, never reprocessed.
+    Administrative read access to stored deliveries requires `webhooks.read`.
+servers:
+  - url: /api/v1
+paths:
+  /webhooks/{sourceKey}:
+    post:
+      operationId: receiveWebhook
+      summary: Receive a webhook delivery from a configured source
+      security: []
+      parameters:
+        - in: path
+          name: sourceKey
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-z0-9_-]{2,64}$'
+        - in: header
+          name: X-Delivery-Id
+          required: true
+          description: Sender-supplied unique delivery identifier; unique per source.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 200
+        - in: header
+          name: X-Webhook-Timestamp
+          required: true
+          description: Unix seconds. Must be within the source's skew window.
+          schema:
+            type: integer
+        - in: header
+          name: X-Webhook-Signature
+          required: false
+          description: Hex HMAC-SHA256 over `timestamp + "." + raw body`. Required unless the source is configured `not_verifiable`.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '202':
+          description: Accepted and stored; processing enqueued (verified) or held (not processed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAck'
+        '200':
+          description: Duplicate delivery ID; recorded, not reprocessed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAck'
+        '400':
+          description: Malformed request (missing required headers).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Signature verification failed. The delivery is stored with `verification_status = failed` and is never processed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Unknown or disabled source.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '408':
+          description: Timestamp outside the allowed skew window (stale or future-dated); recorded as `rejected_stale`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '413':
+          description: Body exceeds the source's size limit; recorded as `rejected_oversize` without the body.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Suspected PHI or credentials; recorded as `blocked_phi` (metadata only). Content is never echoed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Per-source rate limit exceeded.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /webhook-events:
+    get:
+      operationId: listWebhookEvents
+      summary: List stored deliveries (metadata only by default)
+      security:
+        - oidcBearer: []
+      parameters:
+        - in: query
+          name: sourceKey
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [received, processing, processed, duplicate, rejected_stale, rejected_oversize, blocked_phi, failed]
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A page of deliveries. Raw bodies and headers are never returned by this endpoint.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookEventSummary'
+                  nextCursor:
+                    type: [string, 'null']
+        '401':
+          description: Unauthenticated.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Caller lacks `webhooks.read`; denial is audited.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  securitySchemes:
+    oidcBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    WebhookAck:
+      type: object
+      required: [deliveryId, status, duplicate]
+      properties:
+        deliveryId:
+          type: string
+        status:
+          type: string
+          enum: [received, processing, processed, duplicate]
+        duplicate:
+          type: boolean
+        correlationId:
+          type: string
+    WebhookEventSummary:
+      type: object
+      required: [id, sourceKey, deliveryId, receivedAt, verificationStatus, status, attemptCount]
+      properties:
+        id:
+          type: string
+          format: uuid
+        sourceKey:
+          type: string
+        deliveryId:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        verificationStatus:
+          type: string
+          enum: [verified, failed, not_verifiable]
+        status:
+          type: string
+        attemptCount:
+          type: integer
+        correlationId:
+          type: string
+    Problem:
+      type: object
+      required: [type, title, status, correlationId]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        correlationId:
+          type: string

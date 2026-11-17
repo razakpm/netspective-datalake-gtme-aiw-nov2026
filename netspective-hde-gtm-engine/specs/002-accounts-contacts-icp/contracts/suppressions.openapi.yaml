@@ -1,0 +1,127 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Suppressions and eligibility
+  version: 0.1.0
+  description: |
+    Do-not-contact records on a contact or an account. Any signed-in user may add; only administrators may
+    lift (suppressions.lift). Effective immediately. The eligibility read is a pure rule answer, never AI.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /suppressions:
+    post:
+      operationId: addSuppression
+      summary: Record suppression on a contact or an account (any signed-in user)
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SuppressionInput' } } }
+      responses:
+        '201': { description: "Recorded; effective immediately.", content: { application/json: { schema: { $ref: '#/components/schemas/Suppression' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    get:
+      operationId: listSuppressions
+      summary: Suppression history for a contact or account
+      parameters:
+        - { in: query, name: contactId, schema: { type: string } }
+        - { in: query, name: accountId, schema: { type: string } }
+      responses:
+        '200': { description: "History, newest first.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/Suppression' } } } } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+  /suppressions/{id}/lift:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: liftSuppression
+      summary: Lift a suppression with a reason (administrator); both actions stay in history
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 3, maxLength: 500 } } } } }
+      responses:
+        '201': { description: "Lift recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/Suppression' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /contacts/{id}/eligibility:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getContactEligibility
+      summary: Single suppression/eligibility answer for a contact (no caching)
+      responses:
+        '200': { description: "Answer.", content: { application/json: { schema: { $ref: '#/components/schemas/Eligibility' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: Problem details.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }
+    ImportOutcome: { type: string, enum: [created, updated, unchanged, rejected, flagged, conflict] }
+    ImportRow:
+      type: object
+      required: [rowNumber, outcome, reasonCodes]
+      description: Never contains row content; reason codes only.
+      properties:
+        rowNumber: { type: integer }
+        outcome: { $ref: "#/components/schemas/ImportOutcome" }
+        reasonCodes: { type: array, items: { type: string } }
+        entityId: { type: [string, "null"] }
+        matchedId: { type: [string, "null"] }
+    ImportRun:
+      type: object
+      required: [id, kind, state, rowCount, counts]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [accounts, contacts] }
+        state: { type: string, enum: [queued, running, completed, failed, rejected] }
+        rowCount: { type: integer }
+        counts: { type: object, additionalProperties: { type: integer } }
+        rows: { type: array, items: { $ref: "#/components/schemas/ImportRow" } }
+        fileRejectReason: { type: [string, "null"] }
+
+    SuppressionInput:
+      type: object
+      required: [scope, reason]
+      additionalProperties: false
+      properties:
+        scope: { type: string, enum: [contact, account] }
+        contactId: { type: string }
+        accountId: { type: string }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+    Suppression:
+      type: object
+      required: [id, scope, action, reason, recordedBy, recordedAt]
+      properties:
+        id: { type: string }
+        scope: { type: string, enum: [contact, account] }
+        contactId: { type: [string, 'null'] }
+        accountId: { type: [string, 'null'] }
+        action: { type: string, enum: [add, lift, erase_marker] }
+        reason: { type: string }
+        recordedBy: { type: string }
+        recordedAt: { type: string }
+    Eligibility:
+      type: object
+      required: [contactId, suppressed]
+      properties:
+        contactId: { type: string }
+        suppressed: { type: boolean }
+        scope: { type: [string, 'null'], enum: [contact, account, erased, null] }
+        reason: { type: [string, 'null'] }

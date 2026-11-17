@@ -1,0 +1,4 @@
+// Deliberate violation: a module reaching into another module internals (use its index.ts instead).
+import { secret } from "../accounts/__lint_fixture_internal.js";
+
+export const reachedIn = secret;

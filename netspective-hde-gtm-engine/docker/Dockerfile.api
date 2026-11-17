@@ -1,0 +1,32 @@
+# API and worker image (one codebase, HTTP and worker roles chosen at start-up).
+# Skeleton from task T005: the build and start steps become runnable once apps/api has a build
+# script and entry point (tasks T029, T077). Verified by T112 (container smoke test).
+# Build context: the project root (netspective-hde-gtm-engine).
+FROM node:22-slim AS base
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable
+WORKDIR /app
+
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
+COPY packages/domain/package.json packages/domain/
+COPY packages/ai-contracts/package.json packages/ai-contracts/
+COPY packages/providers/package.json packages/providers/
+COPY packages/db/package.json packages/db/
+RUN pnpm install --frozen-lockfile --filter @gtm/api...
+
+FROM deps AS build
+COPY tsconfig.base.json ./
+COPY apps/api apps/api
+COPY packages packages
+RUN pnpm --filter @gtm/api... --if-present build
+
+FROM base AS runtime
+ENV NODE_ENV=production
+COPY --from=build /app /app
+USER node
+EXPOSE 3000
+# Role selection (http | worker | both) is read from the environment by apps/api/src/main.ts.
+CMD ["node", "apps/api/dist/main.js"]

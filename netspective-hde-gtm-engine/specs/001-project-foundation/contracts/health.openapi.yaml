@@ -1,0 +1,68 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Health and Readiness
+  version: 0.1.0
+  description: |
+    Unauthenticated operational endpoints (FR-044). Responses never contain secrets, user data, internal
+    hostnames or dependency versions. Target response time is under 1 second under normal conditions.
+servers:
+  - url: /
+security: []
+paths:
+  /health/live:
+    get:
+      operationId: getLiveness
+      summary: Process liveness (no dependency checks)
+      responses:
+        '200':
+          description: Process is alive.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [alive]
+  /health/ready:
+    get:
+      operationId: getReadiness
+      summary: Readiness including required dependencies
+      description: |
+        Checks database reachability, migration level, job queue reachability and freshness of the
+        identity provider key set. Returns 503 with the names of failing checks only.
+      responses:
+        '200':
+          description: Ready to serve.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Readiness'
+        '503':
+          description: Not ready; a required dependency is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Readiness'
+components:
+  schemas:
+    Readiness:
+      type: object
+      required: [status, checks]
+      properties:
+        status:
+          type: string
+          enum: [ready, not_ready]
+        checks:
+          type: array
+          items:
+            type: object
+            required: [name, status]
+            properties:
+              name:
+                type: string
+                enum: [database, migrations, job_queue, identity_provider_keys]
+              status:
+                type: string
+                enum: [ok, failing]
