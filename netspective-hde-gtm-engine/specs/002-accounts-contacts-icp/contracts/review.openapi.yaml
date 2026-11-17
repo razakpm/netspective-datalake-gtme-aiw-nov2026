@@ -1,0 +1,117 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Review queue
+  version: 0.1.0
+  description: |
+    One queue for merge candidates and contact conflicts. Nothing merges or overwrites without a human
+    decision with a reason. Requires review.decide to decide; accounts.read to view.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /review-items:
+    get:
+      operationId: listReviewItems
+      summary: Review items, oldest open first
+      parameters:
+        - { in: query, name: kind, schema: { type: string, enum: [merge_candidate, contact_conflict] } }
+        - { in: query, name: state, schema: { type: string, enum: [open, merged, rejected, accepted], default: open } }
+        - { in: query, name: cursor, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200': { description: "A page.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/ReviewItem' } }, nextCursor: { type: [string, 'null'] } } } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /review-items/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getReviewItem
+      summary: Both sides in full for side-by-side review
+      responses:
+        '200': { description: "The item.", content: { application/json: { schema: { $ref: '#/components/schemas/ReviewItem' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+  /review-items/{id}/decision:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: decideReviewItem
+      summary: Merge/accept or reject with a required reason; field choices required where the two sides conflict
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/Decision' } } }
+      responses:
+        '200': { description: "Decided; history kept.", content: { application/json: { schema: { $ref: '#/components/schemas/ReviewItem' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { description: "Already decided.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: Problem details.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }
+    ImportOutcome: { type: string, enum: [created, updated, unchanged, rejected, flagged, conflict] }
+    ImportRow:
+      type: object
+      required: [rowNumber, outcome, reasonCodes]
+      description: Never contains row content; reason codes only.
+      properties:
+        rowNumber: { type: integer }
+        outcome: { $ref: "#/components/schemas/ImportOutcome" }
+        reasonCodes: { type: array, items: { type: string } }
+        entityId: { type: [string, "null"] }
+        matchedId: { type: [string, "null"] }
+    ImportRun:
+      type: object
+      required: [id, kind, state, rowCount, counts]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [accounts, contacts] }
+        state: { type: string, enum: [queued, running, completed, failed, rejected] }
+        rowCount: { type: integer }
+        counts: { type: object, additionalProperties: { type: integer } }
+        rows: { type: array, items: { $ref: "#/components/schemas/ImportRow" } }
+        fileRejectReason: { type: [string, "null"] }
+
+    ReviewItem:
+      type: object
+      required: [id, kind, state, reasonCodes, proposedAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [merge_candidate, contact_conflict] }
+        state: { type: string, enum: [open, merged, rejected, accepted] }
+        reasonCodes: { type: array, items: { type: string, enum: [domain_match, name_similarity, alias_match, title_differs, account_differs] } }
+        score: { type: [number, 'null'] }
+        subjectA: { type: object, description: "Account or contact snapshot." }
+        subjectB: { type: [object, 'null'] }
+        proposedValues: { type: [object, 'null'] }
+        proposedAt: { type: string }
+        decidedBy: { type: [string, 'null'] }
+        decidedAt: { type: [string, 'null'] }
+        decisionReason: { type: [string, 'null'] }
+    Decision:
+      type: object
+      required: [decision, reason]
+      additionalProperties: false
+      properties:
+        decision: { type: string, enum: [merge, accept, reject] }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+        survivorId: { type: string, description: "Required for merge." }
+        fieldChoices: { type: object, additionalProperties: { type: string, enum: [a, b] }, description: "Required for every conflicting field on a merge." }

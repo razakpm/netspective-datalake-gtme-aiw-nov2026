@@ -1,0 +1,17 @@
+# Dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+.next/
+pnpm-lock.yaml
+
+# Specification artifacts and agent tooling are not code
+specs/
+docs/
+.specify/
+.claude/
+**/*.md
+
+# Deliberate lint violations (task T032)
+tools/lint-fixtures/

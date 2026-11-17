@@ -1,0 +1,20 @@
+# Local hooks only, so no third-party hook revisions are pinned from memory.
+# Requires gitleaks and pnpm on the PATH.
+repos:
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks (staged changes)
+        entry: gitleaks protect --staged --redact --config .gitleaks.toml
+        language: system
+        pass_filenames: false
+      - id: prettier
+        name: prettier --check
+        entry: pnpm exec prettier --check
+        language: system
+        types_or: [ts, tsx, javascript, json, yaml]
+      - id: eslint
+        name: eslint
+        entry: pnpm exec eslint
+        language: system
+        types_or: [ts, tsx, javascript]

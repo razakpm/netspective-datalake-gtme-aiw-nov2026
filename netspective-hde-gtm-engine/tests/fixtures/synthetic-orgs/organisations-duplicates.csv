@@ -1,0 +1,7 @@
+name,aliases,domains,type,geography,notes,staffed_beds
+Northvale Regional Exchange,,northvale-hie.example,health_information_exchange,Midwest region,Same domain as an existing account; must be flagged.,
+Riverbend Health System,,riverbend-regional.example,health_system,River valley,Similar name and same type as an existing account; must be flagged.,
+Prairie Medicaid Operation,,prairie-ops-alt.example,state_medicaid_program_operator,Elsewhere,Similar name and same type; must be flagged.,
+Summitcare Health Group,,summitcare-group.example,payer,Far away,Similar name but different type and geography; must NOT be flagged.,
+Shared Domain Hospital,,shared-portal.example,health_system,Metro area,First holder of a domain that will be marked shared.,
+Shared Domain Exchange,,shared-portal.example,health_information_exchange,Metro area,Second holder of a shared domain; the domain alone must not flag.,

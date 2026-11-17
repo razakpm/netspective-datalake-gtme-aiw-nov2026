@@ -1,0 +1,193 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Quarantine and PHI decisions
+  version: 0.1.0
+  description: |
+    Review of content held by the PHI boundary guard at entry points configured for review. Every
+    operation requires `quarantine.review`. List and metadata endpoints never return content; content
+    leaves only through the `content` operation, which is logged as an access and audited (FR-020).
+    Release and discard need a human actor and a reason.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /quarantine-items:
+    get:
+      operationId: listQuarantineItems
+      summary: List held items (metadata only)
+      parameters:
+        - { in: query, name: status, schema: { $ref: '#/components/schemas/QuarantineStatus' } }
+      responses:
+        '200':
+          description: Items, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/QuarantineItem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /quarantine-items/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getQuarantineItem
+      summary: One item's metadata, including the rule IDs that held it
+      responses:
+        '200':
+          description: The item.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuarantineItem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /quarantine-items/{id}/content:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: viewQuarantinedContent
+      summary: Read the held content (logged as an access and audited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [purpose]
+              additionalProperties: false
+              properties:
+                purpose: { type: string, minLength: 3, maxLength: 200 }
+      responses:
+        '200':
+          description: The decrypted content.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, content]
+                properties:
+                  id: { type: string }
+                  content: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
+  /quarantine-items/{id}/release:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: releaseQuarantinedItem
+      summary: Release a false positive (human, with a reason)
+      requestBody: { $ref: '#/components/requestBodies/Decision' }
+      responses:
+        '200':
+          description: The item, now released.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuarantineItem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /quarantine-items/{id}/discard:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: discardQuarantinedItem
+      summary: Discard held content (human, with a reason)
+      requestBody: { $ref: '#/components/requestBodies/Decision' }
+      responses:
+        '200':
+          description: The item, now discarded with its content removed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuarantineItem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /phi-decisions:
+    get:
+      operationId: listPhiDecisions
+      summary: "Guard decisions (metadata only, never content)"
+      responses:
+        '200':
+          description: Decisions, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/PhiDecision' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  requestBodies:
+    Decision:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [reason]
+            additionalProperties: false
+            properties:
+              reason: { type: string, minLength: 3, maxLength: 500 }
+  responses:
+    Problem:
+      description: Problem details (never contains content).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    QuarantineStatus: { type: string, enum: [held, released, discarded] }
+    QuarantineItem:
+      type: object
+      required: [id, entryPoint, ruleIds, guardVersion, status, createdAt, heldUntil, contentPurged]
+      properties:
+        id: { type: string }
+        entryPoint: { type: string }
+        ruleIds: { type: array, items: { type: string } }
+        guardVersion: { type: string }
+        status: { $ref: '#/components/schemas/QuarantineStatus' }
+        createdAt: { type: string, format: date-time }
+        heldUntil: { type: string, format: date-time }
+        decidedBy: { type: [string, 'null'] }
+        decidedAt: { type: [string, 'null'] }
+        decisionReason: { type: [string, 'null'] }
+        contentPurged: { type: boolean }
+    PhiDecision:
+      type: object
+      required: [id, occurredAt, entryPoint, decision, ruleIds, guardVersion]
+      properties:
+        id: { type: string }
+        occurredAt: { type: string, format: date-time }
+        entryPoint: { type: string }
+        decision: { type: string, enum: [reject, quarantine] }
+        ruleIds: { type: array, items: { type: string } }
+        guardVersion: { type: string }
+        correlationId: { type: [string, 'null'] }
+        route: { type: [string, 'null'] }
+    Problem:
+      type: object
+      required: [type, title, status, correlationId]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }
+        ruleIds: { type: array, items: { type: string } }

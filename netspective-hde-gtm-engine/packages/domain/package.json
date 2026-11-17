@@ -1,0 +1,15 @@
+{
+  "name": "@gtm/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared domain: entities, pure rules, Zod schemas, PHI guard",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

@@ -1,0 +1,182 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Accounts
+  version: 0.1.0
+  description: |
+    Organisation import, listing, detail, classification and merge decisions. Import is an idempotent job;
+    results are read from the import run. Row reports never contain row content. Requires permissions
+    accounts.read / accounts.import / accounts.edit / review.decide.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /accounts/import:
+    post:
+      operationId: importAccounts
+      summary: Import organisations from CSV (name, aliases, domains, type, geography, notes, optional staffed_beds)
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+        - { in: query, name: dry_run, schema: { type: boolean, default: false }, description: "Validate the whole file and return the report without saving." }
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema: { type: string, maxLength: 5242880 }
+      responses:
+        '200': { description: "Dry-run report (nothing saved).", content: { application/json: { schema: { $ref: '#/components/schemas/ImportRun' } } } }
+        '201': { description: "Import completed in this request; the run holds the per-row report.", content: { application/json: { schema: { $ref: '#/components/schemas/ImportRun' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '422': { description: "Whole file rejected (headers, encoding, size, row limit, PHI-like file content).", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /import-runs/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getImportRun
+      summary: Import run with its per-row report (accounts or contacts)
+      responses:
+        '200': { description: "The run.", content: { application/json: { schema: { $ref: '#/components/schemas/ImportRun' } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /accounts:
+    get:
+      operationId: listAccounts
+      summary: List accounts
+      parameters:
+        - { in: query, name: orgType, schema: { $ref: '#/components/schemas/OrgType' } }
+        - { in: query, name: fit, schema: { $ref: '#/components/schemas/FitStatus' } }
+        - { in: query, name: eligible, schema: { type: boolean } }
+        - { in: query, name: q, schema: { type: string, maxLength: 100 } }
+        - { in: query, name: cursor, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: A page of accounts.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/AccountSummary' } }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /accounts/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getAccount
+      summary: Account profile with aliases, domains, classification history, latest fit per ICP, override state and suppression state
+      responses:
+        '200': { description: "The account.", content: { application/json: { schema: { $ref: '#/components/schemas/AccountDetail' } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    patch:
+      operationId: updateAccount
+      summary: Edit name, geography, notes, organisation type or staffed bed count (audited; never triggers an assessment)
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/AccountUpdate' } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/AccountDetail' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /accounts/{id}/domains/{domain}/shared:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string } }
+      - { in: path, name: domain, required: true, schema: { type: string, maxLength: 253 } }
+    put:
+      operationId: setDomainShared
+      summary: Mark a domain as shared across accounts (audited)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [shared], properties: { shared: { type: boolean } } } } }
+      responses:
+        '204': { description: "Updated." }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: Problem details.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }
+    ImportOutcome: { type: string, enum: [created, updated, unchanged, rejected, flagged, conflict] }
+    ImportRow:
+      type: object
+      required: [rowNumber, outcome, reasonCodes]
+      description: Never contains row content; reason codes only.
+      properties:
+        rowNumber: { type: integer }
+        outcome: { $ref: "#/components/schemas/ImportOutcome" }
+        reasonCodes: { type: array, items: { type: string } }
+        entityId: { type: [string, "null"] }
+        matchedId: { type: [string, "null"] }
+    ImportRun:
+      type: object
+      required: [id, kind, state, rowCount, counts]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [accounts, contacts] }
+        state: { type: string, enum: [queued, running, completed, failed, rejected] }
+        rowCount: { type: integer }
+        counts: { type: object, additionalProperties: { type: integer } }
+        rows: { type: array, items: { $ref: "#/components/schemas/ImportRow" } }
+        fileRejectReason: { type: [string, "null"] }
+
+    OrgType: { type: string, enum: [health_information_exchange, state_medicaid_program_operator, health_system, medtech, payer, multi_site_practice, biotech, other, unknown] }
+    FitStatus: { type: string, enum: [strong, possible, weak, excluded, unknown] }
+    AccountSummary:
+      type: object
+      required: [id, name, orgType, priorityEligible]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        orgType: { $ref: '#/components/schemas/OrgType' }
+        geography: { type: string }
+        fit: { type: object, additionalProperties: { $ref: '#/components/schemas/FitStatus' }, description: "Latest status per ICP key (icp1, icp2)." }
+        priorityEligible: { type: boolean }
+        suppressed: { type: boolean }
+    AccountDetail:
+      allOf:
+        - { $ref: '#/components/schemas/AccountSummary' }
+        - type: object
+          required: [aliases, domains, classificationHistory]
+          properties:
+            notes: { type: string }
+            staffedBedCount: { type: [integer, 'null'] }
+            aliases: { type: array, items: { type: object, required: [alias], properties: { alias: { type: string }, currentUntil: { type: [string, 'null'] } } } }
+            domains: { type: array, items: { type: object, required: [domain, shared], properties: { domain: { type: string }, shared: { type: boolean } } } }
+            classificationHistory: { type: array, items: { type: object, required: [orgType, recordedBy, recordedAt], properties: { orgType: { $ref: '#/components/schemas/OrgType' }, staffedBedCount: { type: [integer, 'null'] }, recordedBy: { type: string }, recordedAt: { type: string } } } }
+            override: { type: [object, 'null'], description: "Latest override state with rationale; the original exclusion stays visible in the assessment." }
+    AccountUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        geography: { type: string, maxLength: 200 }
+        notes: { type: string, maxLength: 2000 }
+        orgType: { $ref: '#/components/schemas/OrgType' }
+        staffedBedCount: { type: [integer, 'null'], minimum: 0 }

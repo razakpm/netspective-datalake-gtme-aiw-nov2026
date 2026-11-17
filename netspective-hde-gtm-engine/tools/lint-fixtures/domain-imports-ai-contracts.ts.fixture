@@ -1,0 +1,4 @@
+// Deliberate violation: a deterministic domain rule importing AI contracts.
+import "@gtm/ai-contracts";
+
+export {};

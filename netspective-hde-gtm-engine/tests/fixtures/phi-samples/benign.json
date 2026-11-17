@@ -1,0 +1,73 @@
+[
+  {
+    "id": "plain-prose",
+    "expected": "allow",
+    "note": "ordinary business text",
+    "content": "We map fields across sender systems and track onboarding delays."
+  },
+  {
+    "id": "field-names-only",
+    "expected": "allow",
+    "note": "workshops may list field names; a header with no data row is allowed",
+    "content": "Fields to trace: patient_id, mrn, dob, zip"
+  },
+  {
+    "id": "mrn-word-without-number",
+    "expected": "allow",
+    "note": "the term MRN with no identifier",
+    "content": "The medical record number field is called MRN in the HL7 feed."
+  },
+  {
+    "id": "dates-only",
+    "expected": "allow",
+    "note": "dates without a name or birth marker",
+    "content": "The implementation guide was updated on 2026-03-14 and published on 03/14/2026."
+  },
+  {
+    "id": "phone-and-icd",
+    "expected": "allow",
+    "note": "phone-like and ICD-like strings are not SSNs",
+    "content": "Call 555-123-4567 about code E11.9 before Friday."
+  },
+  {
+    "id": "name-without-identifier",
+    "expected": "allow",
+    "note": "a person name alone is business contact data",
+    "content": "Jordan Testcase attended the workshop."
+  },
+  {
+    "id": "two-column-csv",
+    "expected": "allow",
+    "note": "a table with fewer than three patient columns",
+    "content": "source_system,format\nEpic,CCDA\nCerner,HL7v2\n"
+  },
+  {
+    "id": "json-rows-not-patient",
+    "expected": "allow",
+    "note": "array of objects without patient keys",
+    "content": [
+      {
+        "system": "a",
+        "format": "b",
+        "count": 1
+      },
+      {
+        "system": "c",
+        "format": "d",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "id": "scrubbed-rejection-log",
+    "expected": "allow",
+    "note": "scrubbed rejection log line",
+    "content": "Rejected: field PID.5 missing; code E102; sender-id 4471"
+  },
+  {
+    "id": "password-in-prose",
+    "expected": "allow",
+    "note": "the word password with no assignment",
+    "content": "Reset your password in settings if you forgot it."
+  }
+]

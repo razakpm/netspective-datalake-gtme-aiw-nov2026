@@ -1,0 +1,208 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Contacts and stakeholders
+  version: 0.1.0
+  description: |
+    Contact import (source and permitted-use basis mandatory), listing, stakeholder roles with evidence-gated
+    economic-buyer confirmation, relationship end, and administrator erasure. Requires contacts.read /
+    contacts.import / contacts.edit / stakeholders.edit / evidence.record / contacts.erase.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /contacts/import:
+    post:
+      operationId: importContacts
+      summary: Import contacts from CSV (name, title, department, business_email, profile_url, account, source, basis, documented_origin)
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+        - { in: query, name: dry_run, schema: { type: boolean, default: false } }
+      requestBody:
+        required: true
+        content: { text/csv: { schema: { type: string, maxLength: 5242880 } } }
+      responses:
+        '200': { description: "Dry-run report (nothing saved).", content: { application/json: { schema: { $ref: '#/components/schemas/ImportRun' } } } }
+        '202': { description: "Import queued; poll /import-runs/{id}.", content: { application/json: { schema: { $ref: '#/components/schemas/ImportRun' } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /contacts:
+    get:
+      operationId: listContacts
+      summary: List contacts (suppressed contacts included and marked)
+      parameters:
+        - { in: query, name: accountId, schema: { type: string } }
+        - { in: query, name: q, schema: { type: string, maxLength: 100 } }
+        - { in: query, name: cursor, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: A page of contacts.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/Contact' } }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /contacts/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getContact
+      summary: Contact with source/basis history and relationships
+      responses:
+        '200': { description: "The contact.", content: { application/json: { schema: { $ref: '#/components/schemas/Contact' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      operationId: eraseContact
+      summary: Erase personal details on request; keeps only a keyed-hash suppression marker (administrator)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 3, maxLength: 500 } } } } }
+      responses:
+        '204': { description: "Erased." }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /relationships/{id}/roles:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    put:
+      operationId: setRelationshipRoles
+      summary: Set inferred role and/or confirmed role and authority status (audited). Confirming economic_buyer needs linked buyer_confirmed evidence.
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RolesUpdate' } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/Relationship' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { description: "Economic buyer confirmation without linked evidence.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /relationships/{id}/end:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: endRelationship
+      summary: Record that a contact left the organisation (date and reason; history kept)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [endedAt, reason], properties: { endedAt: { type: string, format: date }, reason: { type: string, maxLength: 500 } } } } }
+      responses:
+        '200': { description: "Ended.", content: { application/json: { schema: { $ref: '#/components/schemas/Relationship' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /evidence:
+    post:
+      operationId: recordEvidence
+      summary: Record a minimal evidence reference for an account (optionally a contact)
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/EvidenceInput' } } }
+      responses:
+        '201': { description: "Recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/Evidence' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: Problem details.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }
+    ImportOutcome: { type: string, enum: [created, updated, unchanged, rejected, flagged, conflict] }
+    ImportRow:
+      type: object
+      required: [rowNumber, outcome, reasonCodes]
+      description: Never contains row content; reason codes only.
+      properties:
+        rowNumber: { type: integer }
+        outcome: { $ref: "#/components/schemas/ImportOutcome" }
+        reasonCodes: { type: array, items: { type: string } }
+        entityId: { type: [string, "null"] }
+        matchedId: { type: [string, "null"] }
+    ImportRun:
+      type: object
+      required: [id, kind, state, rowCount, counts]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [accounts, contacts] }
+        state: { type: string, enum: [queued, running, completed, failed, rejected] }
+        rowCount: { type: integer }
+        counts: { type: object, additionalProperties: { type: integer } }
+        rows: { type: array, items: { $ref: "#/components/schemas/ImportRow" } }
+        fileRejectReason: { type: [string, "null"] }
+
+    Role: { type: string, enum: [operational_user, onboarding_data_quality_lead, integration_lead, data_engineering_lead, interoperability_director, data_operations_director, data_governance_lead, privacy_compliance_lead, cmio, cdo, ai_governance_lead, cio, cfo, executive_director, state_program_director, procurement_contact, economic_buyer, champion, technical_evaluator, unknown] }
+    EvidenceStatus: { type: string, enum: [observed, buyer_confirmed, derived_interpretation, ai_hypothesis, unverified_assumption, contradictory] }
+    EvidenceInput:
+      type: object
+      required: [accountId, topic, what, whereRef, observedAt, status]
+      additionalProperties: false
+      properties:
+        accountId: { type: string }
+        contactId: { type: string }
+        topic: { type: string, enum: [sender_onboarding_friction, ig_change_friction, stalled_ai_pilot, demonstrated_data_problem, generic_ai_interest, mid_size_judgement, economic_buyer_confirmation, other] }
+        what: { type: string, minLength: 3, maxLength: 500 }
+        whereRef: { type: string, maxLength: 500 }
+        observedAt: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/EvidenceStatus' }
+    Evidence:
+      allOf:
+        - { $ref: '#/components/schemas/EvidenceInput' }
+        - { type: object, required: [id, recordedBy, recordedAt], properties: { id: { type: string }, recordedBy: { type: string }, recordedAt: { type: string } } }
+    RolesUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        roleInferred: { oneOf: [ { $ref: '#/components/schemas/Role' }, { type: 'null' } ] }
+        roleConfirmed: { oneOf: [ { $ref: '#/components/schemas/Role' }, { type: 'null' } ] }
+        authorityStatus: { type: string, enum: [unconfirmed, confirmed] }
+        evidenceIds: { type: array, items: { type: string }, description: "Evidence linked to this confirmation." }
+    Relationship:
+      type: object
+      required: [id, accountId, contactId, titleStated, authorityStatus, startedAt]
+      properties:
+        id: { type: string }
+        accountId: { type: string }
+        contactId: { type: string }
+        titleStated: { type: string }
+        department: { type: string }
+        roleInferred: { oneOf: [ { $ref: '#/components/schemas/Role' }, { type: 'null' } ] }
+        roleConfirmed: { oneOf: [ { $ref: '#/components/schemas/Role' }, { type: 'null' } ] }
+        authorityStatus: { type: string, enum: [unconfirmed, confirmed] }
+        evidenceIds: { type: array, items: { type: string } }
+        startedAt: { type: string }
+        endedAt: { type: [string, 'null'] }
+        endReason: { type: [string, 'null'] }
+    Contact:
+      type: object
+      required: [id, suppressed, relationships]
+      properties:
+        id: { type: string }
+        fullName: { type: [string, 'null'] }
+        businessEmail: { type: [string, 'null'] }
+        profileUrl: { type: [string, 'null'] }
+        erased: { type: boolean }
+        suppressed: { type: boolean }
+        source: { type: object, properties: { source: { type: string }, basis: { type: string }, documentedOrigin: { type: string }, recordedAt: { type: string } } }
+        relationships: { type: array, items: { $ref: '#/components/schemas/Relationship' } }

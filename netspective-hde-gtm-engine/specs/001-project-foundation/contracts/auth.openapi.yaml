@@ -1,0 +1,131 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Auth
+  version: 0.1.0
+  description: |
+    Authentication contract. Sign-in itself is performed by the web app through the company OIDC provider.
+    The API never issues credentials and offers no local password path (FR-002). Every request carries the
+    user's OIDC ID token as a bearer token; the API verifies signature, issuer, audience and expiry, then
+    resolves the user and roles from the database on every request (never from token claims).
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: Current authenticated user, roles and effective permissions
+      tags: [auth]
+      responses:
+        '200':
+          description: The caller is authenticated and holds an active or invited record.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /auth/session/check:
+    get:
+      operationId: checkSession
+      summary: Validate the current token and user status without side effects
+      description: |
+        Used by the web app's server-side session guard. Returns 401 for invalid or expired tokens,
+        403 for users who are not invited, deactivated or revoked. A user with zero roles is authenticated
+        (200) but receives an empty permission list (FR-008).
+      tags: [auth]
+      responses:
+        '200':
+          description: Token valid and user permitted to hold a session.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          description: Identity provider keys unavailable and cache expired; new sign-ins cannot be validated.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  securitySchemes:
+    oidcBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Unauthenticated:
+      description: Missing, invalid or expired token. No session is created.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: |
+        User is not invited, was deactivated or revoked, or lacks permission. An audit event with
+        outcome `denied` is recorded.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    CurrentUser:
+      type: object
+      required: [id, email, status, roles, permissions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        status:
+          type: string
+          enum: [invited, active, deactivated]
+        roles:
+          type: array
+          description: May be empty; the user can then authenticate but access nothing.
+          items:
+            type: string
+            enum:
+              - gtm_operator
+              - research_analyst
+              - technical_sme_reviewer
+              - sales_service_lead
+              - campaign_approver
+              - administrator
+              - read_only_executive
+        permissions:
+          type: array
+          description: Union of permissions across all held roles, computed from the database.
+          items:
+            type: string
+    Problem:
+      type: object
+      required: [type, title, status, correlationId]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+          description: Never contains tokens, secrets or blocked content.
+        correlationId:
+          type: string

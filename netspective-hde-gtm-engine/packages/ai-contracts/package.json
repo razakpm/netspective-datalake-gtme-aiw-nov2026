@@ -1,0 +1,15 @@
+{
+  "name": "@gtm/ai-contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Structured AI output schemas and prompt version identifiers",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

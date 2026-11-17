@@ -1,0 +1,13 @@
+title = "GTM Engine gitleaks configuration"
+
+[extend]
+useDefault = true
+
+# Synthetic canary secrets and PHI-like strings that tests plant on purpose (spec FR-035).
+# Keep this list as small as possible and reviewed.
+[allowlist]
+description = "Synthetic test canaries"
+paths = [
+  '''tests/fixtures/''',
+  '''packages/domain/test-support/canaries\.ts''',
+]
