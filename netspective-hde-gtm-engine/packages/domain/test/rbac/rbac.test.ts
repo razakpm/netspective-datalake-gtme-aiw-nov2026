@@ -36,6 +36,8 @@ describe("effective permissions", () => {
         "icp.read",
         "jobs.read",
         "review.decide",
+        "signals.read",
+        "signals.record",
         "stakeholders.edit",
         "webhooks.read",
       ].sort(),

@@ -17,6 +17,12 @@ import {
 } from "./modules/identity/index.js";
 import { AccountService, registerAccountRoutes } from "./modules/accounts/index.js";
 import { JobService, registerJobRoutes } from "./modules/jobs/index.js";
+import {
+  registerSignalRoutes,
+  ReviewService,
+  SignalService,
+  SourceService,
+} from "./modules/signals/index.js";
 import { PhiNotifier } from "./platform/events/phi-notifier.js";
 
 // Composition root: builds the database, services and routes from configuration. The persistence is
@@ -28,6 +34,9 @@ export interface Services {
   quarantine: QuarantineService;
   identity: IdentityService;
   accounts: AccountService;
+  signals: SignalService;
+  signalReviews: ReviewService;
+  signalSources: SourceService;
 }
 
 export function openDatabase(path: string): SqliteDatabase {
@@ -42,6 +51,13 @@ export function buildServices(config: AppConfig, db: SqliteDatabase): Services {
     db,
     identity: new IdentityService(db),
     accounts: new AccountService(db),
+    signals: new SignalService(db, {
+      excerptMaxChars: config.signals.excerptMaxChars,
+      similarityThreshold: config.signals.similarityThreshold,
+      retentionMonths: config.signals.retentionMonths,
+    }),
+    signalReviews: new ReviewService(db),
+    signalSources: new SourceService(db, config.signals.excerptMaxChars),
     quarantine: new QuarantineService(
       db,
       config.quarantineEncryptionKey ?? "dev-only-quarantine-key-not-for-production-use",
@@ -108,6 +124,13 @@ export async function buildHttpApp(config: AppConfig, logger: Logger, services: 
         service: services.accounts,
         authz,
         limits: config.imports,
+      });
+      registerSignalRoutes(app, {
+        db: services.db,
+        signals: services.signals,
+        reviews: services.signalReviews,
+        sources: services.signalSources,
+        authz,
       });
     },
   });

@@ -11,6 +11,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Users", href: "/admin/users", permission: "users.manage" },
   { label: "Audit", href: "/admin/audit", permission: "audit.read" },
   { label: "Jobs", href: "/admin/jobs", permission: "jobs.read" },
+  { label: "Signals", href: "/signals", permission: "signals.read" },
   { label: "Webhooks", href: "/webhooks", permission: "webhooks.read" },
   { label: "Quarantine", href: "/admin/quarantine", permission: "quarantine.review" },
   { label: "AI invocations", href: "/ai-invocations", permission: "ai_invocations.read" },

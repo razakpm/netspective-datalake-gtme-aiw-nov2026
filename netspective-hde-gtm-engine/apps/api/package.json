@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
+    "@gtm/ai-contracts": "workspace:*",
     "@gtm/db": "workspace:*",
     "@gtm/domain": "workspace:*",
     "fastify": "^5.12.8",

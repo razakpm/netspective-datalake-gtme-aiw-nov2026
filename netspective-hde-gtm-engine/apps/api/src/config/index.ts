@@ -91,6 +91,13 @@ const EnvSchema = z.object({
   SUPPRESSION_HASH_KEY: z.string().min(32).optional(),
   IMPORT_MAX_BYTES: int(5_242_880),
   IMPORT_MAX_ROWS: int(5000),
+
+  // Feature 003 (HYPOTHESIS defaults: excerpt ceiling 300 characters, similarity 0.85, retention 36 months).
+  SIGNAL_EXCERPT_MAX_CHARS: int(300, 0, 1000),
+  SIGNAL_SIMILARITY_THRESHOLD: z.coerce.number().min(0.5).max(1).default(0.85),
+  SIGNAL_RETENTION_MONTHS: int(36),
+  SIGNAL_FRESHNESS_JOB_ENABLED: flag,
+  SIGNAL_RETENTION_JOB_ENABLED: flag,
 });
 
 type Env = z.infer<typeof EnvSchema>;
@@ -130,6 +137,13 @@ export interface AppConfig {
   quarantineEncryptionKey: string | undefined;
   suppressionHashKey: string;
   imports: { maxBytes: number; maxRows: number };
+  signals: {
+    excerptMaxChars: number;
+    similarityThreshold: number;
+    retentionMonths: number;
+    freshnessJobEnabled: boolean;
+    retentionJobEnabled: boolean;
+  };
   /** Values the logger must scrub wherever they appear (see logging/logger.ts). */
   secretValues: string[];
 }
@@ -244,6 +258,13 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     suppressionHashKey:
       env.SUPPRESSION_HASH_KEY ?? "dev-only-suppression-hash-key-not-for-production-use",
     imports: { maxBytes: env.IMPORT_MAX_BYTES, maxRows: env.IMPORT_MAX_ROWS },
+    signals: {
+      excerptMaxChars: env.SIGNAL_EXCERPT_MAX_CHARS,
+      similarityThreshold: env.SIGNAL_SIMILARITY_THRESHOLD,
+      retentionMonths: env.SIGNAL_RETENTION_MONTHS,
+      freshnessJobEnabled: env.SIGNAL_FRESHNESS_JOB_ENABLED === "true",
+      retentionJobEnabled: env.SIGNAL_RETENTION_JOB_ENABLED === "true",
+    },
     secretValues: secretsFrom(env),
   };
 }

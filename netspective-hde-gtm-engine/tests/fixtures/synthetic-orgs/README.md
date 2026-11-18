@@ -10,3 +10,5 @@ Every organisation, person, domain and email in this folder is fictional. Domain
   and rejection and conflict cases.
 - `evidence.json`: evidence references used by the ICP assessments.
 - `expected.json`: expected outcomes. Only the four in spec FR-026 are fixed; the rest are `pending-gtm-lead`.
+- `signals.json`: synthetic signals for feature 003 (one per category A-I, funding, regulatory, excerpt, duplicate and
+  conflicting-evidence cases); each entry carries its expected outcome.

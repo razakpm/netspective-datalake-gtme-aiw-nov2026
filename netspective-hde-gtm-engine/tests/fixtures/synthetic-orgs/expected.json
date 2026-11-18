@@ -1,20 +1,50 @@
 {
   "note": "Only the four outcomes in spec FR-026 are fixed. Every other fixture is pending the GTM lead (open question #28) and must not be invented.",
   "organisations": {
-    "helixbio.example": { "icp1": "excluded", "icp2": "excluded" },
-    "northvale-hie.example": { "icp1": "strong" },
-    "riverbend-health.example": { "icp2": ["strong", "possible"] },
+    "helixbio.example": {
+      "icp1": "excluded",
+      "icp2": "excluded"
+    },
+    "northvale-hie.example": {
+      "icp1": "strong"
+    },
+    "riverbend-health.example": {
+      "icp2": ["strong", "possible"]
+    },
     "summitcare-health.example": {
       "icp2": "possible",
       "icp2_unmet_includes": "no demonstrated data problem"
     },
-    "prairie-medicaid-ops.example": { "expected_status": "pending-gtm-lead" },
-    "lakeshore-hie.example": { "expected_status": "pending-gtm-lead" },
-    "metro-health-partners.example": { "expected_status": "pending-gtm-lead" },
-    "coastal-hie.example": { "expected_status": "pending-gtm-lead" },
-    "granite-health.example": { "import": "rejected", "reason_prefix": "phi_guard:" }
+    "prairie-medicaid-ops.example": {
+      "expected_status": "pending-gtm-lead"
+    },
+    "lakeshore-hie.example": {
+      "expected_status": "pending-gtm-lead"
+    },
+    "metro-health-partners.example": {
+      "expected_status": "pending-gtm-lead"
+    },
+    "coastal-hie.example": {
+      "expected_status": "pending-gtm-lead"
+    },
+    "granite-health.example": {
+      "import": "rejected",
+      "reason_prefix": "phi_guard:"
+    }
   },
   "contacts": {
-    "pat.unsubscribed@example.org": { "suppressed_after_suppression_added": true }
+    "pat.unsubscribed@example.org": {
+      "suppressed_after_suppression_added": true
+    }
+  },
+  "signals": {
+    "note": "Outcomes asserted by apps/api/test/signals-fixtures.int.test.ts (feature 003).",
+    "categories": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+    "lakeshore_conflict": {
+      "labels": ["lakeshore-conflict-a", "lakeshore-conflict-b"],
+      "both_kept": true,
+      "both_contradictory": true,
+      "neither_current_until_decided": true
+    }
   }
 }
