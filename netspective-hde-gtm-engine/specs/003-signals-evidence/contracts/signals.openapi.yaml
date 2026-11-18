@@ -1,0 +1,246 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Signals and evidence
+  version: 0.1.0
+  description: |
+    Record, de-duplicate, review and browse signals. A signal is an observation, never a conclusion: no field
+    expresses ICP fit, hypothesis, intent, funding path or a buyer decision. Requires signals.read /
+    signals.record / signals.review. Only approved, fresh signals count as current evidence.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /signals:
+    post:
+      operationId: recordSignal
+      summary: "Record a signal. A near-duplicate merges into the existing signal; an identical one changes nothing."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SignalInput' } } }
+      responses:
+        '201': { description: "A new signal was recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/RecordResult' } } } }
+        '200': { description: "Already exists (identical) or merged into an existing signal.", content: { application/json: { schema: { $ref: '#/components/schemas/RecordResult' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { description: "Refused: no source, unknown or retired type, PHI-like text, buyer_confirmed not allowed, funding or regulatory rule broken.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    get:
+      operationId: listSignals
+      summary: "Signal Feed with filters; newest first."
+      parameters:
+        - { in: query, name: type, schema: { type: string, maxLength: 80 } }
+        - { in: query, name: category, schema: { type: string, enum: [A, B, C, D, E, F, G, H, I] } }
+        - { in: query, name: icp, schema: { type: string, enum: [icp1, icp2] } }
+        - { in: query, name: accountId, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: sourceId, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: capability, schema: { type: string, maxLength: 60 } }
+        - { in: query, name: offer, schema: { type: string, maxLength: 60 } }
+        - { in: query, name: confidence, schema: { $ref: '#/components/schemas/Confidence' } }
+        - { in: query, name: freshness, schema: { type: string, enum: [fresh, stale, undated] } }
+        - { in: query, name: reviewStatus, schema: { $ref: '#/components/schemas/ReviewStatus' } }
+        - { in: query, name: cursor, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: "A page of signals."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/SignalSummary' } }
+                  nextCursor: { type: [string, 'null'] }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /signals/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getSignal
+      summary: "One signal with all provenance fields, provenance chain, links and review history."
+      responses:
+        '200': { description: "The signal.", content: { application/json: { schema: { $ref: '#/components/schemas/SignalDetail' } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /signals/{id}/review:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: reviewSignal
+      summary: "Approve, reject (reason required), mark contradictory (name the other signal), re-verify a regulatory signal, or clear the new-provenance flag. A decision is added to history; the observation never changes."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ReviewInput' } } }
+      responses:
+        '200': { description: "Decision recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/SignalDetail' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /accounts/{id}/signals:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: listAccountSignals
+      summary: "Signals for an account (timeline), optionally only current evidence."
+      parameters:
+        - { in: query, name: currentOnly, schema: { type: boolean, default: false }, description: "Only approved, fresh signals." }
+        - { in: query, name: cursor, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: "Signals newest first."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/SignalSummary' } }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: "Problem details."
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }
+        ruleIds: { type: array, items: { type: string } }
+    Reliability: { type: string, enum: [high, medium, low, unknown] }
+    Confidence: { type: string, enum: [low, medium, high] }
+    EvidenceStatus: { type: string, enum: [observed, buyer_confirmed, derived_interpretation, ai_hypothesis, unverified_assumption, contradictory] }
+    ReviewStatus: { type: string, enum: [pending, approved, rejected, contradictory] }
+
+    SignalInput:
+      type: object
+      additionalProperties: false
+      required: [accountId, typeKey, observation, observedAt, source]
+      properties:
+        accountId: { type: string }
+        contactId: { type: string }
+        typeKey: { type: string, maxLength: 80 }
+        observation: { type: string, minLength: 3, maxLength: 1000 }
+        excerpt: { type: string, maxLength: 1000 }
+        observedAt: { type: string, format: date-time }
+        publishedAt: { type: string, format: date-time }
+        source:
+          type: object
+          additionalProperties: false
+          required: [ref]
+          description: "Either sourceId of a registered source, or name and kind for a new one (created citation-only)."
+          properties:
+            sourceId: { type: string }
+            name: { type: string, maxLength: 200 }
+            kind: { type: string, enum: [official_publication, buyer_statement, third_party, analyst_observation, provider, first_party, other] }
+            ref: { type: string, minLength: 1, maxLength: 1000, description: "URL or other identifier." }
+            itemKey: { type: string, maxLength: 200 }
+        reliability: { $ref: '#/components/schemas/Reliability' }
+        extractionConfidence: { $ref: '#/components/schemas/Confidence' }
+        evidenceStatus: { $ref: '#/components/schemas/EvidenceStatus' }
+        relevance:
+          type: object
+          additionalProperties: false
+          properties:
+            icp: { type: array, items: { type: string, enum: [icp1, icp2] } }
+            capability: { type: array, items: { type: string, maxLength: 60 } }
+            offer: { type: array, items: { type: string, maxLength: 60 } }
+        fundingClass: { type: string, enum: [context, budget_approval_evidence] }
+        approvalCitation: { type: string, maxLength: 500 }
+        regulatoryItem: { type: string, maxLength: 80 }
+        regulatoryStatus: { type: string, enum: [proposed, unverified, reported_final] }
+        supports: { type: array, items: { $ref: '#/components/schemas/LinkInput' } }
+        contradicts: { type: array, items: { $ref: '#/components/schemas/LinkInput' } }
+    LinkInput:
+      type: object
+      required: [entityType, entityId]
+      properties:
+        entityType: { type: string, enum: [evidence_reference, icp_fit_assessment, signal] }
+        entityId: { type: string }
+    RecordResult:
+      type: object
+      required: [outcome, signal]
+      properties:
+        outcome: { type: string, enum: [created, already_exists, merged] }
+        mergeKind: { type: string, enum: [merged_duplicate, republication] }
+        signal: { $ref: '#/components/schemas/SignalSummary' }
+    SignalSummary:
+      type: object
+      required: [id, accountId, typeKey, category, taxonomyVersion, observation, source, observedAt, reliability, extractionConfidence, evidenceStatus, reviewStatus, isCurrent, stale, undated, flags]
+      properties:
+        id: { type: string }
+        accountId: { type: string }
+        contactId: { type: [string, 'null'] }
+        typeKey: { type: string }
+        category: { type: string, enum: [A, B, C, D, E, F, G, H, I] }
+        taxonomyVersion: { type: integer }
+        observation: { type: string }
+        excerpt: { type: [string, 'null'] }
+        excerptWithheldReason: { type: string, enum: [none, too_long, source_no_storage] }
+        source: { type: object, required: [id, name, ref], properties: { id: { type: string }, name: { type: string }, ref: { type: string }, unavailableSince: { type: [string, 'null'] } } }
+        observedAt: { type: string }
+        collectedAt: { type: string }
+        publishedAt: { type: [string, 'null'] }
+        reliability: { $ref: '#/components/schemas/Reliability' }
+        extractionConfidence: { $ref: '#/components/schemas/Confidence' }
+        evidenceStatus: { $ref: '#/components/schemas/EvidenceStatus' }
+        reviewStatus: { $ref: '#/components/schemas/ReviewStatus' }
+        isCurrent: { type: boolean, description: "Approved and within its freshness window." }
+        stale: { type: boolean }
+        undated: { type: boolean }
+        freshUntil: { type: string }
+        flags:
+          type: object
+          required: [newProvenanceSinceReview, reverifyRequired, contextOnly]
+          properties:
+            newProvenanceSinceReview: { type: boolean }
+            reverifyRequired: { type: boolean }
+            contextOnly: { type: boolean }
+        fundingClass: { type: string, enum: [none, context, budget_approval_evidence] }
+        regulatoryStatus: { type: [string, 'null'], enum: [proposed, unverified, reported_final, null] }
+        statusLabel: { type: string, description: "hypothesis while taxonomy defaults are unconfirmed." }
+    SignalDetail:
+      allOf:
+        - { $ref: '#/components/schemas/SignalSummary' }
+        - type: object
+          required: [provenance, supporting, contradictory, reviews, relevance, retention, sensitivity]
+          properties:
+            aiModel: { type: [string, 'null'] }
+            aiPromptVersion: { type: [string, 'null'] }
+            extractionMethod: { type: string, enum: [manual, provider, ai_extracted] }
+            provenance: { type: array, items: { type: object, required: [seq, kind, occurredAt], properties: { seq: { type: integer }, kind: { type: string }, actorType: { type: string }, method: { type: string }, sourceId: { type: [string, 'null'] }, sourceRef: { type: [string, 'null'] }, occurredAt: { type: string } } } }
+            supporting: { type: array, items: { $ref: '#/components/schemas/LinkInput' } }
+            contradictory: { type: array, items: { $ref: '#/components/schemas/LinkInput' } }
+            reviews: { type: array, items: { type: object, required: [decision, decidedBy, decidedAt], properties: { decision: { type: string }, reason: { type: [string, 'null'] }, contradictsSignalId: { type: [string, 'null'] }, decidedBy: { type: string }, decidedAt: { type: string } } } }
+            relevance: { type: object, properties: { icp: { type: array, items: { type: string } }, capability: { type: array, items: { type: string } }, offer: { type: array, items: { type: string } } } }
+            retention: { type: object, required: [policy, retainUntil], properties: { policy: { type: string }, retainUntil: { type: string } } }
+            sensitivity: { type: string }
+            externalUse: { type: string, description: "For regulatory signals, not without re-verification until re-verified." }
+    ReviewInput:
+      type: object
+      additionalProperties: false
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [approve, reject, contradict, reverify, clear_flag] }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+        contradictsSignalId: { type: string }
