@@ -22,7 +22,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           package_json_file: netspective-hde-gtm-engine/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: netspective-hde-gtm-engine/.nvmrc
           cache: pnpm
@@ -38,7 +38,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           package_json_file: netspective-hde-gtm-engine/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: netspective-hde-gtm-engine/.nvmrc
           cache: pnpm
@@ -53,7 +53,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           package_json_file: netspective-hde-gtm-engine/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: netspective-hde-gtm-engine/.nvmrc
           cache: pnpm
@@ -69,7 +69,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           package_json_file: netspective-hde-gtm-engine/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: netspective-hde-gtm-engine/.nvmrc
           cache: pnpm
@@ -85,7 +85,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           package_json_file: netspective-hde-gtm-engine/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: netspective-hde-gtm-engine/.nvmrc
           cache: pnpm
@@ -100,7 +100,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           package_json_file: netspective-hde-gtm-engine/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: netspective-hde-gtm-engine/.nvmrc
           cache: pnpm
@@ -115,7 +115,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           package_json_file: netspective-hde-gtm-engine/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: netspective-hde-gtm-engine/.nvmrc
           cache: pnpm
@@ -147,7 +147,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           package_json_file: netspective-hde-gtm-engine/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: netspective-hde-gtm-engine/.nvmrc
           cache: pnpm
