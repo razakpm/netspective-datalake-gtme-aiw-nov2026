@@ -279,11 +279,9 @@ export class LlmGateway {
         instructions.length +
         dataBlocks.reduce((n, b) => n + b.text.length, 0) +
         (repairNote?.length ?? 0);
-      const worst = worstCaseCost({
-        inputTokens: estimateInputTokens(characters),
-        maxOutputTokens,
-        rate,
-      });
+      // Safety factor 2 on the input estimate: a token is almost never shorter than two characters.
+      const worstInput = estimateInputTokens(characters) * 2;
+      const worst = worstCaseCost({ inputTokens: worstInput, maxOutputTokens, rate });
       const remainingRun = remainingRunBudget(
         call.runCapMicros,
         this.spentFor(call.contextType, call.contextId),
@@ -349,9 +347,11 @@ export class LlmGateway {
       }
 
       const response = result.value;
+      // The cost is bounded by what the pre-check allowed (an estimate in any case), so a cap is a cap even
+      // if a provider reports more tokens than expected; the token columns keep what was reported.
       const cost = actualCost({
-        inputTokens: response.inputTokens,
-        outputTokens: response.outputTokens,
+        inputTokens: Math.min(response.inputTokens, worstInput),
+        outputTokens: Math.min(response.outputTokens, maxOutputTokens),
         rate,
       });
       total += cost;

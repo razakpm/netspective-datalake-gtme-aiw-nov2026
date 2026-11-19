@@ -82,6 +82,7 @@ export interface HarnessOptions {
   rates?: { inMicrosPer1k: number; outMicrosPer1k: number };
   proposer?: HypothesisProposer;
   withProposals?: boolean;
+  log?: (line: unknown) => void;
 }
 
 export function buildResearchHarness(options: HarnessOptions = {}) {
@@ -110,6 +111,7 @@ export function buildResearchHarness(options: HarnessOptions = {}) {
     maxRetries: settings.maxRetries,
     now,
     boundary: () => "bnd-test",
+    log: options.log,
   });
   const jobs = new JobService(db, { now });
   const service = new ResearchService(db, jobs, settings);

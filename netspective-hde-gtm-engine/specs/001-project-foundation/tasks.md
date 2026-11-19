@@ -4,6 +4,8 @@ description: "Task list for Feature 001 — Project Foundation"
 
 # Tasks: Project Foundation
 
+> **Feature 004 note**: T096, T098, T100, T103 and T107 are partly built by feature 004 (research/LLM interfaces, fakes, wrapper, gateway). See `specs/004-account-research-hypotheses/tasks.md` Progress notes.
+
 **Input**: Design documents from `/specs/001-project-foundation/`
 
 **Prerequisites**: [plan.md](plan.md), [spec.md](spec.md), [research.md](research.md), [data-model.md](data-model.md), [contracts/](contracts/), [quickstart.md](quickstart.md)

@@ -511,13 +511,28 @@ export class ResearchRunner {
     });
 
     // Statements and quotes pass the PHI guard before they are stored (data-model: research_finding).
-    const stored: VerifiedFinding[] = [];
+    const guarded: VerifiedFinding[] = [];
     let guardDropped = 0;
     for (const k of verified.kept) {
       const check = guardValue({ s: k.statement, q: k.supportingText });
       if (check.decision !== "allow") guardDropped += 1;
-      else stored.push(k);
+      else guarded.push(k);
     }
+    // A verified quote is kept as text only when the source's excerpt rule allows it (feature 003 storage
+    // rule); the signal sources research creates are citation-only, so by default only its hash is kept.
+    const allowsQuote = (fetchId: string | null): boolean => {
+      const p = processed.find((x) => x.fetchId === fetchId);
+      if (!p) return false;
+      const row = this.d.db.raw
+        .prepare("SELECT storage_rule FROM signal_source WHERE name = ?")
+        .get(`Research: ${p.host}`) as { storage_rule: string } | undefined;
+      return row?.storage_rule === "excerpt";
+    };
+    const stored: VerifiedFinding[] = guarded.map((k) =>
+      k.supportingText !== null && !allowsQuote(k.sourceFetchId)
+        ? { ...k, supportingText: null }
+        : k,
+    );
     const dropped = {
       ...verified.dropped,
       unsupported: verified.dropped.unsupported + guardDropped,

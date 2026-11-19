@@ -69,9 +69,9 @@ const ANY = { task: "extraction" as const, whenTextIncludes: [""] };
 
 describe("valid calls", () => {
   it("returns parsed data and records one invocation with model, prompt, schema, tokens, cost and latency", async () => {
-    const { gw } = gateway([{ ...ANY, respond: valid, tokens: { input: 1000, output: 200 } }]);
+    const { gw } = gateway([{ ...ANY, respond: valid, tokens: { input: 100, output: 100 } }]);
     const r = await call(gw);
-    expect(r).toMatchObject({ ok: true, data: valid, attempts: 1, costMicros: 1000 + 1000 });
+    expect(r).toMatchObject({ ok: true, data: valid, attempts: 1, costMicros: 100 + 500 });
     const [row] = rows();
     expect(row).toMatchObject({
       provider: "fake",
@@ -82,9 +82,9 @@ describe("valid calls", () => {
       context_type: "research_run",
       context_id: "run-1",
       attempt: 1,
-      input_tokens: 1000,
-      output_tokens: 200,
-      cost_micros: 2000,
+      input_tokens: 100,
+      output_tokens: 100,
+      cost_micros: 600,
       validation_result: "valid",
       outcome: "completed",
       actor_type: "ai",
