@@ -18,6 +18,18 @@ export const SignalSubmissionSchema = z
       .object({
         sourceId: z.string().min(1).max(64).optional(),
         name: z.string().min(1).max(200).optional(),
+        /** Used only when the source is created inline (feature 004 passes the approved rule's kind). */
+        kind: z
+          .enum([
+            "official_publication",
+            "buyer_statement",
+            "third_party",
+            "analyst_observation",
+            "provider",
+            "first_party",
+            "other",
+          ])
+          .optional(),
         ref: z.string().min(1).max(1000),
         itemKey: z.string().min(1).max(200).optional(),
       })

@@ -1,0 +1,11 @@
+{
+  "scenario": "faulty-invalid-json",
+  "rules": [
+    {
+      "task": "extraction",
+      "whenTextIncludes": [""],
+      "respondRaw": "this is not json",
+      "repeat": true
+    }
+  ]
+}

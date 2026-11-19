@@ -153,4 +153,72 @@ export const COLUMN_CLASSIFICATION: ClassificationRegistry = {
   signal_contradiction: som(
     "id, signal_a, signal_b, created_by, created_at, resolved_at, resolved_by",
   ),
+
+  // Feature 004 (account research and hypotheses). Finding statements and quotes are source-derived
+  // text, so confidential commercial; nothing here stores a prompt, a response or a reasoning trace.
+  prompt_version: som(
+    "id, name, version, template_hash, output_schema_id, output_schema_version, status, approved_by, approved_at",
+  ),
+  ai_invocation: som(
+    "id, occurred_at, provider, model, task, prompt_version_id, schema_version, context_type, context_id, account_id, attempt, input_tokens, output_tokens, cost_micros, latency_ms, validation_result, outcome, refusal_rule_ids, correlation_id, actor_id, actor_type",
+  ),
+  research_source_rule: mergeFields(
+    cc("pattern"),
+    som("id, kind, match_type, status, signal_source_kind, created_by, created_at, status_label"),
+  ),
+  research_run: mergeFields(
+    cc("requested_sources, summary_json, attention_note"),
+    som(
+      "id, account_id, started_by, trigger, state, max_sources, max_cost_micros, reserved_micros, cost_micros, input_tokens, output_tokens, sources_read, dropped_uncited, dropped_unsupported, dropped_protected, dropped_taxonomy, injection_flags, retries, icp_excluded, stop_reason, summary_prompt_version_id, attention_ack_by, attention_ack_at, correlation_id, created_at, started_at, finished_at",
+    ),
+  ),
+  research_source_fetch: mergeFields(
+    cc("address, address_normalised, final_address, permitted_excerpt"),
+    som(
+      "id, run_id, rule_id, outcome, http_status, content_sha256, size_bytes, truncated, injection_rule_ids, flagged, fetched_at",
+    ),
+  ),
+  research_finding: mergeFields(
+    cc("statement, supporting_text"),
+    som(
+      "id, run_id, fetch_id, kind, topic, supporting_text_sha256, basis_finding_ids, second_fetch_id, type_key, extraction_confidence, verified, signal_id, signal_refusal_codes, carried_over_from_run, created_at",
+    ),
+  ),
+  research_schedule: som(
+    "account_id, cadence, next_run_at, enabled, created_by, created_at, updated_at",
+  ),
+  hypothesis_category: som("key, label, active, status_label"),
+  service_capability_provisional: som("key, label, active, status_label"),
+  account_hypothesis: mergeFields(
+    cc("statement, proposed_statement, confidence_explanation"),
+    som(
+      "id, account_id, origin, acceptance, category, status, not_for_prioritisation, confidence_band, proposed_by_run_id, ai_model, ai_prompt_version_id, created_by, created_at, accepted_by, accepted_at, last_revived_at, last_reviewed_at, flagged_for_review, flag_reason, updated_at",
+    ),
+  ),
+  hypothesis_tag: som("hypothesis_id, dimension, value"),
+  hypothesis_evidence: som(
+    "id, hypothesis_id, signal_id, role, linked_by, linked_by_type, linked_at",
+  ),
+  hypothesis_assumption: mergeFields(
+    cc("text"),
+    som("id, hypothesis_id, source, interpretation_id, added_by, added_at"),
+  ),
+  hypothesis_status_decision: mergeFields(
+    cc("note"),
+    som(
+      "id, hypothesis_id, from_status, to_status, decided_by, decided_by_type, reason_code, decided_at",
+    ),
+  ),
+  confidence_assessment: mergeFields(
+    cc("explanation"),
+    som(
+      "id, subject_type, subject_id, dimension, band, assessed_by_type, assessed_by, assessed_at",
+    ),
+  ),
+  problem_interpretation: mergeFields(
+    cc("matches_json, questions_json, unknowns_json"),
+    som(
+      "id, account_id, source_signal_id, statement_sha256, ai_model, ai_prompt_version_id, requested_by, cost_micros, created_at",
+    ),
+  ),
 };

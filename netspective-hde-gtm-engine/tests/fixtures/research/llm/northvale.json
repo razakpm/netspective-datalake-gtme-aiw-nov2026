@@ -1,0 +1,133 @@
+{
+  "scenario": "northvale-hie",
+  "rules": [
+    {
+      "task": "extraction",
+      "whenTextIncludes": ["three formats", "implementation guide"],
+      "respond": {
+        "findings": [
+          {
+            "key": "n1",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Senders submit data in three formats: CCDA, HL7 v2 and CSV extracts.",
+            "extractionConfidence": "high",
+            "supportingText": "three formats: CCDA, HL7 v2 and CSV extracts",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "multi_format_sender"
+          },
+          {
+            "key": "n2",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Northvale published an updated implementation guide for claims attachments.",
+            "extractionConfidence": "high",
+            "supportingText": "updated implementation guide for claims attachments",
+            "sourceFetchId": "$BLOCK:2",
+            "typeKey": "implementation_guide_change"
+          },
+          {
+            "key": "n3",
+            "kind": "inference",
+            "topic": "other",
+            "statement": "Senders probably need to revise their submissions, which may delay onboarding.",
+            "extractionConfidence": "medium",
+            "basisKeys": ["n1", "n2"],
+            "typeKey": "onboarding_delay"
+          }
+        ]
+      }
+    },
+    {
+      "task": "extraction",
+      "whenTextIncludes": ["implementation guide"],
+      "respond": {
+        "findings": [
+          {
+            "key": "n2",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Northvale published an updated implementation guide for claims attachments.",
+            "extractionConfidence": "high",
+            "supportingText": "updated implementation guide for claims attachments",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "implementation_guide_change"
+          }
+        ]
+      }
+    },
+    {
+      "task": "extraction",
+      "whenTextIncludes": ["three formats"],
+      "respond": {
+        "findings": [
+          {
+            "key": "n1",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Senders submit data in three formats: CCDA, HL7 v2 and CSV extracts.",
+            "extractionConfidence": "high",
+            "supportingText": "three formats: CCDA, HL7 v2 and CSV extracts",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "multi_format_sender"
+          }
+        ]
+      }
+    },
+    {
+      "task": "synthesis",
+      "whenTextIncludes": ["three formats"],
+      "respond": {
+        "proposals": [
+          {
+            "statement": "Sender onboarding delays after implementation-guide changes may be slowing multi-format intake.",
+            "category": "onboarding_friction",
+            "relevance": {
+              "icp": ["icp1"],
+              "capability": ["sender_onboarding_automation"],
+              "offer": []
+            },
+            "supportingFindingKeys": ["n1", "n2"],
+            "contradictoryFindingKeys": [],
+            "assumptions": ["Senders keep submitting in more than one format."],
+            "confidence": {
+              "band": "medium",
+              "explanation": "Two public observations agree; no buyer has confirmed it yet."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "task": "interpretation",
+      "whenTextIncludes": ["pilot worked on demo data"],
+      "respond": {
+        "matches": [
+          {
+            "capabilityKey": "field_lineage_traceability",
+            "band": "high",
+            "reason": "Worked on demo data and failed on the buyer's own data points to input traceability."
+          },
+          {
+            "capabilityKey": "data_quality_monitoring",
+            "band": "medium",
+            "reason": "Quality of the real inputs may differ from the demo data."
+          }
+        ],
+        "discoveryQuestions": [
+          "Which ten fields does the pilot depend on, by name?",
+          "Which source systems supply each of those fields?",
+          "How often is each field refreshed?",
+          "Who owns each source system?",
+          "Which fields were present in the demo data but missing in the real data?",
+          "What formats do the real sources use?",
+          "When did the pilot stop meeting its targets?",
+          "Which fields are populated differently across source systems?",
+          "Where could each field's origin be recorded today?",
+          "Which of the fields are optional in the source systems?"
+        ],
+        "unknowns": ["Who owns the data feeding the pilot.", "Who holds the budget for the pilot."]
+      }
+    }
+  ]
+}

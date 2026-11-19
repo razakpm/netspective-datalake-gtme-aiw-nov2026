@@ -101,4 +101,27 @@ describe("ingestSubmission", () => {
         .run(),
     ).toThrow();
   });
+
+  it("creates an inline source with the kind given (feature 004 passes the approved rule's kind)", () => {
+    const r = signals.ingestSubmission(provider, {
+      ...base,
+      source: {
+        name: "Research: docs.example",
+        kind: "official_publication",
+        ref: "https://docs.example/p",
+      },
+    });
+    expect(r.signal.source.name).toBe("Research: docs.example");
+    expect(r.signal.reliability).toBe("high");
+    const src = db.raw
+      .prepare("SELECT kind, storage_rule FROM signal_source WHERE name = 'Research: docs.example'")
+      .get() as { kind: string; storage_rule: string };
+    expect(src).toEqual({ kind: "official_publication", storage_rule: "citation_only" });
+    const other = signals.ingestSubmission(provider, {
+      ...base,
+      observation: "A different observation altogether.",
+      source: { name: "Research: plain.example", ref: "https://plain.example/p" },
+    });
+    expect(other.signal.reliability).toBe("low");
+  });
 });

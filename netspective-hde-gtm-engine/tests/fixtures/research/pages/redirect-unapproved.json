@@ -1,0 +1,7 @@
+{
+  "address": "https://news.northvale-hie.example/moved",
+  "status": 302,
+  "contentType": "text/html",
+  "redirectTo": "https://not-approved.example/landing",
+  "text": ""
+}

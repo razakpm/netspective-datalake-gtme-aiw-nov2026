@@ -8,6 +8,7 @@ import {
 import type { Tx } from "../sqlite/database.js";
 import { seedFeature002 } from "./feature002.js";
 import { seedFeature003 } from "./feature003.js";
+import { seedFeature004 } from "./feature004.js";
 
 // Reference data seed (task T040): the seven roles, seven permissions and the foundation matrix.
 // Idempotent, and run in every environment (it is not synthetic prospect data).
@@ -49,6 +50,12 @@ const PERMISSION_DESCRIPTIONS: Readonly<Record<Permission, string>> = {
   "signals.record": "Record signals",
   "signals.review": "Approve, reject, mark contradictory and re-verify signals",
   "signals.sources.manage": "Manage signal sources and the signal taxonomy",
+  "research.read": "View research runs and summaries",
+  "research.run": "Start and cancel research runs and interpret problem statements",
+  "research.sources.manage": "Manage the approved research source list",
+  "hypotheses.read": "View account hypotheses",
+  "hypotheses.edit": "Create, accept, edit and link evidence to hypotheses",
+  "hypotheses.review": "Change the status of hypotheses (reviewers only)",
 };
 
 export function seedReference(tx: Tx): void {
@@ -72,4 +79,5 @@ export function seedReference(tx: Tx): void {
   }
   seedFeature002(tx);
   seedFeature003(tx);
+  seedFeature004(tx);
 }

@@ -65,6 +65,9 @@ importers:
       '@gtm/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@gtm/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
       fastify:
         specifier: ^5.12.8
         version: 5.12.8
@@ -126,6 +129,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@gtm/ai-contracts':
+        specifier: workspace:*
+        version: link:../ai-contracts
       '@gtm/domain':
         specifier: workspace:*
         version: link:../domain
@@ -136,7 +142,11 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
 
-  packages/providers: {}
+  packages/providers:
+    dependencies:
+      '@gtm/domain':
+        specifier: workspace:*
+        version: link:../domain
 
 packages:
 

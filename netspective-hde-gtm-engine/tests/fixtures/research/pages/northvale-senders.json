@@ -1,0 +1,6 @@
+{
+  "address": "https://news.northvale-hie.example/senders",
+  "status": 200,
+  "contentType": "text/html",
+  "text": "Northvale HIE onboarding update. Northvale HIE reports that senders submit data in three formats: CCDA, HL7 v2 and CSV extracts. Several senders have waited more than eight weeks to complete onboarding."
+}

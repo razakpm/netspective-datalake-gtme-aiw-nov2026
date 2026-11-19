@@ -46,5 +46,34 @@
       "both_contradictory": true,
       "neither_current_until_decided": true
     }
+  },
+  "research": {
+    "note": "Hypothesis expectations from acceptance Scenarios A and B (hypothesis labelled); asserted by apps/api/test/research-scenarios.int.test.ts.",
+    "northvale-hie.example": {
+      "category": "onboarding_friction",
+      "supportingSignals": 2,
+      "unknownTopics": [
+        "data_architecture",
+        "source_systems",
+        "budget",
+        "project_status",
+        "buying_authority"
+      ],
+      "status": "untested"
+    },
+    "riverbend-health.example": {
+      "category": "pilot_input_quality",
+      "supportingSignals": 1,
+      "unknownTopics": ["data_architecture", "budget", "project_status", "buying_authority"],
+      "discoveryQuestions": 10,
+      "validatedOnlyAfterBuyerConfirmedSignalApproved": true
+    },
+    "lakeshore-hie.example": {
+      "contradictions": 1,
+      "supportingSignals": 1,
+      "contradictorySignals": 1,
+      "automaticStatus": null,
+      "canBeValidatedByTheseSignals": false
+    }
   }
 }

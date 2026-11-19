@@ -1,0 +1,354 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Account research
+  version: 0.1.0
+  description: |
+    Start bounded research runs, read run results (checked summary, source record, cost), cancel runs,
+    set a simple repeat schedule, interpret a buyer's non-PHI problem statement, and maintain the approved
+    research source list. Research never changes ICP fit, qualification, eligibility or any decision; its
+    signals enter feature 003 as unreviewed AI-extracted signals. Requires research.read / research.run /
+    research.sources.manage. External content is treated as data; no fetched text appears in any response
+    except short permitted excerpts and finding statements.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /accounts/{id}/research:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: startResearchRun
+      summary: "Start a bounded research run for an account. Answers 202 with the queued run."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RunInput' } } }
+      responses:
+        '202': { description: "Run queued.", content: { application/json: { schema: { $ref: '#/components/schemas/ResearchRun' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { description: "A run is already active for this account.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '422': { description: "Refused: budget above the per-run cap, account cap would be exceeded, source not approved, or PHI-like text in a supplied capture.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    get:
+      operationId: listAccountRuns
+      summary: "Research runs for an account, newest first."
+      parameters:
+        - { in: query, name: cursor, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: "A page of runs."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/ResearchRun' } }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /accounts/{id}/research-summary:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getAccountResearchSummary
+      summary: "The account's current research picture: facts as stated, inferences, unknowns and contradictions, composed from the latest processed findings per source; findings from sources skipped as unchanged are marked carried over."
+      responses:
+        '200': { description: "The summary.", content: { application/json: { schema: { $ref: '#/components/schemas/AccountSummary' } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /accounts/{id}/research/schedule:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    put:
+      operationId: setResearchSchedule
+      summary: "Create, change or turn off the simple repeat schedule for one account. There is no all-accounts schedule."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ScheduleInput' } } }
+      responses:
+        '200': { description: "The schedule.", content: { application/json: { schema: { $ref: '#/components/schemas/Schedule' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /research-runs:
+    get:
+      operationId: listResearchRuns
+      summary: "Runs across accounts, for example the attention queue (state=needs_attention)."
+      parameters:
+        - { in: query, name: state, schema: { $ref: '#/components/schemas/RunState' } }
+        - { in: query, name: cursor, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: "A page of runs."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/ResearchRun' } }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /research-runs/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getResearchRun
+      summary: "One run with its budget, cost, source record, findings and injection flags."
+      responses:
+        '200': { description: "The run.", content: { application/json: { schema: { $ref: '#/components/schemas/ResearchRunDetail' } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /research-runs/{id}/cancel:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: cancelResearchRun
+      summary: "Cancel a queued or running run. Takes effect before the next fetch or model call."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '200': { description: "The run.", content: { application/json: { schema: { $ref: '#/components/schemas/ResearchRun' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /research-runs/{id}/acknowledge:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: acknowledgeAttention
+      summary: "A person acknowledges a run in needs_attention, with a note."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [note], properties: { note: { type: string, minLength: 3, maxLength: 500 } } } } }
+      responses:
+        '200': { description: "The run.", content: { application/json: { schema: { $ref: '#/components/schemas/ResearchRun' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /accounts/{id}/problem-interpretations:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: interpretProblemStatement
+      summary: "Interpret a buyer-supplied non-PHI problem statement into capability matches and suggested discovery questions. Advisory only."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/InterpretInput' } } }
+      responses:
+        '201': { description: "The interpretation.", content: { application/json: { schema: { $ref: '#/components/schemas/Interpretation' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { description: "Refused: PHI-like text (before any model sees it), budget or cap, or invalid output after the retry limit.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /research-sources:
+    get:
+      operationId: listResearchSources
+      summary: "The approved research source list."
+      responses:
+        '200': { description: "Rules.", content: { application/json: { schema: { type: object, required: [items, webFetchEnabled], properties: { webFetchEnabled: { type: boolean }, items: { type: array, items: { $ref: '#/components/schemas/SourceRule' } } } } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: createResearchSourceRule
+      summary: "Administrator adds an approved source pattern."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SourceRuleInput' } } }
+      responses:
+        '201': { description: "Created.", content: { application/json: { schema: { $ref: '#/components/schemas/SourceRule' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /research-sources/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    patch:
+      operationId: updateResearchSourceRule
+      summary: "Administrator enables or disables a source pattern. Rules are never deleted."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [status], properties: { status: { type: string, enum: [enabled, disabled] } } } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/SourceRule' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: "Problem details."
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }
+        ruleIds: { type: array, items: { type: string } }
+    Band: { type: string, enum: [low, medium, high] }
+    RunState: { type: string, enum: [queued, running, completed, budget_reached, needs_attention, failed, cancelled] }
+    RunInput:
+      type: object
+      additionalProperties: false
+      properties:
+        maxSources: { type: integer, minimum: 1, maximum: 25, description: "Defaults to 10 (hypothesis)." }
+        maxCost: { type: string, pattern: '^[0-9]{1,4}(\.[0-9]{1,6})?$', description: "Decimal amount in the configured currency unit; must not exceed the per-run cap (default 2.00)." }
+        sources:
+          type: array
+          maxItems: 25
+          description: "Analyst-captured addresses. May include pasted text, in which case no network call is made for that address."
+          items:
+            type: object
+            additionalProperties: false
+            required: [address]
+            properties:
+              address: { type: string, maxLength: 2000 }
+              capturedText: { type: string, maxLength: 200000 }
+    ResearchRun:
+      type: object
+      required: [id, accountId, state, startedBy, trigger, budget, totals, createdAt]
+      properties:
+        id: { type: string }
+        accountId: { type: string }
+        state: { $ref: '#/components/schemas/RunState' }
+        trigger: { type: string, enum: [manual, schedule] }
+        startedBy: { type: string }
+        stopReason: { type: [string, 'null'], enum: [max_sources, max_cost, account_cap, cancelled, invalid_output, provider_error, null] }
+        icpExcluded: { type: boolean, description: "The account's fit was excluded when the run started; research never changes it." }
+        budget: { type: object, required: [maxSources, maxCost], properties: { maxSources: { type: integer }, maxCost: { type: string } } }
+        totals:
+          type: object
+          required: [sourcesRead, cost, inputTokens, outputTokens, retries, injectionFlags, droppedFindings]
+          properties:
+            sourcesRead: { type: integer }
+            cost: { type: string, description: "Decimal amount; an estimate from configured rates." }
+            inputTokens: { type: integer }
+            outputTokens: { type: integer }
+            retries: { type: integer }
+            injectionFlags: { type: integer }
+            droppedFindings: { type: object, properties: { uncited: { type: integer }, unsupported: { type: integer }, protectedTopic: { type: integer }, taxonomy: { type: integer } } }
+        attention: { type: [object, 'null'], properties: { acknowledgedBy: { type: [string, 'null'] }, acknowledgedAt: { type: [string, 'null'] }, note: { type: [string, 'null'] } } }
+        createdAt: { type: string }
+        startedAt: { type: [string, 'null'] }
+        finishedAt: { type: [string, 'null'] }
+    ResearchRunDetail:
+      allOf:
+        - { $ref: '#/components/schemas/ResearchRun' }
+        - type: object
+          required: [sources, findings]
+          properties:
+            sources: { type: array, items: { $ref: '#/components/schemas/SourceFetch' } }
+            findings: { type: array, items: { $ref: '#/components/schemas/Finding' } }
+            summary: { oneOf: [ { $ref: '#/components/schemas/AccountSummary' }, { type: 'null' } ] }
+    SourceFetch:
+      type: object
+      required: [id, address, outcome, flagged, fetchedAt]
+      properties:
+        id: { type: string }
+        address: { type: string }
+        finalAddress: { type: [string, 'null'] }
+        outcome: { type: string, enum: [processed, unchanged_skipped, refused_unapproved, refused_redirect, blocked_by_guard, unreachable, too_large_truncated, duplicate_in_run, budget_skipped] }
+        contentSha256: { type: [string, 'null'] }
+        sizeBytes: { type: [integer, 'null'] }
+        truncated: { type: boolean }
+        flagged: { type: boolean }
+        injectionRuleIds: { type: array, items: { type: string }, description: "Rule ids only; never the instruction text." }
+        permittedExcerpt: { type: [string, 'null'] }
+        fetchedAt: { type: string }
+    Finding:
+      type: object
+      required: [id, kind, topic, statement, extractionConfidence, verified, source]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [fact, inference, unknown, contradiction] }
+        topic: { type: string, enum: [data_architecture, source_systems, budget, project_status, buying_authority, other] }
+        statement: { type: string }
+        supportingText: { type: [string, 'null'] }
+        basisFindingIds: { type: array, items: { type: string } }
+        extractionConfidence: { $ref: '#/components/schemas/Band' }
+        verified: { type: boolean }
+        carriedOver: { type: boolean }
+        flaggedSource: { type: boolean, description: "Came from a source flagged as an injection attempt." }
+        source: { oneOf: [ { type: object, required: [fetchId, address], properties: { fetchId: { type: string }, address: { type: string } } }, { type: 'null' } ] }
+        secondSource: { oneOf: [ { type: object, required: [fetchId, address], properties: { fetchId: { type: string }, address: { type: string } } }, { type: 'null' } ] }
+        signalId: { type: [string, 'null'] }
+    AccountSummary:
+      type: object
+      required: [accountId, facts, inferences, unknowns, contradictions, sources, label]
+      properties:
+        accountId: { type: string }
+        runId: { type: [string, 'null'], description: "The latest run contributing." }
+        label: { type: string, const: "AI-generated, advisory" }
+        facts: { type: array, items: { $ref: '#/components/schemas/Finding' } }
+        inferences: { type: array, items: { $ref: '#/components/schemas/Finding' } }
+        unknowns: { type: array, items: { type: object, required: [topic, statement], properties: { topic: { type: string }, statement: { type: string } } }, description: "Always lists the five protected topics that no verified fact covers." }
+        contradictions: { type: array, items: { $ref: '#/components/schemas/Finding' } }
+        sources: { type: array, items: { type: object, required: [fetchId, address], properties: { fetchId: { type: string }, address: { type: string }, flagged: { type: boolean } } } }
+        modelAndPrompt: { type: [object, 'null'], properties: { model: { type: string }, promptVersion: { type: string } } }
+    ScheduleInput:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        cadence: { type: string, enum: [weekly, monthly] }
+    Schedule:
+      type: object
+      required: [accountId, enabled]
+      properties:
+        accountId: { type: string }
+        enabled: { type: boolean }
+        cadence: { type: [string, 'null'], enum: [weekly, monthly, null] }
+        nextRunAt: { type: [string, 'null'] }
+    InterpretInput:
+      type: object
+      additionalProperties: false
+      required: [statement]
+      properties:
+        statement: { type: string, minLength: 10, maxLength: 2000, description: "Buyer-supplied, non-PHI. Refused before any model sees it if it looks like PHI." }
+        sourceSignalId: { type: string, description: "The buyer-confirmed signal this statement came from, if one was recorded." }
+    Interpretation:
+      type: object
+      required: [id, accountId, matches, discoveryQuestions, unknowns, label, modelAndPrompt]
+      properties:
+        id: { type: string }
+        accountId: { type: string }
+        label: { type: string, const: "AI-generated, advisory" }
+        matches: { type: array, items: { type: object, required: [capabilityKey, band, reason], properties: { capabilityKey: { type: string }, band: { $ref: '#/components/schemas/Band' }, reason: { type: string, maxLength: 300 } } } }
+        discoveryQuestions: { type: array, items: { type: string, maxLength: 300 }, description: "Field names, source-system names, formats and timelines only; never patient-level data." }
+        unknowns: { type: array, items: { type: string } }
+        modelAndPrompt: { type: object, required: [model, promptVersion], properties: { model: { type: string }, promptVersion: { type: string } } }
+        cost: { type: string }
+        createdAt: { type: string }
+    SourceRuleInput:
+      type: object
+      additionalProperties: false
+      required: [kind, matchType, pattern]
+      properties:
+        kind: { type: string, enum: [analyst_capture, public_org_site, public_regulatory, public_procurement] }
+        matchType: { type: string, enum: [host, host_suffix] }
+        pattern: { type: string, pattern: '^[a-z0-9.-]{3,253}$' }
+    SourceRule:
+      type: object
+      required: [id, kind, matchType, pattern, status]
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        matchType: { type: string }
+        pattern: { type: string }
+        status: { type: string, enum: [enabled, disabled] }
+        statusLabel: { type: string }

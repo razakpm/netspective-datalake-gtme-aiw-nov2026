@@ -13,3 +13,6 @@ export * from "./csv/index.js";
 export * from "./events/feature002.js";
 export * from "./signals/index.js";
 export * from "./events/feature003.js";
+export * from "./research/index.js";
+export * from "./hypotheses/index.js";
+export * from "./events/feature004.js";

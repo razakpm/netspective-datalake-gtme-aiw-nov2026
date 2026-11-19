@@ -1,0 +1,29 @@
+{
+  "facts": [
+    {
+      "key": "f1",
+      "statement": "The exchange published an updated implementation guide for claims attachments.",
+      "sourceFetchId": "fetch-1",
+      "supportingText": "updated implementation guide for claims attachments",
+      "topic": "other",
+      "carriedOver": false
+    }
+  ],
+  "inferences": [
+    {
+      "key": "f2",
+      "statement": "Senders probably need to change their submissions.",
+      "basisKeys": ["f1"],
+      "extractionConfidence": "low"
+    }
+  ],
+  "unknowns": [
+    { "topic": "data_architecture", "statement": "No source states the data architecture." },
+    { "topic": "source_systems", "statement": "No source names the source systems." },
+    { "topic": "budget", "statement": "No source states a budget." },
+    { "topic": "project_status", "statement": "No source states a project status." },
+    { "topic": "buying_authority", "statement": "No source names who holds buying authority." }
+  ],
+  "contradictions": [],
+  "sources": [{ "fetchId": "fetch-1", "flagged": false }]
+}

@@ -20,6 +20,12 @@ import { PhiNotifier } from "../src/platform/events/phi-notifier.js";
 import { registerIdentityRoutes } from "../src/modules/identity/index.js";
 import { IdentityService, OidcVerifier } from "../src/modules/identity/index.js";
 import { buildTestServer, type TestServer } from "../test/helpers.js";
+import { loadConfig } from "../src/config/index.js";
+import { FakeLLM, FakeResearchSource } from "@gtm/providers";
+import { registerHypothesisRoutes } from "../src/modules/hypotheses/index.js";
+import { registerResearchRoutes } from "../src/modules/research/index.js";
+import { buildResearchStack, type ResearchStack } from "../src/research-stack.js";
+import { loadPages, loadScenario } from "./research-harness.js";
 import { FakeIssuer } from "./fake-oidc/issuer.js";
 
 // A running API with the identity routes, an in-memory SQLite database, seeded reference data and a
@@ -33,6 +39,8 @@ export const QUARANTINE_KEY = "quarantine-test-key-0123456789abcdef-not-real";
 export interface FixtureOptions {
   /** Entry points that hold content for review instead of rejecting it. */
   quarantineEntryPoints?: string[];
+  /** Fake-model scenario for the research stack (default northvale). */
+  researchScenario?: string;
 }
 
 export interface IdentityFixture extends TestServer {
@@ -46,6 +54,9 @@ export interface IdentityFixture extends TestServer {
   signals: SignalService;
   signalReviews: ReviewService;
   signalSources: SourceService;
+  research: ResearchStack;
+  fakeLlm: FakeLLM;
+  fakeSource: FakeResearchSource;
   /** Insert an active user directly (bypassing the API) and return a bearer token for them. */
   makeUser(
     email: string,
@@ -91,6 +102,18 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
   const signals = new SignalService(db, signalSettings);
   const signalReviews = new ReviewService(db);
   const signalSources = new SourceService(db, signalSettings.excerptMaxChars);
+  const scenario = loadScenario(options.researchScenario ?? "northvale");
+  const fakeLlm = new FakeLLM(scenario.rules, { obeyInjection: scenario.obeyInjection });
+  const fakeSource = new FakeResearchSource(loadPages());
+  const research = buildResearchStack({
+    db,
+    config: loadConfig({ NODE_ENV: "test", DATABASE_URL: "postgres://gtm:x@localhost:5432/gtm" }),
+    jobs,
+    signals,
+    llm: fakeLlm,
+    source: fakeSource,
+    now: () => clock.now,
+  });
   const server = await buildTestServer({
     phiGuardSink: createPhiGuardSink(db, notifier),
     ...(options.quarantineEntryPoints
@@ -112,6 +135,22 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
         service: accounts,
         authz,
         limits: { maxBytes: 5_242_880, maxRows: 5000 },
+      });
+      registerResearchRoutes(app, {
+        db,
+        service: research.research,
+        schedules: research.schedules,
+        interpreter: research.interpreter,
+        rules: research.rules,
+        authz,
+        now: () => clock.now,
+      });
+      registerHypothesisRoutes(app, {
+        db,
+        service: research.hypotheses,
+        review: research.review,
+        authz,
+        now: () => clock.now,
       });
       registerSignalRoutes(app, {
         db,
@@ -136,6 +175,9 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
     signals,
     signalReviews,
     signalSources,
+    research,
+    fakeLlm,
+    fakeSource,
     clock,
     idp,
     routes,

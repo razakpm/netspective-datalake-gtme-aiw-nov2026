@@ -107,6 +107,8 @@ describe("typed config", () => {
       OIDC_AUDIENCE: "gtm-engine",
       QUARANTINE_ENCRYPTION_KEY: "x".repeat(32),
       SUPPRESSION_HASH_KEY: "y".repeat(32),
+      LLM_PROVIDER: "anthropic",
+      ANTHROPIC_API_KEY: "k".repeat(16),
     };
     expect(() => loadConfig({ ...production })).not.toThrow();
     const withoutKey: Record<string, string> = { ...production };
@@ -152,5 +154,65 @@ describe("typed config", () => {
       DATABASE_URL: `postgres://gtm:${CANARY_SECRET}@localhost:5432/gtm`,
     });
     expect(config.secretValues).toContain(CANARY_SECRET);
+  });
+});
+
+describe("feature 004 configuration", () => {
+  it("defaults to the fake model, 10 sources, 2.00 per run, 20.00 per account per month and 90 days", () => {
+    const c = loadConfig(baseEnv);
+    expect(c.llm.provider).toBe("fake");
+    expect(c.llm.models).toEqual({
+      extraction: "claude-haiku-5-5",
+      synthesis: "claude-sonnet-5-5",
+    });
+    expect(c.research).toMatchObject({
+      maxSources: 10,
+      runCapMicros: 2_000_000,
+      accountMonthlyCapMicros: 20_000_000,
+      maxRetries: 2,
+      interpretationCapMicros: 200_000,
+      webFetchEnabled: false,
+      hypothesisStaleDays: 90,
+    });
+  });
+  it("parses money without floating point and rejects malformed amounts", () => {
+    expect(loadConfig({ ...baseEnv, RESEARCH_RUN_COST_CAP: "0.05" }).research.runCapMicros).toBe(
+      50_000,
+    );
+    expect(
+      loadConfig({ ...baseEnv, RESEARCH_RUN_COST_CAP: "12.345678" }).research.runCapMicros,
+    ).toBe(12_345_678);
+    expect(() => loadConfig({ ...baseEnv, RESEARCH_RUN_COST_CAP: "two" })).toThrow(
+      /RESEARCH_RUN_COST_CAP/,
+    );
+    expect(() => loadConfig({ ...baseEnv, RESEARCH_MAX_SOURCES: "26" })).toThrow(
+      /RESEARCH_MAX_SOURCES/,
+    );
+  });
+  it("needs a key with the anthropic provider and refuses the fake model in production", () => {
+    expect(() => loadConfig({ ...baseEnv, LLM_PROVIDER: "anthropic" })).toThrow(
+      /ANTHROPIC_API_KEY/,
+    );
+    const production = {
+      ...baseEnv,
+      DATABASE_URL: "postgres://gtm:x@db.example.org:5432/gtm?sslmode=verify-full",
+      NODE_ENV: "production",
+      OIDC_ISSUER_URL: "https://login.example.org",
+      OIDC_AUDIENCE: "gtm-engine",
+      QUARANTINE_ENCRYPTION_KEY: "x".repeat(32),
+      SUPPRESSION_HASH_KEY: "y".repeat(32),
+    };
+    expect(() => loadConfig(production)).toThrow(/LLM_PROVIDER/);
+    expect(() =>
+      loadConfig({ ...production, LLM_PROVIDER: "anthropic", ANTHROPIC_API_KEY: "k".repeat(16) }),
+    ).not.toThrow();
+  });
+  it("scrubs the API key from logs and never echoes it in an error", () => {
+    const c = loadConfig({
+      ...baseEnv,
+      LLM_PROVIDER: "anthropic",
+      ANTHROPIC_API_KEY: "secret-key-value-123",
+    });
+    expect(c.secretValues).toContain("secret-key-value-123");
   });
 });

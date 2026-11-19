@@ -1,0 +1,14 @@
+{
+  "matches": [
+    {
+      "capabilityKey": "field_lineage_traceability",
+      "band": "high",
+      "reason": "The buyer says the pilot worked on demo data and failed on their own data, which points to input traceability."
+    }
+  ],
+  "discoveryQuestions": [
+    "Which ten fields does the pilot depend on, by name?",
+    "Which source systems supply each of those fields?"
+  ],
+  "unknowns": ["Who owns the data feeding the pilot."]
+}

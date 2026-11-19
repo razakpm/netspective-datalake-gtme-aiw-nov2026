@@ -18,6 +18,19 @@ const int = (fallback: number, min = 1, max = Number.MAX_SAFE_INTEGER) =>
 
 const flag = z.enum(["true", "false"]).optional();
 
+/** A decimal amount such as "2.00" (at most 6 decimals), kept as text until converted to micro-units. */
+const money = (fallback: string) =>
+  z
+    .string()
+    .regex(/^[0-9]{1,6}(\.[0-9]{1,6})?$/, "must be a decimal amount such as 2.00")
+    .default(fallback);
+
+/** Decimal text to integer micro-units, without floating point. */
+export function toMicros(amount: string): number {
+  const [whole = "0", frac = ""] = amount.split(".");
+  return Number(whole) * 1_000_000 + Number(frac.padEnd(6, "0").slice(0, 6));
+}
+
 const postgresUrl = z.string({ error: "is required" }).refine(
   (value) => {
     try {
@@ -98,6 +111,27 @@ const EnvSchema = z.object({
   SIGNAL_RETENTION_MONTHS: int(36),
   SIGNAL_FRESHNESS_JOB_ENABLED: flag,
   SIGNAL_RETENTION_JOB_ENABLED: flag,
+
+  // Feature 004 (HYPOTHESIS defaults: 10 sources, 2.00 per run, 20.00 per account per calendar month,
+  // 2 repair retries, 90 days to stale, 0.20 per interpretation). Amounts are in the configured currency
+  // unit and held as integer micro-units. Rates are micro-units per 1,000 tokens (estimates).
+  LLM_PROVIDER: z.enum(["fake", "anthropic"]).default("fake"),
+  ANTHROPIC_API_KEY: z.string().min(8).optional(),
+  LLM_MODEL_EXTRACTION: z.string().min(1).default("claude-haiku-5-5"),
+  LLM_MODEL_SYNTHESIS: z.string().min(1).default("claude-sonnet-5-5"),
+  LLM_RATE_EXTRACTION_IN: int(1000, 0),
+  LLM_RATE_EXTRACTION_OUT: int(5000, 0),
+  LLM_RATE_SYNTHESIS_IN: int(3000, 0),
+  LLM_RATE_SYNTHESIS_OUT: int(15000, 0),
+  RESEARCH_MAX_SOURCES: int(10, 1, 25),
+  RESEARCH_RUN_COST_CAP: money("2.00"),
+  RESEARCH_ACCOUNT_MONTHLY_CAP: money("20.00"),
+  RESEARCH_MAX_RETRIES: int(2, 0, 5),
+  INTERPRETATION_COST_CAP: money("0.20"),
+  RESEARCH_WEB_FETCH_ENABLED: flag,
+  RESEARCH_FETCH_TIMEOUT_MS: int(10_000, 100),
+  RESEARCH_MAX_PAGE_BYTES: int(1_048_576, 1024),
+  HYPOTHESIS_STALE_DAYS: int(90),
 });
 
 type Env = z.infer<typeof EnvSchema>;
@@ -144,6 +178,26 @@ export interface AppConfig {
     freshnessJobEnabled: boolean;
     retentionJobEnabled: boolean;
   };
+  llm: {
+    provider: "fake" | "anthropic";
+    apiKey: string | undefined;
+    models: { extraction: string; synthesis: string };
+    rates: {
+      extraction: { inMicrosPer1k: number; outMicrosPer1k: number };
+      synthesis: { inMicrosPer1k: number; outMicrosPer1k: number };
+    };
+  };
+  research: {
+    maxSources: number;
+    runCapMicros: number;
+    accountMonthlyCapMicros: number;
+    maxRetries: number;
+    interpretationCapMicros: number;
+    webFetchEnabled: boolean;
+    fetchTimeoutMs: number;
+    maxPageBytes: number;
+    hypothesisStaleDays: number;
+  };
   /** Values the logger must scrub wherever they appear (see logging/logger.ts). */
   secretValues: string[];
 }
@@ -158,6 +212,7 @@ function secretsFrom(env: Env): string[] {
   }
   if (env.QUARANTINE_ENCRYPTION_KEY) values.push(env.QUARANTINE_ENCRYPTION_KEY);
   if (env.SUPPRESSION_HASH_KEY) values.push(env.SUPPRESSION_HASH_KEY);
+  if (env.ANTHROPIC_API_KEY) values.push(env.ANTHROPIC_API_KEY);
   return values;
 }
 
@@ -209,12 +264,25 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     if (env.SUPPRESSION_HASH_KEY === undefined) {
       problems.push({ variable: "SUPPRESSION_HASH_KEY", message: "is required in production" });
     }
+    if (env.LLM_PROVIDER === "fake") {
+      problems.push({
+        variable: "LLM_PROVIDER",
+        message: "the fake language model is not allowed in production",
+      });
+    }
     problems.push(
       ...checkEncryptedTransport({
         databaseUrl: env.DATABASE_URL,
         oidcIssuerUrl: env.OIDC_ISSUER_URL,
       }),
     );
+  }
+
+  if (env.LLM_PROVIDER === "anthropic" && env.ANTHROPIC_API_KEY === undefined) {
+    problems.push({
+      variable: "ANTHROPIC_API_KEY",
+      message: "is required with LLM_PROVIDER=anthropic",
+    });
   }
 
   if (problems.length > 0) throw new ConfigError(problems);
@@ -258,6 +326,32 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     suppressionHashKey:
       env.SUPPRESSION_HASH_KEY ?? "dev-only-suppression-hash-key-not-for-production-use",
     imports: { maxBytes: env.IMPORT_MAX_BYTES, maxRows: env.IMPORT_MAX_ROWS },
+    llm: {
+      provider: env.LLM_PROVIDER,
+      apiKey: env.ANTHROPIC_API_KEY,
+      models: { extraction: env.LLM_MODEL_EXTRACTION, synthesis: env.LLM_MODEL_SYNTHESIS },
+      rates: {
+        extraction: {
+          inMicrosPer1k: env.LLM_RATE_EXTRACTION_IN,
+          outMicrosPer1k: env.LLM_RATE_EXTRACTION_OUT,
+        },
+        synthesis: {
+          inMicrosPer1k: env.LLM_RATE_SYNTHESIS_IN,
+          outMicrosPer1k: env.LLM_RATE_SYNTHESIS_OUT,
+        },
+      },
+    },
+    research: {
+      maxSources: env.RESEARCH_MAX_SOURCES,
+      runCapMicros: toMicros(env.RESEARCH_RUN_COST_CAP),
+      accountMonthlyCapMicros: toMicros(env.RESEARCH_ACCOUNT_MONTHLY_CAP),
+      maxRetries: env.RESEARCH_MAX_RETRIES,
+      interpretationCapMicros: toMicros(env.INTERPRETATION_COST_CAP),
+      webFetchEnabled: env.RESEARCH_WEB_FETCH_ENABLED === "true",
+      fetchTimeoutMs: env.RESEARCH_FETCH_TIMEOUT_MS,
+      maxPageBytes: env.RESEARCH_MAX_PAGE_BYTES,
+      hypothesisStaleDays: env.HYPOTHESIS_STALE_DAYS,
+    },
     signals: {
       excerptMaxChars: env.SIGNAL_EXCERPT_MAX_CHARS,
       similarityThreshold: env.SIGNAL_SIMILARITY_THRESHOLD,

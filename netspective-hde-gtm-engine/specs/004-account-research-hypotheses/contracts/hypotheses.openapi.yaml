@@ -1,0 +1,240 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Account hypotheses
+  version: 0.1.0
+  description: |
+    Create, accept, edit, link evidence to and review account hypotheses. A hypothesis is a testable statement
+    about an account's data problem, never a qualification fact: no field expresses funding path, budget,
+    buying authority, ICP fit or eligibility, and confidence is a band (low, medium, high) with an explanation,
+    never a number. AI-proposed hypotheses are proposals until an analyst accepts them. Status changes need
+    hypotheses.review and a note; validated needs a supporting signal that is approved and buyer-confirmed.
+    Requires hypotheses.read / hypotheses.edit / hypotheses.review.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /accounts/{id}/hypotheses:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: createHypothesis
+      summary: "An analyst creates an accepted hypothesis (status untested) with at least one supporting signal and a stated confidence band."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/HypothesisInput' } } }
+      responses:
+        '201': { description: "Created.", content: { application/json: { schema: { $ref: '#/components/schemas/Hypothesis' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { description: "Refused: the statement asserts qualification, funding path, budget approval, buying authority or a buyer decision as established; PHI-like text; no supporting signal; unknown category, tag or signal.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    get:
+      operationId: listAccountHypotheses
+      summary: "Hypotheses for an account. By default only accepted hypotheses; proposals are listed with acceptance=proposed."
+      parameters:
+        - { in: query, name: acceptance, schema: { type: string, enum: [accepted, proposed, dismissed], default: accepted } }
+        - { in: query, name: status, schema: { $ref: '#/components/schemas/Status' } }
+        - { in: query, name: cursor, schema: { type: string, maxLength: 64 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: "A page of hypotheses."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/HypothesisSummary' } }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /hypotheses/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getHypothesis
+      summary: "One hypothesis with supporting and contradictory signals, buyer-confirmed facts, assumptions, confidence and status history."
+      responses:
+        '200': { description: "The hypothesis.", content: { application/json: { schema: { $ref: '#/components/schemas/Hypothesis' } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    patch:
+      operationId: updateHypothesis
+      summary: "Edit text, category, tags or confidence (hypotheses.edit), or change status with a note (hypotheses.review). Status changes by AI or provider actors are refused."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/HypothesisPatch' } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/Hypothesis' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { description: "The transition is not allowed from the current status.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '422': { description: "Refused: no note, validated without a supporting approved buyer-confirmed signal, conclusion-like statement, or PHI-like text.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /hypotheses/{id}/accept:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: acceptHypothesisProposal
+      summary: "An analyst accepts an AI-proposed hypothesis; it becomes an untested hypothesis."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '200': { description: "Accepted.", content: { application/json: { schema: { $ref: '#/components/schemas/Hypothesis' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /hypotheses/{id}/dismiss:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: dismissHypothesisProposal
+      summary: "An analyst dismisses an AI-proposed hypothesis. Dismissal is final."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '200': { description: "Dismissed.", content: { application/json: { schema: { $ref: '#/components/schemas/Hypothesis' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /hypotheses/{id}/evidence:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: linkHypothesisEvidence
+      summary: "Link a signal as supporting or contradictory. Links are never removed."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [signalId, role], properties: { signalId: { type: string }, role: { type: string, enum: [supporting, contradictory] } } } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/Hypothesis' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { description: "The signal is already linked.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /hypotheses/{id}/assumptions:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: addHypothesisAssumption
+      summary: "Add an assumption, optionally from a problem interpretation. Assumptions are never shown as confirmed facts."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [text], properties: { text: { type: string, minLength: 3, maxLength: 300 }, interpretationId: { type: string } } } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/Hypothesis' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /hypothesis-categories:
+    get:
+      operationId: listHypothesisCategories
+      summary: "Hypothesis categories (provisional list; hypothesis labels)."
+      responses:
+        '200': { description: "Categories.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { type: object, required: [key, label], properties: { key: { type: string }, label: { type: string }, statusLabel: { type: string } } } } } } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: "Problem details."
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }
+        ruleIds: { type: array, items: { type: string } }
+    Band: { type: string, enum: [low, medium, high] }
+    Status: { type: string, enum: [untested, strengthening, weakening, validated, rejected, stale] }
+    Relevance:
+      type: object
+      additionalProperties: false
+      properties:
+        icp: { type: array, items: { type: string, enum: [icp1, icp2] } }
+        capability: { type: array, items: { type: string, maxLength: 60 } }
+        offer: { type: array, items: { type: string, maxLength: 60 } }
+    Confidence:
+      type: object
+      additionalProperties: false
+      required: [band, explanation]
+      properties:
+        band: { $ref: '#/components/schemas/Band' }
+        explanation: { type: string, minLength: 3, maxLength: 500 }
+    HypothesisInput:
+      type: object
+      additionalProperties: false
+      required: [statement, category, supportingSignalIds, confidence]
+      properties:
+        statement: { type: string, minLength: 10, maxLength: 500 }
+        category: { type: string, maxLength: 60 }
+        relevance: { $ref: '#/components/schemas/Relevance' }
+        supportingSignalIds: { type: array, minItems: 1, maxItems: 50, items: { type: string } }
+        contradictorySignalIds: { type: array, maxItems: 50, items: { type: string } }
+        assumptions: { type: array, maxItems: 20, items: { type: string, minLength: 3, maxLength: 300 } }
+        confidence: { $ref: '#/components/schemas/Confidence' }
+    HypothesisPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        statement: { type: string, minLength: 10, maxLength: 500 }
+        category: { type: string, maxLength: 60 }
+        relevance: { $ref: '#/components/schemas/Relevance' }
+        confidence: { $ref: '#/components/schemas/Confidence' }
+        status: { $ref: '#/components/schemas/Status' }
+        note: { type: string, minLength: 3, maxLength: 500, description: "Required with status; also used when acknowledging a review flag." }
+        acknowledgeFlag: { type: boolean, description: "A reviewer confirms they looked at a flagged hypothesis (needs a note)." }
+    SignalRef:
+      type: object
+      required: [signalId, observation, evidenceStatus, reviewStatus, isCurrent]
+      properties:
+        signalId: { type: string }
+        observation: { type: string }
+        evidenceStatus: { type: string }
+        reviewStatus: { type: string }
+        isCurrent: { type: boolean, description: "Approved and within its freshness window (feature 003)." }
+        source: { type: object, properties: { name: { type: string }, ref: { type: string } } }
+    HypothesisSummary:
+      type: object
+      required: [id, accountId, acceptance, statement, category, origin, confidence, flaggedForReview, notForPrioritisation, label]
+      properties:
+        id: { type: string }
+        accountId: { type: string }
+        acceptance: { type: string, enum: [proposed, accepted, dismissed] }
+        origin: { type: string, enum: [analyst, ai] }
+        statement: { type: string }
+        category: { type: string }
+        status: { oneOf: [ { $ref: '#/components/schemas/Status' }, { type: 'null' } ], description: "Null until accepted." }
+        effectiveStatus: { oneOf: [ { $ref: '#/components/schemas/Status' }, { type: 'null' } ], description: "Stored status, or stale when the stale rule is due and not yet materialised." }
+        confidence: { $ref: '#/components/schemas/Confidence' }
+        flaggedForReview: { type: boolean }
+        flagReason: { type: [string, 'null'] }
+        notForPrioritisation: { type: boolean, description: "Set for accounts whose ICP fit is excluded or on hold." }
+        label: { type: string, description: "AI-proposed, not accepted for proposals; empty otherwise." }
+    Hypothesis:
+      allOf:
+        - { $ref: '#/components/schemas/HypothesisSummary' }
+        - type: object
+          required: [supporting, contradictory, buyerConfirmedFacts, assumptions, relevance, statusHistory, definitions]
+          properties:
+            supporting: { type: array, items: { $ref: '#/components/schemas/SignalRef' } }
+            contradictory: { type: array, items: { $ref: '#/components/schemas/SignalRef' } }
+            buyerConfirmedFacts: { type: array, items: { $ref: '#/components/schemas/SignalRef' }, description: "Linked signals whose evidence status is buyer-confirmed, shown apart from assumptions and inferences." }
+            assumptions: { type: array, items: { type: object, required: [text, source], properties: { text: { type: string }, source: { type: string, enum: [analyst, interpretation, ai] }, interpretationId: { type: [string, 'null'] } } } }
+            relevance: { $ref: '#/components/schemas/Relevance' }
+            dimensions: { type: array, items: { type: object, required: [dimension, band, explanation], properties: { dimension: { type: string }, band: { $ref: '#/components/schemas/Band' }, explanation: { type: string } } } }
+            statusHistory: { type: array, items: { type: object, required: [toStatus, note, decidedByType, decidedAt], properties: { fromStatus: { type: [string, 'null'] }, toStatus: { type: string }, note: { type: string }, decidedBy: { type: [string, 'null'] }, decidedByType: { type: string, enum: [human, system] }, reasonCode: { type: [string, 'null'] }, decidedAt: { type: string } } } }
+            proposedStatement: { type: [string, 'null'], description: "The AI's original wording when the statement was edited." }
+            definitions: { type: object, description: "Plain-language definitions of the confidence bands." }

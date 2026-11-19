@@ -1,0 +1,67 @@
+{
+  "scenario": "lakeshore-hie",
+  "rules": [
+    {
+      "task": "extraction",
+      "whenTextIncludes": ["Lakeshore HIE"],
+      "respond": {
+        "findings": [
+          {
+            "key": "l1",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Onboarding delays are reported for new senders this quarter.",
+            "extractionConfidence": "high",
+            "supportingText": "onboarding delays for new senders this quarter",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "onboarding_delay"
+          },
+          {
+            "key": "l2",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Onboarding for new senders is reported as fast, usually under two weeks.",
+            "extractionConfidence": "high",
+            "supportingText": "onboarding for new senders is fast, usually under two weeks",
+            "sourceFetchId": "$BLOCK:2",
+            "typeKey": "onboarding_delay"
+          },
+          {
+            "key": "l3",
+            "kind": "contradiction",
+            "topic": "other",
+            "statement": "One source reports onboarding delays and another reports fast onboarding.",
+            "extractionConfidence": "medium",
+            "sourceFetchId": "$BLOCK:1",
+            "secondSourceFetchId": "$BLOCK:2",
+            "supportingText": "onboarding delays for new senders this quarter"
+          }
+        ]
+      }
+    },
+    {
+      "task": "synthesis",
+      "whenTextIncludes": ["delays are reported"],
+      "respond": {
+        "proposals": [
+          {
+            "statement": "Sender onboarding may be slow, but public sources disagree about it.",
+            "category": "onboarding_friction",
+            "relevance": {
+              "icp": ["icp1"],
+              "capability": [],
+              "offer": []
+            },
+            "supportingFindingKeys": ["l1"],
+            "contradictoryFindingKeys": ["l2"],
+            "assumptions": [],
+            "confidence": {
+              "band": "low",
+              "explanation": "Two public sources of equal standing disagree."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
