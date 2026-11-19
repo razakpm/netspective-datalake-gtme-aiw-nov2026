@@ -22,6 +22,7 @@
 | 20 | Pricing for paid engagements | Scoping | None stored; human scoping only | Service lead | No |
 | 21 | Designated claim approvers | 005/009 | Service lead + marketing approver (two-person for restricted claims) | Leadership | Yes for 009 |
 | 22 | Resilience Review scope | Offer 8 | Inactive until defined | Service lead | No |
+| 23 | Business source content for the 19 capabilities (§12), the ten offers (§6) and the offer scoring table (§6.2) is not in the repository | 005 | Seed only what the repository records (Offers 1, 5, 6, 7, 8; the three paid engagement types); everything else is a "to be provided" placeholder that blocks approval | Project owner / Service lead | No |
 | 23 | PHI guard default action (reject vs quarantine) | 001 | Reject by default; quarantine only at entry points explicitly configured for review. **Resolved 2026-11-12** (recommended default accepted in clarify session) | Privacy lead (to confirm) | No |
 | 24 | Retention periods beyond #17: webhook raw body/headers, quarantine, job payload/error details, API idempotency records | 001 | Webhook raw 90 days (metadata kept); quarantine 30 days max; job details 90 days after terminal state; idempotency records 24 hours — **assumption (hypotheses)** | Privacy lead | No |
 | 25 | Encryption of transport and storage | 001 | TLS everywhere; encryption at rest for database, file storage and quarantine; production start-up refuses non-TLS database and non-https URLs — **assumption** pending hosting decision (#16) | CTO | Yes for production |

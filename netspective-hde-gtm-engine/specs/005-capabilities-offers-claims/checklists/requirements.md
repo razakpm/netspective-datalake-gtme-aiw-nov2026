@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,4 +31,4 @@
 
 ## Notes
 
-- One open marker: the seed source for the 19 capabilities, the ten offers and the scoring table (business source §§6, 12) is not in the repository. Resolve with `/speckit-clarify` or by answering the question below.
+- The seed-source question was answered on 2026-11-19 (placeholders for content not in the repository). All items pass.

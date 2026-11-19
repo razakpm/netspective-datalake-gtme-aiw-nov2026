@@ -75,7 +75,7 @@ A service lead maintains the initial 19 service capabilities. Each has a descrip
 
 **Acceptance Scenarios**:
 
-1. **Given** the seeded catalogue, **When** it is read, **Then** it holds the 19 initial capabilities, each with every required attribute present or explicitly marked unknown.
+1. **Given** the seeded catalogue, **When** it is read, **Then** it holds 19 capability entries, each with every required attribute present or marked "to be provided", and the placeholders are clearly distinguishable from filled entries.
 2. **Given** a capability, **When** it is linked to offers and a paid engagement type, **Then** those links are visible from both sides.
 3. **Given** a capability with internal delivery examples, **When** its public-claim status is anything other than approved, **Then** the examples are available to internal users only and no public view includes them.
 4. **Given** a capability with no evidence basis recorded, **When** someone tries to mark it approved for public claims, **Then** it is refused.
@@ -130,7 +130,7 @@ A service lead keeps the three paid engagement types and the offer scoring table
 - **FR-009**: The system MUST hold the ten engagement offers with the attributes listed in User Story 2 and a status of draft, internally reviewed, approved, available, withdrawn or expired.
 - **FR-010**: The system MUST only allow status moves in the defined order (draft → internally reviewed → approved → available; any → withdrawn; available or approved → expired) and MUST refuse others with a plain reason.
 - **FR-011**: Every change to an offer MUST create a new immutable version; versions MUST be readable and MUST NOT be edited or deleted.
-- **FR-012**: The system MUST seed Offers 1, 5 and 6 as approved and Offers 2, 3, 4, 7, 8, 9 and 10 as draft and inactive.
+- **FR-012**: The system MUST seed Offers 1, 5 and 6 as approved and Offers 2, 3, 4, 7, 8, 9 and 10 as draft and inactive. Any attribute not recorded in the repository MUST be stored as "to be provided", and an offer with such an attribute MUST NOT move to approved or available.
 - **FR-013**: An offer carrying a recorded limitation MUST NOT be activated until a named person has acknowledged the limitation; Offer 7's limitation "evaluation is a buyer prompt only" is seeded as such.
 - **FR-014**: Moving an offer to approved or available MUST be refused while its public text contains a restricted phrase that is not covered by an approved claim.
 - **FR-015**: The Netspective effort estimate and any score MUST be labelled as a hypothesis wherever shown.
@@ -145,7 +145,7 @@ A service lead keeps the three paid engagement types and the offer scoring table
 
 **Capabilities, paid engagement types and scoring**
 
-- **FR-021**: The system MUST hold the 19 initial service capabilities with the attributes listed in User Story 4, each present or explicitly unknown.
+- **FR-021**: The system MUST hold the 19 initial service capabilities with the attributes listed in User Story 4, each present or marked "to be provided"; a capability with a placeholder attribute MUST NOT be marked approved for public claims.
 - **FR-022**: Internal delivery examples MUST be visible only to internal users and MUST NOT appear in any public-facing output.
 - **FR-023**: A capability MUST NOT be marked approved for public claims without a recorded evidence basis and an approved claim.
 - **FR-024**: The system MUST hold Sender Readiness Sprint, Input Audit and Resilience Review as paid engagement types with the scope details given, Resilience Review inactive.
@@ -187,9 +187,15 @@ A service lead keeps the three paid engagement types and the offer scoring table
 - **SC-007**: No price field exists on any paid engagement type, and no internal delivery example appears in any public-facing output.
 - **SC-008**: Every change to a capability, offer, capacity limit or claim has a matching audit record naming who made it.
 
+## Clarifications
+
+### Session 2026-11-19
+
+- Q: Should the seed use content supplied now, or only the facts already in the repository? → A: Seed only what the repository records. Offers 1, 5, 6, 7 and 8 and the three paid engagement types are seeded from it. The remaining capabilities, Offers 2, 3, 4, 9 and 10, and the offer scores are "to be provided" placeholders until the business source is supplied (open question 23).
+
 ## Assumptions
 
-- Seed content for the 19 capabilities, the ten offers and the scoring table comes from the project's business source (sections 4, 6 and 12). Those sections are not in `docs/context/00-source-prompt.md`, which holds only the build runbook, guardrails and a short offer summary. See the open clarification below.
+- The full content of the 19 capabilities, the ten offers and the scoring table belongs to the project's business source (sections 6 and 12), which is not in the repository. The first version seeds only what the repository records; every other capability, offer attribute and score is a visible placeholder marked "to be provided", and is never invented. A placeholder offer or capability cannot be approved or made available until a person fills it in.
 - Facts already in the repository are used as given: Offers 1, 5 and 6 and their routing (guardrails), Offer 7's limitation, Offer 8 as the Resilience Review offer (inactive until its scope is defined), and no pricing.
 - Initial capacity defaults, kept as hypotheses and editable: Offer 6 three sessions per month and Offer 1 three sessions per week during validation (open questions 6 and 7).
 - Designated claim approvers are the service lead and a marketing approver, with two people required for restricted claims (open question 21).
@@ -198,7 +204,3 @@ A service lead keeps the three paid engagement types and the offer scoring table
 - Capacity usage will come from feature 007 (workshop operations); until then usage is entered by hand.
 - Feature 004 uses a provisional capability list; once this catalogue is available, research and hypotheses read capabilities from here.
 - Landing-page publishing, content drafting (feature 009) and routing (feature 006) are separate features that consume this one.
-
-## Open Clarification
-
-- [NEEDS CLARIFICATION: The business source sections for the 19 initial capabilities (§12), the ten offers (§6) and the offer scoring table (§6.2) are not in the repository. Should the seed use content you supply now, or seed only the facts already recorded in the repository (Offers 1, 5, 6, 7 and 8, the three paid engagement types) and mark the remaining capabilities, offers and scores as "to be provided" placeholders?]
