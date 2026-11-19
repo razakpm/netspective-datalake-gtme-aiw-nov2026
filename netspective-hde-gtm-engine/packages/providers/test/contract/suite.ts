@@ -10,7 +10,7 @@ export const llmRequest = (over: Partial<LlmRequest> = {}): LlmRequest => ({
   promptName: "research-extract",
   model: "test-model",
   instructions: "Extract observations.",
-  dataBlocks: [{ id: "b1", label: "page", text: "hello world" }],
+  dataBlocks: [{ id: "b1", label: "source", text: "hello world" }],
   boundary: "bnd-1",
   jsonSchema: { type: "object" },
   maxOutputTokens: 500,
