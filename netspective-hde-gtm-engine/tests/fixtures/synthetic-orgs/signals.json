@@ -1,0 +1,300 @@
+{
+  "note": "Synthetic signals for feature 003. Every organisation and URL is fictional (.example). excerptFiller is the length of a generated excerpt.",
+  "signals": [
+    {
+      "label": "A-profile",
+      "account": "northvale-hie.example",
+      "typeKey": "org_profile_fact",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/northvale/profile"
+      },
+      "observation": "Northvale HIE serves a multi-county region.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "label": "B-ig-change",
+      "account": "northvale-hie.example",
+      "typeKey": "implementation_guide_change",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/northvale/ig"
+      },
+      "observation": "Northvale published an updated implementation guide for claims attachments.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "label": "C-quality",
+      "account": "riverbend-health.example",
+      "typeKey": "data_quality_issue",
+      "source": {
+        "sourceId": "default-source-analyst_observation",
+        "ref": "analyst-note-riverbend-1"
+      },
+      "observation": "Analyst saw repeated rejection of inbound lab results.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "label": "D-platform",
+      "account": "riverbend-health.example",
+      "typeKey": "platform_architecture_change",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/riverbend/platform"
+      },
+      "observation": "Riverbend announced a move to a new data platform.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "label": "E-rfp-portal-a",
+      "account": "prairie-medicaid-ops.example",
+      "typeKey": "procurement_notice",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://portal-a.example/rfp/2026-17",
+        "itemKey": "RFP-2026-17"
+      },
+      "observation": "RFP 2026-17 for a data platform was issued.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "label": "F-hiring",
+      "account": "lakeshore-hie.example",
+      "typeKey": "capability_gap_hiring",
+      "source": {
+        "sourceId": "default-source-third_party",
+        "ref": "https://jobs.example/lakeshore/1"
+      },
+      "observation": "Lakeshore is hiring a data engineer.",
+      "observedAt": "2026-11-03T00:00:00Z"
+    },
+    {
+      "label": "G-exec",
+      "account": "metro-health-partners.example",
+      "typeKey": "executive_change",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/metro/exec"
+      },
+      "observation": "Metro named a new chief data officer.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "label": "H-cms",
+      "account": "coastal-hie.example",
+      "typeKey": "regulatory_ecosystem_item",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/coastal/cms"
+      },
+      "observation": "Coastal discussed CMS-0057-F API readiness.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "regulatoryItem": "CMS-0057-F"
+    },
+    {
+      "label": "I-workshop",
+      "account": "summitcare-health.example",
+      "typeKey": "workshop_meeting_note",
+      "source": {
+        "sourceId": "default-source-first_party",
+        "ref": "workshop-2026-11-summitcare"
+      },
+      "observation": "Summitcare attended the interoperability workshop.",
+      "observedAt": "2026-11-03T00:00:00Z"
+    },
+    {
+      "label": "E-grant",
+      "account": "prairie-medicaid-ops.example",
+      "typeKey": "grant_funding_announcement",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/prairie/grant"
+      },
+      "observation": "A state grant for interoperability was announced.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "expect": {
+        "fundingClass": "context"
+      }
+    },
+    {
+      "label": "E-grant-as-approval-refused",
+      "account": "prairie-medicaid-ops.example",
+      "typeKey": "grant_funding_announcement",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/prairie/grant2"
+      },
+      "observation": "A second grant note was published.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "fundingClass": "budget_approval_evidence",
+      "approvalCitation": "grant text",
+      "expect": {
+        "refused": "grant_announcement_is_context_only"
+      }
+    },
+    {
+      "label": "E-budget-approved",
+      "account": "prairie-medicaid-ops.example",
+      "typeKey": "budget_approval_statement",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/prairie/budget"
+      },
+      "observation": "The board approved the FY27 data platform budget.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "fundingClass": "budget_approval_evidence",
+      "approvalCitation": "Board minutes 2026-10-01: budget approved",
+      "expect": {
+        "fundingClass": "budget_approval_evidence"
+      }
+    },
+    {
+      "label": "H-hti5-final-refused",
+      "account": "coastal-hie.example",
+      "typeKey": "regulatory_ecosystem_item",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/coastal/hti5"
+      },
+      "observation": "HTI-5 final rule text.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "regulatoryItem": "HTI-5",
+      "regulatoryStatus": "reported_final",
+      "expect": {
+        "refused": "hti5_never_final"
+      }
+    },
+    {
+      "label": "H-hti5-proposed",
+      "account": "coastal-hie.example",
+      "typeKey": "regulatory_ecosystem_item",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/coastal/hti5-proposed"
+      },
+      "observation": "HTI-5 proposed rule discussion.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "regulatoryItem": "HTI-5",
+      "regulatoryStatus": "proposed",
+      "expect": {
+        "regulatoryStatus": "proposed"
+      }
+    },
+    {
+      "label": "B-long-excerpt",
+      "account": "northvale-hie.example",
+      "typeKey": "implementation_guide_change",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/northvale/ig2"
+      },
+      "observation": "Northvale posted a second guide revision.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "excerptFiller": 301,
+      "expect": {
+        "excerptWithheld": "too_long"
+      }
+    },
+    {
+      "label": "B-no-storage",
+      "account": "northvale-hie.example",
+      "typeKey": "onboarding_delay",
+      "source": {
+        "sourceId": "default-source-third_party",
+        "ref": "https://news.example/northvale/delay"
+      },
+      "observation": "Northvale senders report onboarding delays.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "excerpt": "Short quote from a no-storage source.",
+      "expect": {
+        "excerptWithheld": "source_no_storage"
+      }
+    },
+    {
+      "label": "E-rfp-portal-b",
+      "account": "prairie-medicaid-ops.example",
+      "typeKey": "procurement_notice",
+      "source": {
+        "sourceId": "default-source-third_party",
+        "ref": "https://portal-b.example/bids/17",
+        "itemKey": "RFP-2026-17"
+      },
+      "observation": "Request for proposals 2026-17: data platform modernisation.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "expect": {
+        "outcome": "merged",
+        "mergeKind": "republication"
+      }
+    },
+    {
+      "label": "B-ig-identical",
+      "account": "northvale-hie.example",
+      "typeKey": "implementation_guide_change",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/northvale/ig"
+      },
+      "observation": "Northvale published an updated implementation guide for claims attachments.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "expect": {
+        "outcome": "already_exists"
+      }
+    },
+    {
+      "label": "B-ig-reworded",
+      "account": "northvale-hie.example",
+      "typeKey": "implementation_guide_change",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/northvale/ig"
+      },
+      "observation": "Northvale published an updated implementation guide for claims attachment.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-11-02T00:00:00Z",
+      "expect": {
+        "outcome": "merged",
+        "mergeKind": "merged_duplicate"
+      }
+    },
+    {
+      "label": "lakeshore-conflict-a",
+      "account": "lakeshore-hie.example",
+      "typeKey": "onboarding_delay",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/lakeshore-a"
+      },
+      "observation": "One public source reports onboarding delays at Lakeshore.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-10-13T00:00:00Z"
+    },
+    {
+      "label": "lakeshore-conflict-b",
+      "account": "lakeshore-hie.example",
+      "typeKey": "onboarding_delay",
+      "source": {
+        "sourceId": "default-source-official_publication",
+        "ref": "https://evidence.example/lakeshore-b"
+      },
+      "observation": "Another public source reports onboarding is fast at Lakeshore.",
+      "observedAt": "2026-11-03T00:00:00Z",
+      "publishedAt": "2026-10-14T00:00:00Z"
+    }
+  ]
+}

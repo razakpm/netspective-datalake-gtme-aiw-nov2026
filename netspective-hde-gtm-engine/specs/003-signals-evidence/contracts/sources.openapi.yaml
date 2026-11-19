@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Signal sources and taxonomy
+  version: 0.1.0
+  description: |
+    The signal taxonomy (read-only, versioned) and the registry of signal sources with their storage rules.
+    Recorders may register a source inline; it is citation-only until an administrator allows excerpts.
+    Requires signals.read, signals.record, signals.review or signals.sources.manage as stated.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /signal-types:
+    get:
+      operationId: listSignalTypes
+      summary: "Signal types of the current taxonomy version (or a stated version), with default freshness and reliability. Defaults are hypotheses."
+      parameters: [ { in: query, name: version, schema: { type: integer, minimum: 1 } } ]
+      responses:
+        '200': { description: "Taxonomy.", content: { application/json: { schema: { type: object, required: [version, items], properties: { version: { type: integer }, status: { type: string }, items: { type: array, items: { $ref: '#/components/schemas/SignalType' } } } } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /signal-sources:
+    get:
+      operationId: listSignalSources
+      summary: "Registered sources."
+      responses:
+        '200': { description: "Sources.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/SignalSource' } } } } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: createSignalSource
+      summary: "Register a source (citation-only unless an administrator sets excerpts)."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SourceInput' } } }
+      responses:
+        '201': { description: "Created.", content: { application/json: { schema: { $ref: '#/components/schemas/SignalSource' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /signal-sources/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    patch:
+      operationId: updateSignalSource
+      summary: "Administrator only. Change storage rule, excerpt limit (never above the global limit) or default reliability."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SourceUpdate' } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/SignalSource' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /signal-sources/{id}/availability:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    put:
+      operationId: setSourceAvailability
+      summary: "Reviewer marks a source unavailable (for example a dead URL) or available again. Signals are kept; reliability is not changed."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [available], properties: { available: { type: boolean }, reason: { type: string, maxLength: 300 } } } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/SignalSource' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: "Problem details."
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }
+        ruleIds: { type: array, items: { type: string } }
+    Reliability: { type: string, enum: [high, medium, low, unknown] }
+    Confidence: { type: string, enum: [low, medium, high] }
+    EvidenceStatus: { type: string, enum: [observed, buyer_confirmed, derived_interpretation, ai_hypothesis, unverified_assumption, contradictory] }
+    ReviewStatus: { type: string, enum: [pending, approved, rejected, contradictory] }
+
+    SignalType:
+      type: object
+      required: [key, category, label, kind, defaultFreshnessDays, defaultReliability, contextOnly, status, statusLabel]
+      properties:
+        key: { type: string }
+        category: { type: string, enum: [A, B, C, D, E, F, G, H, I] }
+        label: { type: string }
+        kind: { type: string, enum: [general, funding, regulatory, first_party] }
+        defaultFreshnessDays: { type: integer }
+        defaultReliability: { $ref: '#/components/schemas/Reliability' }
+        contextOnly: { type: boolean }
+        status: { type: string, enum: [active, retired] }
+        statusLabel: { type: string }
+    SourceKind: { type: string, enum: [official_publication, buyer_statement, third_party, analyst_observation, provider, first_party, other] }
+    SignalSource:
+      type: object
+      required: [id, name, kind, defaultReliability, storageRule, availability]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        kind: { $ref: '#/components/schemas/SourceKind' }
+        defaultReliability: { $ref: '#/components/schemas/Reliability' }
+        storageRule: { type: string, enum: [excerpt, citation_only] }
+        excerptMaxChars: { type: [integer, 'null'] }
+        availability: { type: string, enum: [available, unavailable] }
+        unavailableSince: { type: [string, 'null'] }
+        statusLabel: { type: string }
+    SourceInput:
+      type: object
+      additionalProperties: false
+      required: [name, kind]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        kind: { $ref: '#/components/schemas/SourceKind' }
+    SourceUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        storageRule: { type: string, enum: [excerpt, citation_only] }
+        excerptMaxChars: { type: [integer, 'null'], minimum: 0 }
+        defaultReliability: { $ref: '#/components/schemas/Reliability' }

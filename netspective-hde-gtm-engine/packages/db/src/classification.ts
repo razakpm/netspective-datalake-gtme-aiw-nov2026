@@ -117,4 +117,40 @@ export const COLUMN_CLASSIFICATION: ClassificationRegistry = {
   ),
   import_row: som("import_run_id, row_number, outcome, reason_codes, entity_id, matched_id"),
   config_list: som("list, value, label, active, status_label"),
+
+  // Feature 003 (signals and evidence). Free text from sources is confidential commercial data.
+  taxonomy_version: som("version, status, released_at, approved_by, note, status_label"),
+  signal_type: som(
+    "taxonomy_version, key, category, label, kind, default_freshness_days, default_reliability, context_only, status, status_label",
+  ),
+  signal_source: mergeFields(
+    cc("name"),
+    som(
+      "id, kind, default_reliability, storage_rule, excerpt_max_chars, availability, unavailable_since, created_by, created_at, status_label",
+    ),
+  ),
+  signal: mergeFields(
+    cc(
+      "source_ref, source_ref_normalised, item_key, observation, excerpt, approval_citation, regulatory_item",
+    ),
+    som(
+      "id, account_id, contact_id, type_key, taxonomy_version, source_id, excerpt_withheld_reason, observed_at, collected_at, published_at, undated, reliability, reliability_overridden_by, extraction_method, extraction_confidence, ai_model, ai_prompt_version, evidence_status, review_status, new_provenance_flag, freshness_days, fresh_until, freshness_state, funding_class, regulatory_status, context_only, reverify_required, retention_policy, retain_until, purged_at, sensitivity, content_fingerprint, created_by, created_by_type, created_at, updated_at",
+    ),
+  ),
+  signal_provenance: som(
+    "id, signal_id, seq, kind, actor_id, actor_type, method, source_id, source_ref, detail, occurred_at",
+  ),
+  signal_tag: som("signal_id, dimension, value"),
+  signal_link: som("id, signal_id, entity_type, entity_id, role, linked_by, linked_at"),
+  evidence_artifact: mergeFields(
+    cc("storage_ref"),
+    som("id, signal_id, kind, sha256, size_bytes, classification, retain_until, created_at"),
+  ),
+  signal_review: mergeFields(
+    cc("reason"),
+    som("id, signal_id, decision, contradicts_signal_id, reliability_set, decided_by, decided_at"),
+  ),
+  signal_contradiction: som(
+    "id, signal_a, signal_b, created_by, created_at, resolved_at, resolved_by",
+  ),
 };

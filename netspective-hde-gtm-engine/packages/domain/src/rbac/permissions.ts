@@ -25,6 +25,11 @@ export const PERMISSIONS = [
   "icp.manage",
   "icp.override",
   "suppressions.lift",
+  // Feature 003 (signals and evidence). Role mapping is a hypothesis (open question #38).
+  "signals.read",
+  "signals.record",
+  "signals.review",
+  "signals.sources.manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -39,7 +44,7 @@ export const ROLE_KEYS = [
 ] as const;
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
-const READERS = ["accounts.read", "contacts.read", "icp.read"] as const;
+const READERS = ["accounts.read", "contacts.read", "icp.read", "signals.read"] as const;
 
 export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Permission[]>> = {
   gtm_operator: [
@@ -54,9 +59,10 @@ export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Perm
     "stakeholders.edit",
     "evidence.record",
     "icp.assess",
+    "signals.record",
   ],
-  research_analyst: [...READERS, "icp.assess"],
-  technical_sme_reviewer: [...READERS],
+  research_analyst: [...READERS, "icp.assess", "signals.record"],
+  technical_sme_reviewer: [...READERS, "signals.review"],
   sales_service_lead: [...READERS, "stakeholders.edit", "evidence.record"],
   campaign_approver: [],
   administrator: [...PERMISSIONS],
@@ -76,7 +82,8 @@ export function isRestrictedPermission(key: string): boolean {
     key === "icp.manage" ||
     key === "icp.override" ||
     key === "suppressions.lift" ||
-    key === "contacts.erase"
+    key === "contacts.erase" ||
+    key === "signals.review"
   );
 }
 

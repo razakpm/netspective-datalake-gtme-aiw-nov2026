@@ -10,6 +10,12 @@ import {
 } from "../src/modules/audit/index.js";
 import { JobService, registerJobRoutes } from "../src/modules/jobs/index.js";
 import { AccountService, registerAccountRoutes } from "../src/modules/accounts/index.js";
+import {
+  registerSignalRoutes,
+  ReviewService,
+  SignalService,
+  SourceService,
+} from "../src/modules/signals/index.js";
 import { PhiNotifier } from "../src/platform/events/phi-notifier.js";
 import { registerIdentityRoutes } from "../src/modules/identity/index.js";
 import { IdentityService, OidcVerifier } from "../src/modules/identity/index.js";
@@ -37,6 +43,9 @@ export interface IdentityFixture extends TestServer {
   notifier: PhiNotifier;
   jobs: JobService;
   accounts: AccountService;
+  signals: SignalService;
+  signalReviews: ReviewService;
+  signalSources: SourceService;
   /** Insert an active user directly (bypassing the API) and return a bearer token for them. */
   makeUser(
     email: string,
@@ -78,6 +87,10 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
   const notifier = new PhiNotifier(60_000);
   const jobs = new JobService(db, { now: () => clock.now });
   const accounts = new AccountService(db);
+  const signalSettings = { excerptMaxChars: 300, similarityThreshold: 0.85, retentionMonths: 36 };
+  const signals = new SignalService(db, signalSettings);
+  const signalReviews = new ReviewService(db);
+  const signalSources = new SourceService(db, signalSettings.excerptMaxChars);
   const server = await buildTestServer({
     phiGuardSink: createPhiGuardSink(db, notifier),
     ...(options.quarantineEntryPoints
@@ -100,6 +113,14 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
         authz,
         limits: { maxBytes: 5_242_880, maxRows: 5000 },
       });
+      registerSignalRoutes(app, {
+        db,
+        signals,
+        reviews: signalReviews,
+        sources: signalSources,
+        authz,
+        now: () => clock.now,
+      });
     },
   });
 
@@ -112,6 +133,9 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
     notifier,
     jobs,
     accounts,
+    signals,
+    signalReviews,
+    signalSources,
     clock,
     idp,
     routes,

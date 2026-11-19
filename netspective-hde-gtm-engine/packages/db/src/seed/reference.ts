@@ -7,6 +7,7 @@ import {
 } from "@gtm/domain";
 import type { Tx } from "../sqlite/database.js";
 import { seedFeature002 } from "./feature002.js";
+import { seedFeature003 } from "./feature003.js";
 
 // Reference data seed (task T040): the seven roles, seven permissions and the foundation matrix.
 // Idempotent, and run in every environment (it is not synthetic prospect data).
@@ -44,6 +45,10 @@ const PERMISSION_DESCRIPTIONS: Readonly<Record<Permission, string>> = {
   "icp.manage": "Create and activate ICP definition versions",
   "icp.override": "Grant or revoke exclusion overrides",
   "suppressions.lift": "Lift a suppression",
+  "signals.read": "View signals and evidence",
+  "signals.record": "Record signals",
+  "signals.review": "Approve, reject, mark contradictory and re-verify signals",
+  "signals.sources.manage": "Manage signal sources and the signal taxonomy",
 };
 
 export function seedReference(tx: Tx): void {
@@ -66,4 +71,5 @@ export function seedReference(tx: Tx): void {
     for (const permission of FOUNDATION_ROLE_PERMISSIONS[key]) grant.run(key, permission);
   }
   seedFeature002(tx);
+  seedFeature003(tx);
 }

@@ -123,6 +123,54 @@ DRIVERS["POST /api/v1/review-items/:id/decision"] = async (f) => {
   };
 };
 
+// Feature 003 routes (signals, review, sources).
+const signalActor = () => ({
+  userId: "driver-user",
+  actorType: "human" as const,
+  correlationId: null,
+});
+let signalSeq = 0;
+function makeSignal(f: IdentityFixture): string {
+  return f.signals.record(signalActor(), {
+    accountId: makeAccount(f),
+    typeKey: "program_announcement",
+    source: {
+      sourceId: "default-source-official_publication",
+      ref: "https://example.org/coverage",
+    },
+    observation: `Coverage signal ${signalSeq++} observation text`,
+    observedAt: new Date().toISOString(),
+  }).signal.id;
+}
+DRIVERS["POST /api/v1/signals"] = async (f) => ({
+  url: "/api/v1/signals",
+  payload: {
+    accountId: makeAccount(f),
+    typeKey: "program_announcement",
+    source: { sourceId: "default-source-official_publication", ref: "https://example.org/driver" },
+    observation: "A program was announced for coverage",
+    observedAt: new Date().toISOString(),
+  },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/signals/:id/review"] = async (f) => ({
+  url: `/api/v1/signals/${makeSignal(f)}/review`,
+  payload: { decision: "approve" },
+});
+DRIVERS["POST /api/v1/signal-sources"] = async () => ({
+  url: "/api/v1/signal-sources",
+  payload: { name: "Coverage source", kind: "third_party" },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["PATCH /api/v1/signal-sources/:id"] = async () => ({
+  url: "/api/v1/signal-sources/default-source-official_publication",
+  payload: { excerptMaxChars: 100 },
+});
+DRIVERS["PUT /api/v1/signal-sources/:id/availability"] = async () => ({
+  url: "/api/v1/signal-sources/default-source-third_party/availability",
+  payload: { available: false },
+});
+
 /** Routes that cannot be driven through the fake issuer (none yet; webhook ingress arrives with US5). */
 const EXEMPT: Record<string, string> = {};
 
