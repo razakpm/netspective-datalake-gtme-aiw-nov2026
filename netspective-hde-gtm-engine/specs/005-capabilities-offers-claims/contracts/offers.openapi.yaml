@@ -1,0 +1,342 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Offers, capacity, scores and paid engagement types
+  version: 0.1.0
+  description: |
+    The ten engagement offers with immutable versions and per-version status, limitations, capacity per period,
+    judgement scores (always hypothesis) and the paid engagement types (no price fields exist). Feature 006 reads
+    GET /offers/{id}/capacity/status. Requires offers.*, paid_types.* or claims.read as stated.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /offers:
+    get:
+      operationId: listOffers
+      summary: "All offers with in-force status, placeholder notice and current capacity state."
+      responses:
+        '200': { description: "Offers.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/OfferSummary' } } } } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /offers/{id}:
+    parameters: [ { $ref: '#/components/parameters/OfferId' } ]
+    get:
+      operationId: getOffer
+      summary: "An offer: in-force and latest version, limitations, current scores."
+      responses:
+        '200': { description: "Offer.", content: { application/json: { schema: { $ref: '#/components/schemas/Offer' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    patch:
+      operationId: changeOffer
+      summary: "Create a new version (starts at draft). Needs offers.edit and the current lockNo; a stale lockNo returns 409 stale_version. Public text is checked and shown, not blocked, until a move to approved."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/OfferChange' } } }
+      responses:
+        '201': { description: "New version.", content: { application/json: { schema: { $ref: '#/components/schemas/Offer' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /offers/{id}/versions:
+    parameters: [ { $ref: '#/components/parameters/OfferId' } ]
+    get:
+      operationId: listOfferVersions
+      summary: "Every version, immutable, with its status history."
+      responses:
+        '200': { description: "Versions.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/OfferVersion' } } } } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+  /offers/{id}/versions/{versionNo}/status:
+    parameters:
+      - { $ref: '#/components/parameters/OfferId' }
+      - { in: path, name: versionNo, required: true, schema: { type: integer, minimum: 1 } }
+    post:
+      operationId: moveOfferVersion
+      summary: "Move a version along draft, internally_reviewed, approved, available, or to withdrawn or expired. Needs offers.status.change. Moves to approved or available are refused with codes placeholder_attributes, limitation_unacknowledged or uncovered_restricted_phrase."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [to, note], properties: { to: { $ref: '#/components/schemas/OfferStatus' }, note: { type: string, minLength: 3, maxLength: 500 } } } } }
+      responses:
+        '200': { description: "Moved.", content: { application/json: { schema: { $ref: '#/components/schemas/OfferVersion' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /offers/{id}/limitations/{limitationId}/acknowledge:
+    parameters:
+      - { $ref: '#/components/parameters/OfferId' }
+      - { in: path, name: limitationId, required: true, schema: { type: string } }
+    post:
+      operationId: acknowledgeLimitation
+      summary: "A service lead acknowledges the limitation's current wording. Valid until the wording changes."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '200': { description: "Recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/Limitation' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /offers/{id}/capacity:
+    parameters: [ { $ref: '#/components/parameters/OfferId' } ]
+    get:
+      operationId: getOfferCapacity
+      summary: "Limit history and utilisation for the current period, and the next one."
+      responses:
+        '200': { description: "Capacity.", content: { application/json: { schema: { $ref: '#/components/schemas/Capacity' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: setOfferCapacity
+      summary: "Set a limit for a period kind from a date. Needs offers.capacity.edit. The earlier value is kept."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [periodKind, limitSessions, reason], properties: { periodKind: { type: string, enum: [week, month] }, limitSessions: { type: integer, minimum: 0 }, effectiveFrom: { type: string, format: date }, reason: { type: string, minLength: 3, maxLength: 300 } } } } }
+      responses:
+        '200': { description: "Saved.", content: { application/json: { schema: { $ref: '#/components/schemas/Capacity' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /offers/{id}/capacity/status:
+    parameters:
+      - { $ref: '#/components/parameters/OfferId' }
+      - { in: query, name: at, description: "A date or time inside the period to check (default now).", schema: { type: string, format: date-time } }
+    get:
+      operationId: getOfferCapacityStatus
+      summary: "The exhausted answer for the period containing 'at': room, exhausted or no_limit_set. Read by feature 006."
+      responses:
+        '200': { description: "Status.", content: { application/json: { schema: { $ref: '#/components/schemas/CapacityStatus' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+  /offers/{id}/bookings:
+    parameters: [ { $ref: '#/components/parameters/OfferId' } ]
+    get:
+      operationId: listOfferBookings
+      summary: "Bookings for a period (default the current one)."
+      parameters: [ { in: query, name: periodStart, schema: { type: string, format: date } } ]
+      responses:
+        '200': { description: "Bookings.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/Booking' } } } } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: recordBooking
+      summary: "Record a session by hand (source manual). Refused with capacity_exhausted when the period is full."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [sessionDate], properties: { sessionDate: { type: string, format: date }, externalRef: { type: string, maxLength: 120 } } } } }
+      responses:
+        '201': { description: "Recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/Booking' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /offers/{id}/bookings/{bookingId}:
+    parameters:
+      - { $ref: '#/components/parameters/OfferId' }
+      - { in: path, name: bookingId, required: true, schema: { type: string } }
+    patch:
+      operationId: updateBooking
+      summary: "Change a booking's state (held, cancelled, no_show) or reschedule it. A cancel releases the period; a reschedule into a full period is refused with capacity_exhausted."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, minProperties: 1, properties: { state: { type: string, enum: [booked, held, cancelled, no_show] }, sessionDate: { type: string, format: date } } } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/Booking' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /offer-scores:
+    get:
+      operationId: listOfferScores
+      summary: "Criteria and current scores. Every score is a judgement labelled hypothesis. Empty until the source is supplied."
+      responses:
+        '200': { description: "Scores.", content: { application/json: { schema: { $ref: '#/components/schemas/Scores' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: setOfferScore
+      summary: "Record a score (history kept). Needs offers.edit."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [offerId, criterionKey, score], properties: { offerId: { type: string }, criterionKey: { type: string }, score: { type: integer }, rationale: { type: string, maxLength: 500 } } } } }
+      responses:
+        '200': { description: "Recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/Scores' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /paid-engagement-types:
+    get:
+      operationId: listPaidEngagementTypes
+      summary: "The three paid engagement types and their deliverables. There is no price field."
+      responses:
+        '200': { description: "Types.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/PaidType' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+  /paid-engagement-types/{key}:
+    parameters: [ { in: path, name: key, required: true, schema: { type: string } } ]
+    patch:
+      operationId: updatePaidEngagementType
+      summary: "Edit scope text, weeks or status. Needs paid_types.edit and lockNo. A field named price, fee, rate or currency is rejected as unknown."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [lockNo], properties: { lockNo: { type: integer }, scope: { type: array, items: { type: string, maxLength: 300 } }, weeksMin: { type: integer }, weeksMax: { type: integer }, status: { type: string, enum: [active, inactive] } } } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/PaidType' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /paid-engagement-types/{key}/deliverables:
+    parameters: [ { in: path, name: key, required: true, schema: { type: string } } ]
+    post:
+      operationId: proposeDeliverable
+      summary: "Propose a deliverable that is not in the source. It starts pending_approval and cannot be used until approved."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [text], properties: { text: { type: string, minLength: 3, maxLength: 300 } } } } }
+      responses:
+        '201': { description: "Pending.", content: { application/json: { schema: { $ref: '#/components/schemas/PaidType' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /paid-engagement-types/{key}/deliverables/{deliverableId}/decision:
+    parameters:
+      - { in: path, name: key, required: true, schema: { type: string } }
+      - { in: path, name: deliverableId, required: true, schema: { type: string } }
+    post:
+      operationId: decideDeliverable
+      summary: "Approve or reject a proposed deliverable. Needs paid_types.approve."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [decision, note], properties: { decision: { type: string, enum: [approve, reject] }, note: { type: string, minLength: 3, maxLength: 500 } } } } }
+      responses:
+        '200': { description: "Decided.", content: { application/json: { schema: { $ref: '#/components/schemas/PaidType' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+    OfferId: { in: path, name: id, required: true, schema: { type: string } }
+  responses:
+    Problem:
+      description: "Problem details with stable codes (stale_version, invalid_transition, placeholder_attributes, limitation_unacknowledged, uncovered_restricted_phrase, capacity_exhausted, phi_like_content)."
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties: { type: { type: string }, title: { type: string }, status: { type: integer }, detail: { type: string }, codes: { type: array, items: { type: string } } }
+    OfferStatus: { type: string, enum: [draft, internally_reviewed, approved, available, withdrawn, expired] }
+    Attributes:
+      type: object
+      description: "Every attribute may be null, meaning to be provided."
+      additionalProperties: false
+      properties:
+        name: { type: [string, 'null'], maxLength: 200 }
+        format: { type: [string, 'null'], maxLength: 300 }
+        targetIcp: { type: [string, 'null'], maxLength: 200 }
+        buyerOutput: { type: [string, 'null'], maxLength: 600 }
+        buyerEffort: { type: [string, 'null'], maxLength: 300 }
+        netspectiveEffortEstimate: { type: [string, 'null'], maxLength: 300, description: "Always shown as a hypothesis." }
+        conversionPath: { type: [string, 'null'], maxLength: 600 }
+        landingPagePromise: { type: [string, 'null'], maxLength: 600 }
+        callToAction: { type: [string, 'null'], maxLength: 200 }
+        intakeFields: { type: [array, 'null'], items: { type: string, maxLength: 120 } }
+        successHypotheses: { type: [array, 'null'], items: { type: string, maxLength: 300 } }
+        sqlRuleRef: { type: [string, 'null'], maxLength: 120 }
+        relatedCapabilityKeys: { type: [array, 'null'], items: { type: string } }
+        paidEngagementTypeKey: { type: [string, 'null'] }
+    OfferChange:
+      type: object
+      additionalProperties: false
+      required: [lockNo, reason, attributes]
+      properties: { lockNo: { type: integer }, reason: { type: string, minLength: 3, maxLength: 300 }, attributes: { $ref: '#/components/schemas/Attributes' } }
+    OfferVersion:
+      type: object
+      required: [offerId, versionNo, attributes, status, history, createdBy, createdAt, snapshotHash, superseded]
+      properties:
+        offerId: { type: string }
+        versionNo: { type: integer }
+        attributes: { $ref: '#/components/schemas/Attributes' }
+        placeholderAttributes: { type: array, items: { type: string } }
+        status: { $ref: '#/components/schemas/OfferStatus' }
+        superseded: { type: boolean }
+        history: { type: array, items: { type: object, required: [status, changedBy, changedAt], properties: { status: { $ref: '#/components/schemas/OfferStatus' }, changedBy: { type: string }, note: { type: [string, 'null'] }, changedAt: { type: string, format: date-time } } } }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+        snapshotHash: { type: string }
+    Limitation:
+      type: object
+      required: [id, key, wording, active, acknowledged]
+      properties: { id: { type: string }, key: { type: string }, wording: { type: string }, active: { type: boolean }, acknowledged: { type: boolean }, acknowledgedBy: { type: [string, 'null'] }, acknowledgedAt: { type: [string, 'null'], format: date-time } }
+    OfferSummary:
+      type: object
+      required: [id, number, key, lockNo, status, baselineIncomplete, capacity]
+      properties:
+        id: { type: string }
+        number: { type: integer }
+        key: { type: string }
+        name: { type: [string, 'null'] }
+        lockNo: { type: integer }
+        status: { $ref: '#/components/schemas/OfferStatus' }
+        inForceVersionNo: { type: [integer, 'null'] }
+        baselineIncomplete: { type: boolean }
+        capacity: { $ref: '#/components/schemas/CapacityStatus' }
+    Offer:
+      allOf:
+        - { $ref: '#/components/schemas/OfferSummary' }
+        - type: object
+          required: [latest, limitations]
+          properties:
+            latest: { $ref: '#/components/schemas/OfferVersion' }
+            inForce: { oneOf: [ { $ref: '#/components/schemas/OfferVersion' }, { type: 'null' } ] }
+            limitations: { type: array, items: { $ref: '#/components/schemas/Limitation' } }
+    CapacityStatus:
+      type: object
+      required: [state, periodKind, periodStart, periodEnd]
+      properties:
+        state: { type: string, enum: [room, exhausted, no_limit_set] }
+        periodKind: { type: [string, 'null'], enum: [week, month, null] }
+        periodStart: { type: string, format: date }
+        periodEnd: { type: string, format: date }
+        limitSessions: { type: [integer, 'null'] }
+        used: { type: integer }
+        heldCount: { type: integer }
+        remaining: { type: [integer, 'null'] }
+        utilisation: { type: [number, 'null'], description: "Used divided by limit, 0 or more." }
+    Capacity:
+      type: object
+      required: [current, history]
+      properties:
+        current: { $ref: '#/components/schemas/CapacityStatus' }
+        history: { type: array, items: { type: object, required: [periodKind, limitSessions, effectiveFrom, setBy, setAt], properties: { periodKind: { type: string }, limitSessions: { type: integer }, effectiveFrom: { type: string, format: date }, setBy: { type: string }, setAt: { type: string, format: date-time }, reason: { type: [string, 'null'] } } } }
+    Booking:
+      type: object
+      required: [id, offerId, state, sessionDate, periodStart, source]
+      properties: { id: { type: string }, offerId: { type: string }, externalRef: { type: [string, 'null'] }, state: { type: string, enum: [booked, held, cancelled, no_show] }, sessionDate: { type: string, format: date }, periodStart: { type: string, format: date }, source: { type: string, enum: [manual, workshop] } }
+    Scores:
+      type: object
+      required: [criteria, scores, label]
+      properties:
+        label: { type: string, description: "Always states these are judgement scores and hypotheses." }
+        criteria: { type: array, items: { type: object, required: [key, label], properties: { key: { type: string }, label: { type: string } } } }
+        scores: { type: array, items: { type: object, required: [offerId, criterionKey, score, status], properties: { offerId: { type: string }, criterionKey: { type: string }, score: { type: integer }, status: { type: string, enum: [hypothesis] }, rationale: { type: [string, 'null'] }, setAt: { type: string, format: date-time } } } }
+    PaidType:
+      type: object
+      required: [key, name, scopeConfirmed, status, scope, deliverables, lockNo]
+      properties:
+        key: { type: string, enum: [sender_readiness_sprint, input_audit, resilience_review] }
+        name: { type: string }
+        weeksMin: { type: [integer, 'null'] }
+        weeksMax: { type: [integer, 'null'] }
+        scope: { type: array, items: { type: string } }
+        scopeConfirmed: { type: boolean }
+        status: { type: string, enum: [active, inactive] }
+        lockNo: { type: integer }
+        deliverables: { type: array, items: { type: object, required: [id, text, inSource, approval], properties: { id: { type: string }, text: { type: string }, inSource: { type: boolean }, approval: { type: string, enum: [approved, pending_approval, rejected] } } } }

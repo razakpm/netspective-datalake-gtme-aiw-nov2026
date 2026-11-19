@@ -1,0 +1,155 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Service capabilities
+  version: 0.1.0
+  description: |
+    The 19 service capability slots with evidence, links to offers and a public-claim status. Internal delivery
+    examples are returned only with capabilities.examples.read and never in a public projection. A null attribute
+    means to be provided.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /service-capabilities:
+    get:
+      operationId: listServiceCapabilities
+      summary: "All capability slots. Delivery examples are never included in the list."
+      responses:
+        '200': { description: "Capabilities.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/CapabilitySummary' } } } } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /service-capabilities/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getServiceCapability
+      summary: "One capability with evidence and linked offers. Delivery examples appear only for callers with capabilities.examples.read."
+      responses:
+        '200': { description: "Capability.", content: { application/json: { schema: { $ref: '#/components/schemas/Capability' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    patch:
+      operationId: updateServiceCapability
+      summary: "Edit attributes. Needs capabilities.edit and lockNo (stale value returns 409). Text is refused whole if it matches the PHI guard."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CapabilityChange' } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/Capability' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /service-capabilities/{id}/evidence:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: addCapabilityEvidence
+      summary: "Record the evidence basis (an identifier or address and a short note)."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [basisKind, reference], properties: { basisKind: { type: string, enum: [delivery_record, published_material, internal_assessment] }, reference: { type: string, minLength: 3, maxLength: 300 }, note: { type: string, maxLength: 300 } } } } }
+      responses:
+        '201': { description: "Recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/Capability' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /service-capabilities/{id}/delivery-examples:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: addDeliveryExample
+      summary: "Add an internal-only delivery example. Needs capabilities.examples.read and capabilities.edit. Refused if it matches the PHI guard."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [text], properties: { text: { type: string, minLength: 3, maxLength: 800 } } } } }
+      responses:
+        '201': { description: "Added.", content: { application/json: { schema: { $ref: '#/components/schemas/Capability' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /service-capabilities/{id}/offers/{offerId}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string } }
+      - { in: path, name: offerId, required: true, schema: { type: string } }
+    put:
+      operationId: linkCapabilityToOffer
+      summary: "Link the capability and an offer; visible from both sides."
+      responses:
+        '204': { description: "Linked." }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      operationId: unlinkCapabilityFromOffer
+      summary: "Remove the link."
+      responses:
+        '204': { description: "Removed." }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /service-capabilities/{id}/public-claim-status:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    put:
+      operationId: setCapabilityPublicClaimStatus
+      summary: "Mark approved for public claims. Refused unless no attribute is null, an evidence basis exists and the named claim is approved and unexpired (codes placeholder_attributes, no_evidence_basis, claim_not_approved). Needs claims.approve."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [status], properties: { status: { type: string, enum: [approved, not_approved] }, claimId: { type: string } } } } }
+      responses:
+        '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/Capability' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: "Problem details with stable codes (stale_version, placeholder_attributes, no_evidence_basis, claim_not_approved, phi_like_content)."
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties: { type: { type: string }, title: { type: string }, status: { type: integer }, detail: { type: string }, codes: { type: array, items: { type: string } } }
+    Attributes:
+      type: object
+      description: "Every attribute may be null, meaning to be provided."
+      additionalProperties: false
+      properties:
+        name: { type: [string, 'null'], maxLength: 200 }
+        description: { type: [string, 'null'], maxLength: 1000 }
+        inputTypes: { type: [array, 'null'], items: { type: string, maxLength: 120 } }
+        outputTypes: { type: [array, 'null'], items: { type: string, maxLength: 120 } }
+        buyerProblems: { type: [array, 'null'], items: { type: string, maxLength: 300 } }
+        limitations: { type: [array, 'null'], items: { type: string, maxLength: 300 } }
+        requiredExpertise: { type: [string, 'null'], maxLength: 300 }
+        potentialPaidTypeKey: { type: [string, 'null'] }
+    CapabilityChange:
+      type: object
+      additionalProperties: false
+      required: [lockNo, attributes]
+      properties: { lockNo: { type: integer }, attributes: { $ref: '#/components/schemas/Attributes' } }
+    CapabilitySummary:
+      type: object
+      required: [id, slot, lockNo, publicClaimStatus, placeholderAttributes]
+      properties:
+        id: { type: string }
+        slot: { type: integer }
+        lockNo: { type: integer }
+        name: { type: [string, 'null'] }
+        publicClaimStatus: { type: string, enum: [not_approved, approved] }
+        placeholderAttributes: { type: array, items: { type: string } }
+    Capability:
+      allOf:
+        - { $ref: '#/components/schemas/CapabilitySummary' }
+        - type: object
+          required: [attributes, evidence, offers]
+          properties:
+            attributes: { $ref: '#/components/schemas/Attributes' }
+            evidence: { type: array, items: { type: object, required: [id, basisKind, reference], properties: { id: { type: string }, basisKind: { type: string }, reference: { type: string }, note: { type: [string, 'null'] } } } }
+            offers: { type: array, items: { type: object, required: [offerId], properties: { offerId: { type: string }, name: { type: [string, 'null'] } } } }
+            publicClaimId: { type: [string, 'null'] }
+            deliveryExamples: { type: array, description: "Present only with capabilities.examples.read.", items: { type: object, required: [id, text], properties: { id: { type: string }, text: { type: string } } } }
