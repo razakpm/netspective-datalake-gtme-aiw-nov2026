@@ -1,0 +1,6 @@
+{
+  "address": "https://docs.northvale-hie.example/ig-update",
+  "status": 200,
+  "contentType": "text/html",
+  "text": "Northvale HIE published an updated implementation guide for claims attachments on 2026-10-02. Senders must revise their submissions to match the updated implementation guide."
+}

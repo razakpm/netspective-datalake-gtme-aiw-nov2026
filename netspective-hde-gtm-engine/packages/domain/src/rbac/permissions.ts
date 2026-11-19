@@ -30,6 +30,13 @@ export const PERMISSIONS = [
   "signals.record",
   "signals.review",
   "signals.sources.manage",
+  // Feature 004 (account research and hypotheses). Role mapping is a hypothesis (open question #46).
+  "research.read",
+  "research.run",
+  "research.sources.manage",
+  "hypotheses.read",
+  "hypotheses.edit",
+  "hypotheses.review",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -44,7 +51,14 @@ export const ROLE_KEYS = [
 ] as const;
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
-const READERS = ["accounts.read", "contacts.read", "icp.read", "signals.read"] as const;
+const READERS = [
+  "accounts.read",
+  "contacts.read",
+  "icp.read",
+  "signals.read",
+  "research.read",
+  "hypotheses.read",
+] as const;
 
 export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Permission[]>> = {
   gtm_operator: [
@@ -60,9 +74,11 @@ export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Perm
     "evidence.record",
     "icp.assess",
     "signals.record",
+    "research.run",
+    "hypotheses.edit",
   ],
-  research_analyst: [...READERS, "icp.assess", "signals.record"],
-  technical_sme_reviewer: [...READERS, "signals.review"],
+  research_analyst: [...READERS, "icp.assess", "signals.record", "research.run", "hypotheses.edit"],
+  technical_sme_reviewer: [...READERS, "signals.review", "hypotheses.review"],
   sales_service_lead: [...READERS, "stakeholders.edit", "evidence.record"],
   campaign_approver: [],
   administrator: [...PERMISSIONS],
@@ -83,7 +99,8 @@ export function isRestrictedPermission(key: string): boolean {
     key === "icp.override" ||
     key === "suppressions.lift" ||
     key === "contacts.erase" ||
-    key === "signals.review"
+    key === "signals.review" ||
+    key === "hypotheses.review"
   );
 }
 

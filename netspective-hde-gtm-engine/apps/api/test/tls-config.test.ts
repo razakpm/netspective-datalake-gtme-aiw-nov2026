@@ -11,6 +11,8 @@ const compliant = {
   OIDC_AUDIENCE: "gtm-engine",
   QUARANTINE_ENCRYPTION_KEY: "k".repeat(32),
   SUPPRESSION_HASH_KEY: "s".repeat(32),
+  LLM_PROVIDER: "anthropic",
+  ANTHROPIC_API_KEY: "k".repeat(16),
 };
 
 function problemsFor(

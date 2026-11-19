@@ -1,0 +1,23 @@
+{
+  "scenario": "summitcare-health",
+  "rules": [
+    {
+      "task": "extraction",
+      "whenTextIncludes": ["interest in artificial intelligence"],
+      "respond": {
+        "findings": [
+          {
+            "key": "s1",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Leadership has spoken in general terms about interest in artificial intelligence.",
+            "extractionConfidence": "medium",
+            "supportingText": "interest in artificial intelligence",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "org_profile_fact"
+          }
+        ]
+      }
+    }
+  ]
+}

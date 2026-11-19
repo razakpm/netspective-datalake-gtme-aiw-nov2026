@@ -4,3 +4,4 @@ export * from "./seed/reference.js";
 export * from "./classification.js";
 export * from "./seed/feature002.js";
 export * from "./seed/feature003.js";
+export * from "./seed/feature004.js";

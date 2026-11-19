@@ -1,0 +1,70 @@
+{
+  "scenario": "faulty-lying",
+  "rules": [
+    {
+      "task": "extraction",
+      "whenTextIncludes": ["interest in artificial intelligence"],
+      "respond": {
+        "findings": [
+          {
+            "key": "x1",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Leadership is interested in AI.",
+            "extractionConfidence": "high",
+            "supportingText": "interest in artificial intelligence",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "org_profile_fact"
+          },
+          {
+            "key": "x2",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "A claim about a source that was never read.",
+            "extractionConfidence": "high",
+            "supportingText": "whatever",
+            "sourceFetchId": "fetch-never-read",
+            "typeKey": "org_profile_fact"
+          },
+          {
+            "key": "x3",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "The hospital says it will deploy a quantum ledger.",
+            "extractionConfidence": "high",
+            "supportingText": "quantum ledger deployment",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "org_profile_fact"
+          },
+          {
+            "key": "x4",
+            "kind": "fact",
+            "topic": "budget",
+            "statement": "The budget for the programme is 4 million.",
+            "extractionConfidence": "high",
+            "supportingText": "budget of 4 million",
+            "sourceFetchId": "$BLOCK:1"
+          },
+          {
+            "key": "x5",
+            "kind": "inference",
+            "topic": "data_architecture",
+            "statement": "They run a central data lake.",
+            "extractionConfidence": "low",
+            "basisKeys": ["x1"]
+          },
+          {
+            "key": "x6",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "An unknown signal type.",
+            "extractionConfidence": "high",
+            "supportingText": "interest in artificial intelligence",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "not_in_taxonomy"
+          }
+        ]
+      }
+    }
+  ]
+}

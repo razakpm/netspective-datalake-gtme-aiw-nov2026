@@ -1,0 +1,14 @@
+{
+  "scenario": "faulty-provider-error",
+  "rules": [
+    {
+      "task": "extraction",
+      "whenTextIncludes": [""],
+      "error": {
+        "code": "provider_unavailable",
+        "retryable": true
+      },
+      "repeat": true
+    }
+  ]
+}

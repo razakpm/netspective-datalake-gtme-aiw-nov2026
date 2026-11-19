@@ -1,0 +1,69 @@
+{
+  "scenario": "northvale-hie",
+  "rules": [
+    {
+      "task": "extraction",
+      "whenTextIncludes": [
+        "three formats: CCDA, HL7 v2 and CSV extracts",
+        "updated implementation guide for claims attachments"
+      ],
+      "respond": {
+        "findings": [
+          {
+            "key": "n1",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Senders submit data in three formats: CCDA, HL7 v2 and CSV extracts.",
+            "extractionConfidence": "high",
+            "supportingText": "three formats: CCDA, HL7 v2 and CSV extracts",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "multi_format_sender"
+          },
+          {
+            "key": "n2",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Northvale published an updated implementation guide for claims attachments.",
+            "extractionConfidence": "high",
+            "supportingText": "updated implementation guide for claims attachments",
+            "sourceFetchId": "$BLOCK:2",
+            "typeKey": "implementation_guide_change"
+          },
+          {
+            "key": "n3",
+            "kind": "inference",
+            "topic": "other",
+            "statement": "Senders probably need to revise their submissions, which may delay onboarding.",
+            "extractionConfidence": "medium",
+            "basisKeys": ["n1", "n2"],
+            "typeKey": "onboarding_delay"
+          }
+        ]
+      }
+    },
+    {
+      "task": "synthesis",
+      "whenTextIncludes": ["multi_format_sender"],
+      "respond": {
+        "proposals": [
+          {
+            "statement": "Sender onboarding delays after implementation-guide changes may be slowing multi-format intake.",
+            "category": "onboarding_friction",
+            "relevance": {
+              "icp": ["icp1"],
+              "capability": ["sender_onboarding_automation"],
+              "offer": []
+            },
+            "supportingFindingKeys": ["n1", "n2"],
+            "contradictoryFindingKeys": [],
+            "assumptions": ["Senders keep submitting in more than one format."],
+            "confidence": {
+              "band": "medium",
+              "explanation": "Two public observations agree; no buyer has confirmed it yet."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "address": "https://www.northvale-hie.example/archive",
+  "status": 200,
+  "contentType": "text/html",
+  "textRepeat": {
+    "unit": "Archive entry with no particular content. ",
+    "times": 40000
+  }
+}

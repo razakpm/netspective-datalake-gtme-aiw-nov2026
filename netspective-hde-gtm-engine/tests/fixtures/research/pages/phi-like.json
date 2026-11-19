@@ -1,0 +1,6 @@
+{
+  "address": "https://portal.granite-health.example/notice",
+  "status": 200,
+  "contentType": "text/html",
+  "text": "Notice board. Patient SSN 000-12-3456 on file for review."
+}

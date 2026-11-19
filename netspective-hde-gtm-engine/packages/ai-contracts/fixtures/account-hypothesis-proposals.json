@@ -1,0 +1,16 @@
+{
+  "proposals": [
+    {
+      "statement": "Repeated sender onboarding delays after implementation-guide changes may be slowing intake.",
+      "category": "onboarding_friction",
+      "relevance": { "icp": ["icp1"], "capability": ["sender_onboarding_automation"], "offer": [] },
+      "supportingFindingKeys": ["f1"],
+      "contradictoryFindingKeys": [],
+      "assumptions": ["Senders submit in more than one format."],
+      "confidence": {
+        "band": "medium",
+        "explanation": "Two public observations agree; no buyer confirmation yet."
+      }
+    }
+  ]
+}

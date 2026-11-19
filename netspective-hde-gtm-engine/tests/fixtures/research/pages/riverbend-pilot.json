@@ -1,0 +1,6 @@
+{
+  "address": "https://www.riverbend-health.example/news/pilot",
+  "status": 200,
+  "contentType": "text/html",
+  "text": "Riverbend Health shared that its readmission-risk pilot worked on demonstration data but failed on its own data. The team has not published which source systems feed the pilot."
+}

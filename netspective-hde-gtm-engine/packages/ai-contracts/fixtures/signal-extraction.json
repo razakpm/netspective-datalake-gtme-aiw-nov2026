@@ -1,0 +1,30 @@
+{
+  "findings": [
+    {
+      "key": "f1",
+      "kind": "fact",
+      "topic": "other",
+      "statement": "The exchange published an updated implementation guide for claims attachments.",
+      "supportingText": "updated implementation guide for claims attachments",
+      "sourceFetchId": "fetch-1",
+      "typeKey": "implementation_guide_change",
+      "extractionConfidence": "high"
+    },
+    {
+      "key": "f2",
+      "kind": "inference",
+      "topic": "other",
+      "statement": "Senders probably need to change their submissions.",
+      "basisKeys": ["f1"],
+      "typeKey": "onboarding_delay",
+      "extractionConfidence": "low"
+    },
+    {
+      "key": "f3",
+      "kind": "unknown",
+      "topic": "budget",
+      "statement": "No source states a budget.",
+      "extractionConfidence": "low"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "id": "benign-prose",
+  "description": "Prose that merely discusses instructions and prompts; must not be flagged",
+  "payload": "The implementation guide gives instructions to senders, and the previous version was retired. Staff wrote a prompt reply to each sender.",
+  "expectRuleIds": [],
+  "benignPageTemplate": "{{PAYLOAD}}"
+}
