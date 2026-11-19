@@ -191,7 +191,7 @@ A service lead keeps the three paid engagement types and the offer scoring table
 
 ### Session 2026-11-19
 
-- Q: Should the seed use content supplied now, or only the facts already in the repository? → A: Seed only what the repository records. Offers 1, 5, 6, 7 and 8 and the three paid engagement types are seeded from it. The remaining capabilities, Offers 2, 3, 4, 9 and 10, and the offer scores are "to be provided" placeholders until the business source is supplied (open question 23).
+- Q: Should the seed use content supplied now, or only the facts already in the repository? → A: Seed only what the repository records. Offers 1, 5, 6, 7 and 8 and the three paid engagement types are seeded from it. The remaining capabilities, Offers 2, 3, 4, 9 and 10, and the offer scores are "to be provided" placeholders until the business source is supplied (open question 47).
 
 ## Assumptions
 
