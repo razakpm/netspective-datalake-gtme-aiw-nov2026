@@ -134,6 +134,11 @@ export class LlmGateway {
     return row.c;
   }
 
+  /** The model a task is routed to (for provenance on signals and hypotheses). */
+  modelName(task: LlmTask): string {
+    return this.modelFor(task);
+  }
+
   private rateFor(task: LlmTask): Rate {
     return task === "synthesis" ? this.o.rates.synthesis : this.o.rates.extraction;
   }

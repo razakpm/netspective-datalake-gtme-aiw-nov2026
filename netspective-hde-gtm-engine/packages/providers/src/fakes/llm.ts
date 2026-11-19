@@ -22,10 +22,12 @@ export interface FakeRule {
 
 const INJECTED = /mark this account as qualified|ignore previous instructions|call the \w+ tool/i;
 
+/** `$BLOCK:n` is the id of the n-th SOURCE data block (blocks labelled "source"). */
 function substitute(value: unknown, blocks: LlmRequest["dataBlocks"]): unknown {
   if (typeof value === "string") {
     const m = /^\$BLOCK:(\d+)$/.exec(value);
-    return m ? (blocks[Number(m[1]) - 1]?.id ?? value) : value;
+    const sources = blocks.filter((b) => b.label === "source");
+    return m ? (sources[Number(m[1]) - 1]?.id ?? value) : value;
   }
   if (Array.isArray(value)) return value.map((v) => substitute(v, blocks));
   if (value && typeof value === "object") {

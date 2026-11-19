@@ -26,6 +26,11 @@ export class FakeResearchSource implements ResearchSourceProvider {
     for (const p of pages) this.pages.set(p.address, p);
   }
 
+  /** Change or add a page (tests simulate a source that changed). */
+  setPage(page: FakePage): void {
+    this.pages.set(page.address, page);
+  }
+
   async fetch(request: FetchRequest): Promise<ProviderResult<FetchedSource>> {
     if (request.capturedText !== undefined) {
       const sizeBytes = Buffer.byteLength(request.capturedText);

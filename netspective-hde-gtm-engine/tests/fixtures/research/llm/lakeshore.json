@@ -3,10 +3,7 @@
   "rules": [
     {
       "task": "extraction",
-      "whenTextIncludes": [
-        "onboarding delays for new senders this quarter",
-        "onboarding for new senders is fast"
-      ],
+      "whenTextIncludes": ["Lakeshore HIE"],
       "respond": {
         "findings": [
           {

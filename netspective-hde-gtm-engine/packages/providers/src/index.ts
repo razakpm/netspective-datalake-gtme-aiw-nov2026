@@ -8,3 +8,4 @@ export * from "./fakes/llm.js";
 export * from "./fakes/research-source.js";
 export * from "./adapters/anthropic-llm.js";
 export * from "./adapters/web-fetch.js";
+export * from "./adapters/manual-capture.js";

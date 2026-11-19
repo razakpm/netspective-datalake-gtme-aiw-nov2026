@@ -126,7 +126,7 @@ export function latestProcessedFetch(
   return tx
     .prepare(
       `SELECT f.* FROM research_source_fetch f JOIN research_run r ON r.id = f.run_id
-       WHERE r.account_id = ? AND f.address_normalised = ? AND f.outcome = 'processed'
+       WHERE r.account_id = ? AND f.address_normalised = ? AND f.outcome IN ('processed','too_large_truncated')
        ORDER BY f.fetched_at DESC, f.id DESC LIMIT 1`,
     )
     .get(accountId, addressNormalised) as FetchRow | undefined;
@@ -148,4 +148,46 @@ export function accountSpendMicros(tx: Tx, accountId: string, monthStartIso: str
     )
     .get(accountId, monthStartIso) as { c: number };
   return runs.c + interpretations.c;
+}
+
+export interface AccountFacts {
+  id: string;
+  name: string;
+  orgType: string;
+  domains: string[];
+  /** Excluded or on hold by feature 002's organisation-type rules, unless an exclusion override was granted. */
+  excluded: boolean;
+}
+
+/** Account name, type, domains and exclusion status for the model input and the run banner (spec FR-016). */
+export function accountFacts(tx: Tx, accountId: string): AccountFacts | undefined {
+  const account = tx.prepare("SELECT id, name FROM account WHERE id = ?").get(accountId) as
+    { id: string; name: string } | undefined;
+  if (!account) return undefined;
+  const cls = tx
+    .prepare(
+      "SELECT org_type FROM account_classification WHERE account_id = ? ORDER BY rowid DESC LIMIT 1",
+    )
+    .get(accountId) as { org_type: string } | undefined;
+  const orgType = cls?.org_type ?? "unknown";
+  const domains = (
+    tx
+      .prepare("SELECT domain FROM account_domain WHERE account_id = ? ORDER BY domain")
+      .all(accountId) as {
+      domain: string;
+    }[]
+  ).map((d) => d.domain);
+  const override = tx
+    .prepare(
+      "SELECT action FROM exclusion_override WHERE account_id = ? ORDER BY rowid DESC LIMIT 1",
+    )
+    .get(accountId) as { action: string } | undefined;
+  const excludedType = ["medtech", "payer", "multi_site_practice", "biotech"].includes(orgType);
+  return {
+    id: account.id,
+    name: account.name,
+    orgType,
+    domains,
+    excluded: excludedType && override?.action !== "grant",
+  };
 }

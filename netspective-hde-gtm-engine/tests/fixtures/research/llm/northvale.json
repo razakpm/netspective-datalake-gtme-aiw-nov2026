@@ -3,10 +3,7 @@
   "rules": [
     {
       "task": "extraction",
-      "whenTextIncludes": [
-        "three formats: CCDA, HL7 v2 and CSV extracts",
-        "updated implementation guide for claims attachments"
-      ],
+      "whenTextIncludes": ["three formats", "implementation guide"],
       "respond": {
         "findings": [
           {
@@ -37,6 +34,42 @@
             "extractionConfidence": "medium",
             "basisKeys": ["n1", "n2"],
             "typeKey": "onboarding_delay"
+          }
+        ]
+      }
+    },
+    {
+      "task": "extraction",
+      "whenTextIncludes": ["implementation guide"],
+      "respond": {
+        "findings": [
+          {
+            "key": "n2",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Northvale published an updated implementation guide for claims attachments.",
+            "extractionConfidence": "high",
+            "supportingText": "updated implementation guide for claims attachments",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "implementation_guide_change"
+          }
+        ]
+      }
+    },
+    {
+      "task": "extraction",
+      "whenTextIncludes": ["three formats"],
+      "respond": {
+        "findings": [
+          {
+            "key": "n1",
+            "kind": "fact",
+            "topic": "other",
+            "statement": "Senders submit data in three formats: CCDA, HL7 v2 and CSV extracts.",
+            "extractionConfidence": "high",
+            "supportingText": "three formats: CCDA, HL7 v2 and CSV extracts",
+            "sourceFetchId": "$BLOCK:1",
+            "typeKey": "multi_format_sender"
           }
         ]
       }
