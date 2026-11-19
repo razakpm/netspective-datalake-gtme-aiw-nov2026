@@ -160,7 +160,7 @@ export const COLUMN_CLASSIFICATION: ClassificationRegistry = {
     "id, name, version, template_hash, output_schema_id, output_schema_version, status, approved_by, approved_at",
   ),
   ai_invocation: som(
-    "id, occurred_at, provider, model, task, prompt_version_id, schema_version, context_type, context_id, attempt, input_tokens, output_tokens, cost_micros, latency_ms, validation_result, outcome, refusal_rule_ids, correlation_id, actor_id, actor_type",
+    "id, occurred_at, provider, model, task, prompt_version_id, schema_version, context_type, context_id, account_id, attempt, input_tokens, output_tokens, cost_micros, latency_ms, validation_result, outcome, refusal_rule_ids, correlation_id, actor_id, actor_type",
   ),
   research_source_rule: mergeFields(
     cc("pattern"),

@@ -97,6 +97,37 @@
           }
         ]
       }
+    },
+    {
+      "task": "interpretation",
+      "whenTextIncludes": ["pilot worked on demo data"],
+      "respond": {
+        "matches": [
+          {
+            "capabilityKey": "field_lineage_traceability",
+            "band": "high",
+            "reason": "Worked on demo data and failed on the buyer's own data points to input traceability."
+          },
+          {
+            "capabilityKey": "data_quality_monitoring",
+            "band": "medium",
+            "reason": "Quality of the real inputs may differ from the demo data."
+          }
+        ],
+        "discoveryQuestions": [
+          "Which ten fields does the pilot depend on, by name?",
+          "Which source systems supply each of those fields?",
+          "How often is each field refreshed?",
+          "Who owns each source system?",
+          "Which fields were present in the demo data but missing in the real data?",
+          "What formats do the real sources use?",
+          "When did the pilot stop meeting its targets?",
+          "Which fields are populated differently across source systems?",
+          "Where could each field's origin be recorded today?",
+          "Which of the fields are optional in the source systems?"
+        ],
+        "unknowns": ["Who owns the data feeding the pilot.", "Who holds the budget for the pilot."]
+      }
     }
   ]
 }

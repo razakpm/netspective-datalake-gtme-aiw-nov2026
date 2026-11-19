@@ -8,3 +8,7 @@ export {
   type ResearchSettings,
 } from "./settings.js";
 export { accountFacts, type AccountFacts } from "./repository.js";
+export { ProblemInterpreter, type InterpretationView } from "./interpret.js";
+export { ResearchSourceRules, RULE_KINDS, type RuleView } from "./sources.js";
+export { ResearchSchedules, type ScheduleView } from "./schedule.js";
+export { registerResearchRoutes, type ResearchRouteDeps } from "./routes.js";

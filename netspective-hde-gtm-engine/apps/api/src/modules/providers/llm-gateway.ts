@@ -89,6 +89,8 @@ export interface GatewayCall {
   modelInput: ModelInput;
   contextType: "research_run" | "problem_interpretation" | "other";
   contextId: string;
+  /** The account the call is about; the monthly cap counts every call for it. */
+  accountId?: string | undefined;
   /** The context's own cap (run budget or interpretation cap). */
   runCapMicros: number;
   /** Allowance left on the account this month, read before every attempt. */
@@ -199,9 +201,9 @@ export class LlmGateway {
     this.o.db.transaction((tx) => {
       tx.prepare(
         `INSERT INTO ai_invocation (id, occurred_at, provider, model, task, prompt_version_id, schema_version,
-           context_type, context_id, attempt, input_tokens, output_tokens, cost_micros, latency_ms,
+           context_type, context_id, account_id, attempt, input_tokens, output_tokens, cost_micros, latency_ms,
            validation_result, outcome, refusal_rule_ids, correlation_id, actor_id, actor_type)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       ).run(
         uuidv7(),
         this.now().toISOString(),
@@ -212,6 +214,7 @@ export class LlmGateway {
         prompt.schemaVersion,
         call.contextType,
         call.contextId,
+        call.accountId ?? null,
         attempt,
         row.inputTokens,
         row.outputTokens,

@@ -16,6 +16,8 @@ import {
   registerIdentityRoutes,
 } from "./modules/identity/index.js";
 import { AccountService, registerAccountRoutes } from "./modules/accounts/index.js";
+import { registerHypothesisRoutes } from "./modules/hypotheses/index.js";
+import { registerResearchRoutes } from "./modules/research/index.js";
 import { JobService, registerJobRoutes } from "./modules/jobs/index.js";
 import {
   registerSignalRoutes,
@@ -24,6 +26,7 @@ import {
   SourceService,
 } from "./modules/signals/index.js";
 import { PhiNotifier } from "./platform/events/phi-notifier.js";
+import { buildResearchStack, type ResearchStack } from "./research-stack.js";
 
 // Composition root: builds the database, services and routes from configuration. The persistence is
 // SQLite for the first version (ADR-015); the Postgres adapter replaces `SqliteDatabase` here.
@@ -37,6 +40,7 @@ export interface Services {
   signals: SignalService;
   signalReviews: ReviewService;
   signalSources: SourceService;
+  research: ResearchStack;
 }
 
 export function openDatabase(path: string): SqliteDatabase {
@@ -47,15 +51,27 @@ export function openDatabase(path: string): SqliteDatabase {
 }
 
 export function buildServices(config: AppConfig, db: SqliteDatabase): Services {
+  const jobs = new JobService(db, {
+    retry: {
+      maxAttempts: config.jobs.maxAttempts,
+      baseSeconds: config.jobs.backoffBaseSeconds,
+      factor: config.jobs.backoffFactor,
+      capSeconds: config.jobs.backoffCapSeconds,
+      jitterRatio: 0.2,
+    },
+    concurrency: config.jobs.concurrency,
+    queueDepthCap: config.jobs.queueDepthCap,
+  });
+  const signals = new SignalService(db, {
+    excerptMaxChars: config.signals.excerptMaxChars,
+    similarityThreshold: config.signals.similarityThreshold,
+    retentionMonths: config.signals.retentionMonths,
+  });
   return {
     db,
     identity: new IdentityService(db),
     accounts: new AccountService(db),
-    signals: new SignalService(db, {
-      excerptMaxChars: config.signals.excerptMaxChars,
-      similarityThreshold: config.signals.similarityThreshold,
-      retentionMonths: config.signals.retentionMonths,
-    }),
+    signals,
     signalReviews: new ReviewService(db),
     signalSources: new SourceService(db, config.signals.excerptMaxChars),
     quarantine: new QuarantineService(
@@ -63,17 +79,8 @@ export function buildServices(config: AppConfig, db: SqliteDatabase): Services {
       config.quarantineEncryptionKey ?? "dev-only-quarantine-key-not-for-production-use",
       config.retention.quarantineDays,
     ),
-    jobs: new JobService(db, {
-      retry: {
-        maxAttempts: config.jobs.maxAttempts,
-        baseSeconds: config.jobs.backoffBaseSeconds,
-        factor: config.jobs.backoffFactor,
-        capSeconds: config.jobs.backoffCapSeconds,
-        jitterRatio: 0.2,
-      },
-      concurrency: config.jobs.concurrency,
-      queueDepthCap: config.jobs.queueDepthCap,
-    }),
+    jobs,
+    research: buildResearchStack({ db, config, jobs, signals }),
   };
 }
 
@@ -124,6 +131,20 @@ export async function buildHttpApp(config: AppConfig, logger: Logger, services: 
         service: services.accounts,
         authz,
         limits: config.imports,
+      });
+      registerResearchRoutes(app, {
+        db: services.db,
+        service: services.research.research,
+        schedules: services.research.schedules,
+        interpreter: services.research.interpreter,
+        rules: services.research.rules,
+        authz,
+      });
+      registerHypothesisRoutes(app, {
+        db: services.db,
+        service: services.research.hypotheses,
+        review: services.research.review,
+        authz,
       });
       registerSignalRoutes(app, {
         db: services.db,

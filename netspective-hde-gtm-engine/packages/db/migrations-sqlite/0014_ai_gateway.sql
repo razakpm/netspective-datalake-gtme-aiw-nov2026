@@ -24,6 +24,7 @@ CREATE TABLE ai_invocation (
   schema_version     TEXT NOT NULL,
   context_type       TEXT NOT NULL CHECK (context_type IN ('research_run','problem_interpretation','other')),
   context_id         TEXT,
+  account_id         TEXT,
   attempt            INTEGER NOT NULL CHECK (attempt >= 1),
   input_tokens       INTEGER NOT NULL CHECK (input_tokens >= 0),
   output_tokens      INTEGER NOT NULL CHECK (output_tokens >= 0),
@@ -38,6 +39,7 @@ CREATE TABLE ai_invocation (
 );
 CREATE INDEX ai_invocation_context ON ai_invocation (context_type, context_id);
 CREATE INDEX ai_invocation_time ON ai_invocation (occurred_at);
+CREATE INDEX ai_invocation_account ON ai_invocation (account_id, occurred_at);
 
 CREATE TRIGGER ai_invocation_no_update BEFORE UPDATE ON ai_invocation
 BEGIN SELECT RAISE(ABORT, 'ai_invocation is append-only'); END;

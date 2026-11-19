@@ -64,6 +64,7 @@ export class HypothesisProposals implements HypothesisProposer {
       }),
       contextType: "research_run",
       contextId: ctx.run.id,
+      accountId: ctx.accountId,
       runCapMicros: ctx.run.max_cost_micros,
       accountRemaining: () => this.accountRemaining(ctx.accountId),
       actor: { id: null, type: "ai" },

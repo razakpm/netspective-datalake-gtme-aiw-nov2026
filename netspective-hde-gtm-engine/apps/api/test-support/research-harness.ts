@@ -5,6 +5,7 @@ import { FakeLLM, FakeResearchSource, type FakePage, type FakeRule } from "@gtm/
 import { JobService } from "../src/modules/jobs/index.js";
 import { LlmGateway } from "../src/modules/providers/index.js";
 import {
+  ProblemInterpreter,
   DEFAULT_RESEARCH_SETTINGS,
   ResearchRunner,
   ResearchService,
@@ -132,6 +133,7 @@ export function buildResearchHarness(options: HarnessOptions = {}) {
     now,
     proposer: options.proposer ?? (options.withProposals ? proposals : undefined),
   });
+  const interpreter = new ProblemInterpreter(db, gateway, settings, now);
   const hypotheses = new HypothesisService(db, settings.hypothesisStaleDays, now);
   const hypothesisReview = new HypothesisReview(db, settings.hypothesisStaleDays);
   const staleness = new HypothesisStaleness(db, settings.hypothesisStaleDays);
@@ -226,6 +228,7 @@ export function buildResearchHarness(options: HarnessOptions = {}) {
     runFor,
     addRule,
     now,
+    interpreter,
     hypotheses,
     hypothesisReview,
     staleness,

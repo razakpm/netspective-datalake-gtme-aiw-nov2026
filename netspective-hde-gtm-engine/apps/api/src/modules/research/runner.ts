@@ -441,6 +441,7 @@ export class ResearchRunner {
         }),
         contextType: "research_run",
         contextId: runId,
+        accountId: run.account_id,
         runCapMicros: run.max_cost_micros,
         accountRemaining: () =>
           Math.max(

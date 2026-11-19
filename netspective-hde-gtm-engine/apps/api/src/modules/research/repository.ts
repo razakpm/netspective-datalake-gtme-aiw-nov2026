@@ -132,22 +132,14 @@ export function latestProcessedFetch(
     .get(accountId, addressNormalised) as FetchRow | undefined;
 }
 
-/** Cost recorded for an account in a calendar month (UTC), for runs and other contexts alike. */
+/** Cost recorded for an account in a calendar month (UTC): every model call about it, failed ones included. */
 export function accountSpendMicros(tx: Tx, accountId: string, monthStartIso: string): number {
-  const runs = tx
+  const row = tx
     .prepare(
-      `SELECT COALESCE(SUM(i.cost_micros), 0) AS c FROM ai_invocation i
-       JOIN research_run r ON i.context_type = 'research_run' AND i.context_id = r.id
-       WHERE r.account_id = ? AND i.occurred_at >= ?`,
+      "SELECT COALESCE(SUM(cost_micros), 0) AS c FROM ai_invocation WHERE account_id = ? AND occurred_at >= ?",
     )
     .get(accountId, monthStartIso) as { c: number };
-  const interpretations = tx
-    .prepare(
-      `SELECT COALESCE(SUM(cost_micros), 0) AS c FROM problem_interpretation
-       WHERE account_id = ? AND created_at >= ?`,
-    )
-    .get(accountId, monthStartIso) as { c: number };
-  return runs.c + interpretations.c;
+  return row.c;
 }
 
 export interface AccountFacts {

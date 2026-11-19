@@ -12,3 +12,4 @@ export { HypothesisReview } from "./review.js";
 export { HypothesisStaleness } from "./staleness.js";
 export { HypothesisProposals } from "./proposals.js";
 export { type HypothesisActor } from "./refusal.js";
+export { registerHypothesisRoutes, type HypothesisRouteDeps } from "./routes.js";

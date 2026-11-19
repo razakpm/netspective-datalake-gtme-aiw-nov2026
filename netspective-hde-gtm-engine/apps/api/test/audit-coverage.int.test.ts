@@ -22,6 +22,8 @@ interface Call {
   contentType?: string;
   /** Role used for the forbidden attempt when gtm_operator is itself allowed on the route. */
   forbiddenRole?: "read_only_executive";
+  /** Success audit events one call writes (default 1; starting a run also records the queued job). */
+  successEvents?: number;
 }
 
 const DRIVERS: Record<string, (fx: IdentityFixture) => Promise<Call>> = {
@@ -171,6 +173,151 @@ DRIVERS["PUT /api/v1/signal-sources/:id/availability"] = async () => ({
   payload: { available: false },
 });
 
+// Feature 004 routes (research, interpretation, source rules, hypotheses).
+const human = () => ({ userId: "driver-user", actorType: "human" as const, correlationId: null });
+const driverSignal = (f: IdentityFixture, accountId: string) => {
+  const n = signalSeq++;
+  // A distinct inline source per signal keeps near-identical driver texts from merging into one signal.
+  return f.signals.record(human(), {
+    accountId,
+    typeKey: "onboarding_delay",
+    source: { name: `Driver source ${n}`, kind: "other", ref: `https://example.org/driver/${n}` },
+    observation: `Driver signal ${n} about onboarding delays`,
+    observedAt: new Date().toISOString(),
+  }).signal.id;
+};
+const driverHypothesis = (f: IdentityFixture, accountId = makeAccount(f)) =>
+  f.research.hypotheses.create(human(), accountId, {
+    statement: "Sender onboarding delays may be slowing intake for this account.",
+    category: "onboarding_friction",
+    supportingSignalIds: [driverSignal(f, accountId)],
+    confidence: { band: "low", explanation: "Driver evidence only." },
+  }).id;
+const driverProposal = (f: IdentityFixture) => {
+  const accountId = makeAccount(f);
+  const sig = driverSignal(f, accountId);
+  const runId = `run-${accountId}`;
+  const at = new Date().toISOString();
+  f.db.raw
+    .prepare(
+      "INSERT INTO research_run (id, account_id, started_by, trigger, state, max_sources, max_cost_micros, summary_json, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+    )
+    .run(runId, accountId, "u", "manual", "completed", 10, 2000000, "{}", at);
+  const id = `prop-${accountId}`;
+  f.db.raw
+    .prepare(
+      "INSERT INTO account_hypothesis (id, account_id, origin, acceptance, statement, proposed_statement, category, status, confidence_band, confidence_explanation, proposed_by_run_id, ai_model, ai_prompt_version_id, created_at, updated_at) VALUES (?,?,'ai','proposed','A proposed testable statement.','A proposed testable statement.','other',NULL,'low','weak',?,'m','prompt-hypothesis-propose-1.0.0',?,?)",
+    )
+    .run(id, accountId, runId, at, at);
+  f.db.raw
+    .prepare(
+      "INSERT INTO hypothesis_evidence (id, hypothesis_id, signal_id, role, linked_by_type, linked_at) VALUES (?,?,?,?,'ai',?)",
+    )
+    .run(`ev-${id}`, id, sig, "supporting", at);
+  return id;
+};
+DRIVERS["POST /api/v1/accounts/:id/research"] = async (f) => ({
+  url: `/api/v1/accounts/${makeAccount(f)}/research`,
+  payload: { maxSources: 3 },
+  forbiddenRole: "read_only_executive",
+  successEvents: 2,
+});
+DRIVERS["PUT /api/v1/accounts/:id/research/schedule"] = async (f) => ({
+  url: `/api/v1/accounts/${makeAccount(f)}/research/schedule`,
+  payload: { enabled: true, cadence: "weekly" },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/research-runs/:id/cancel"] = async (f) => ({
+  url: `/api/v1/research-runs/${f.research.research.startRun(human(), makeAccount(f), {}).id}/cancel`,
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/research-runs/:id/acknowledge"] = async (f) => {
+  const accountId = makeAccount(f);
+  const id = `attn-${accountId}`;
+  f.db.raw
+    .prepare(
+      "INSERT INTO research_run (id, account_id, started_by, trigger, state, max_sources, max_cost_micros, created_at) VALUES (?,?,?,?,?,?,?,?)",
+    )
+    .run(id, accountId, "u", "manual", "needs_attention", 10, 2000000, new Date().toISOString());
+  return {
+    url: `/api/v1/research-runs/${id}/acknowledge`,
+    payload: { note: "Looked at it; keeping it open." },
+    forbiddenRole: "read_only_executive",
+  };
+};
+DRIVERS["POST /api/v1/accounts/:id/problem-interpretations"] = async (f) => ({
+  url: `/api/v1/accounts/${makeAccount(f)}/problem-interpretations`,
+  payload: {
+    statement: "Our pilot worked on demo data but failed on ours, and we cannot tell why.",
+  },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/research-sources"] = async () => ({
+  url: "/api/v1/research-sources",
+  payload: {
+    kind: "public_org_site",
+    matchType: "host_suffix",
+    pattern: `driver-${signalSeq++}.example`,
+  },
+});
+DRIVERS["PATCH /api/v1/research-sources/:id"] = async (f) => {
+  const id = `rule-${signalSeq++}`;
+  f.db.raw
+    .prepare(
+      "INSERT INTO research_source_rule (id, kind, match_type, pattern, status, signal_source_kind, created_at) VALUES (?,?,?,?,?,?,?)",
+    )
+    .run(
+      id,
+      "public_org_site",
+      "host",
+      `${id}.example`,
+      "enabled",
+      "official_publication",
+      new Date().toISOString(),
+    );
+  return { url: `/api/v1/research-sources/${id}`, payload: { status: "disabled" } };
+};
+DRIVERS["POST /api/v1/accounts/:id/hypotheses"] = async (f) => {
+  const accountId = makeAccount(f);
+  return {
+    url: `/api/v1/accounts/${accountId}/hypotheses`,
+    payload: {
+      statement: "Sender onboarding delays may be slowing intake for this account.",
+      category: "onboarding_friction",
+      supportingSignalIds: [driverSignal(f, accountId)],
+      confidence: { band: "low", explanation: "Driver evidence only." },
+    },
+    forbiddenRole: "read_only_executive",
+  };
+};
+DRIVERS["PATCH /api/v1/hypotheses/:id"] = async (f) => ({
+  url: `/api/v1/hypotheses/${driverHypothesis(f)}`,
+  payload: { statement: "Sender onboarding delays may be slowing intake in several formats." },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/hypotheses/:id/accept"] = async (f) => ({
+  url: `/api/v1/hypotheses/${driverProposal(f)}/accept`,
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/hypotheses/:id/dismiss"] = async (f) => ({
+  url: `/api/v1/hypotheses/${driverProposal(f)}/dismiss`,
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/hypotheses/:id/evidence"] = async (f) => {
+  const accountId = makeAccount(f);
+  const id = driverHypothesis(f, accountId);
+  return {
+    url: `/api/v1/hypotheses/${id}/evidence`,
+    payload: { signalId: driverSignal(f, accountId), role: "contradictory" },
+    forbiddenRole: "read_only_executive",
+  };
+};
+DRIVERS["POST /api/v1/hypotheses/:id/assumptions"] = async (f) => ({
+  url: `/api/v1/hypotheses/${driverHypothesis(f)}/assumptions`,
+  payload: { text: "The pilot needs a small set of named fields." },
+  forbiddenRole: "read_only_executive",
+});
+
 /** Routes that cannot be driven through the fake issuer (none yet; webhook ingress arrives with US5). */
 const EXEMPT: Record<string, string> = {};
 
@@ -236,13 +383,19 @@ describe("audit coverage of every state-changing route", () => {
         },
         payload: call.payload ?? {},
       });
-      expect([200, 201, 204], route).toContain(ok.statusCode);
-      expect(count("outcome = 'success'") - before, route).toBe(1);
-      const last = fx.db.raw
-        .prepare("SELECT * FROM audit_event WHERE outcome = 'success' ORDER BY rowid DESC LIMIT 1")
-        .get() as Record<string, unknown>;
-      for (const field of REQUIRED) expect(last[field], `${route} ${field}`).toBeTruthy();
-      expect(last["actor_id"]).toBe(admin.id);
+      expect([200, 201, 202, 204], route).toContain(ok.statusCode);
+      expect(count("outcome = 'success'") - before, route).toBe(call.successEvents ?? 1);
+      const written = fx.db.raw
+        .prepare("SELECT * FROM audit_event WHERE outcome = 'success' ORDER BY rowid DESC LIMIT ?")
+        .all(call.successEvents ?? 1) as Record<string, unknown>[];
+      for (const event of written) {
+        for (const field of REQUIRED) expect(event[field], `${route} ${field}`).toBeTruthy();
+      }
+      // The caller's own event names them; a queued-job event written by the system may have no actor.
+      expect(
+        written.some((e) => e["actor_id"] === admin.id),
+        route,
+      ).toBe(true);
     }
   });
 

@@ -7,6 +7,7 @@ import {
   type HypothesisStatus,
 } from "@gtm/domain";
 import { v7 as uuidv7 } from "uuid";
+import { HttpError } from "../../http/errors.js";
 import { recordAudit } from "../audit/index.js";
 import { accountFacts, resolveAccountScope as scopeOf } from "./accounts.js";
 import { getSignalDetail } from "../signals/index.js";
@@ -475,7 +476,7 @@ export class HypothesisService {
   get(id: string, now: Date = this.clock()): HypothesisView {
     return this.db.transaction((tx) => {
       const h = getHypothesis(tx, id);
-      if (!h) throw new HypothesisRefusal(404, "Not found", ["unknown_hypothesis"]);
+      if (!h) throw new HttpError(404, "Not found", "Refused: unknown_hypothesis");
       const ref = (signalId: string) => {
         const s = getSignalDetail(tx, signalId, now);
         return {
@@ -541,7 +542,7 @@ export class HypothesisService {
   ) {
     return this.db.transaction((tx) => {
       const scope = scopeOf(tx, accountId);
-      if (!scope) throw new HypothesisRefusal(404, "Not found", ["unknown_account"]);
+      if (!scope) throw new HttpError(404, "Not found", "Refused: unknown_account");
       const limit = filter.limit ?? 50;
       const where = [`account_id IN (${scope.ids.map(() => "?").join(",")})`, "acceptance = ?"];
       const params: (string | number)[] = [...scope.ids, filter.acceptance ?? "accepted"];

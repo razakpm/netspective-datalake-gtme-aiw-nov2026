@@ -323,7 +323,7 @@ export class ResearchService {
             : null,
           signalId: f.signal_id,
         })),
-        summary: run.summary_json ? (JSON.parse(run.summary_json) as unknown) : null,
+        summary: run.summary_json ? this.compose(tx, run, run.account_id) : null,
       };
     });
   }
@@ -360,6 +360,111 @@ export class ResearchService {
     return {
       items: page.map(runView),
       nextCursor: rows.length > limit ? page[page.length - 1]!.id : null,
+    };
+  }
+
+  /** The account's current research picture: the latest completed or budget-stopped run's verified summary. */
+  accountSummary(accountId: string) {
+    return this.db.transaction((tx) => {
+      const scope = resolveAccountScope(tx, accountId);
+      if (!scope) throw new HttpError(404, "Not found", "No such account");
+      const run = tx
+        .prepare(
+          `SELECT * FROM research_run WHERE account_id IN (${scope.ids.map(() => "?").join(",")})
+             AND state IN ('completed','budget_reached') AND summary_json IS NOT NULL ORDER BY id DESC LIMIT 1`,
+        )
+        .get(...scope.ids) as RunRow | undefined;
+      if (!run) {
+        return {
+          accountId: scope.survivor,
+          runId: null,
+          label: "AI-generated, advisory" as const,
+          facts: [],
+          inferences: [],
+          unknowns: [],
+          contradictions: [],
+          sources: [],
+          modelAndPrompt: null,
+        };
+      }
+      return this.compose(tx, run, scope.survivor);
+    });
+  }
+
+  /** One run's stored summary in the response shape, with sources resolved to addresses. */
+  private compose(tx: Tx, run: RunRow, accountId: string) {
+    const summary = JSON.parse(run.summary_json!) as {
+      facts: { key: string; carriedOver: boolean }[];
+      inferences: { key: string }[];
+      unknowns: { topic: string; statement: string }[];
+      contradictions: { key: string }[];
+      sources: { fetchId: string; flagged: boolean }[];
+    };
+    const fetches = tx
+      .prepare(
+        "SELECT id, address, flagged FROM research_source_fetch WHERE id IN (SELECT fetch_id FROM research_finding WHERE fetch_id IS NOT NULL) OR run_id = ?",
+      )
+      .all(run.id) as { id: string; address: string; flagged: number }[];
+    const address = new Map(fetches.map((f) => [f.id, f.address]));
+    const flagged = new Set(fetches.filter((f) => f.flagged === 1).map((f) => f.id));
+    const finding = (id: string, carried: boolean) => {
+      const f = tx.prepare("SELECT * FROM research_finding WHERE id = ?").get(id) as
+        | {
+            id: string;
+            kind: string;
+            topic: string;
+            statement: string;
+            supporting_text: string | null;
+            basis_finding_ids: string;
+            extraction_confidence: string;
+            verified: number;
+            fetch_id: string | null;
+            second_fetch_id: string | null;
+            signal_id: string | null;
+          }
+        | undefined;
+      if (!f) return null;
+      const src = (fid: string | null) =>
+        fid ? { fetchId: fid, address: address.get(fid) ?? "" } : null;
+      return {
+        id: f.id,
+        kind: f.kind,
+        topic: f.topic,
+        statement: f.statement,
+        supportingText: f.supporting_text,
+        basisFindingIds: JSON.parse(f.basis_finding_ids) as string[],
+        extractionConfidence: f.extraction_confidence,
+        verified: f.verified === 1,
+        carriedOver: carried,
+        flaggedSource: f.fetch_id ? flagged.has(f.fetch_id) : false,
+        source: src(f.fetch_id),
+        secondSource: src(f.second_fetch_id),
+        signalId: f.signal_id,
+      };
+    };
+    const model = tx
+      .prepare(
+        "SELECT model FROM ai_invocation WHERE context_type = 'research_run' AND context_id = ? ORDER BY rowid DESC LIMIT 1",
+      )
+      .get(run.id) as { model: string } | undefined;
+    return {
+      accountId,
+      runId: run.id,
+      label: "AI-generated, advisory" as const,
+      facts: summary.facts.map((f) => finding(f.key, f.carriedOver)).filter((x) => x !== null),
+      inferences: summary.inferences.map((f) => finding(f.key, false)).filter((x) => x !== null),
+      unknowns: summary.unknowns,
+      contradictions: summary.contradictions
+        .map((f) => finding(f.key, false))
+        .filter((x) => x !== null),
+      sources: summary.sources.map((s) => ({
+        fetchId: s.fetchId,
+        address: address.get(s.fetchId) ?? "",
+        flagged: s.flagged,
+      })),
+      modelAndPrompt: model
+        ? { model: model.model, promptVersion: "research-extract@1.0.0" }
+        : null,
     };
   }
 

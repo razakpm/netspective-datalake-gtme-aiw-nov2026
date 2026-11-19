@@ -49,7 +49,7 @@ describe("research repository", () => {
       db.transaction((tx) => latestProcessedFetch(tx, "a1", "https://other.example/")),
     ).toBeUndefined();
   });
-  it("lists only enabled rules and sums the month's spend from invocations and interpretations", () => {
+  it("lists only enabled rules and sums the month's spend from the account's model calls", () => {
     const db = setup();
     const rule = (id: string, status: string) =>
       db.raw
@@ -64,7 +64,7 @@ describe("research repository", () => {
     const inv = (id: string, at: string, cost: number) =>
       db.raw
         .prepare(
-          "INSERT INTO ai_invocation (id, occurred_at, provider, model, task, prompt_version_id, schema_version, context_type, context_id, attempt, input_tokens, output_tokens, cost_micros, latency_ms, validation_result, outcome, actor_type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+          "INSERT INTO ai_invocation (id, occurred_at, provider, model, task, prompt_version_id, schema_version, context_type, context_id, account_id, attempt, input_tokens, output_tokens, cost_micros, latency_ms, validation_result, outcome, actor_type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         )
         .run(
           id,
@@ -76,6 +76,7 @@ describe("research repository", () => {
           "1",
           "research_run",
           "r1",
+          "a1",
           1,
           1,
           1,
@@ -99,7 +100,7 @@ describe("research repository", () => {
       )
       .run("2026-11-07T00:00:00.000Z");
     expect(db.transaction((tx) => accountSpendMicros(tx, "a1", "2026-11-01T00:00:00.000Z"))).toBe(
-      2200,
+      1500,
     );
   });
 });
