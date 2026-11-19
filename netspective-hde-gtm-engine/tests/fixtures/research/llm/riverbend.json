@@ -28,7 +28,7 @@
     },
     {
       "task": "synthesis",
-      "whenTextIncludes": ["org_profile_fact"],
+      "whenTextIncludes": ["worked on demonstration data"],
       "respond": {
         "proposals": [
           {

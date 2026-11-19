@@ -12,7 +12,15 @@ import {
   type ResearchActor,
   type ResearchSettings,
 } from "../src/modules/research/index.js";
-import { SignalService } from "../src/modules/signals/index.js";
+import { SignalService, ReviewService as SignalReview } from "../src/modules/signals/index.js";
+import {
+  HypothesisProposals,
+  HypothesisReview,
+  HypothesisService,
+  HypothesisStaleness,
+} from "../src/modules/hypotheses/index.js";
+import { accountSpendMicros } from "../src/modules/research/repository.js";
+import { monthStart } from "../src/modules/research/settings.js";
 
 // A research stack on an in-memory database with the fake model and fake pages (feature 004 tests).
 const FIXTURES = join(import.meta.dirname, "../../../tests/fixtures/research");
@@ -72,6 +80,7 @@ export interface HarnessOptions {
   pages?: FakePage[];
   rates?: { inMicrosPer1k: number; outMicrosPer1k: number };
   proposer?: HypothesisProposer;
+  withProposals?: boolean;
 }
 
 export function buildResearchHarness(options: HarnessOptions = {}) {
@@ -103,6 +112,17 @@ export function buildResearchHarness(options: HarnessOptions = {}) {
   });
   const jobs = new JobService(db, { now });
   const service = new ResearchService(db, jobs, settings);
+  const proposals = new HypothesisProposals(
+    db,
+    gateway,
+    (accountId) =>
+      Math.max(
+        0,
+        settings.accountMonthlyCapMicros -
+          db.transaction((tx) => accountSpendMicros(tx, accountId, monthStart(now()))),
+      ),
+    now,
+  );
   const runner = new ResearchRunner({
     db,
     source,
@@ -110,8 +130,12 @@ export function buildResearchHarness(options: HarnessOptions = {}) {
     signals,
     settings,
     now,
-    proposer: options.proposer,
+    proposer: options.proposer ?? (options.withProposals ? proposals : undefined),
   });
+  const hypotheses = new HypothesisService(db, settings.hypothesisStaleDays, now);
+  const hypothesisReview = new HypothesisReview(db, settings.hypothesisStaleDays);
+  const staleness = new HypothesisStaleness(db, settings.hypothesisStaleDays);
+  const signalReview = new SignalReview(db);
 
   for (const a of Object.values(ACCOUNTS)) {
     const at = now().toISOString();
@@ -165,6 +189,27 @@ export function buildResearchHarness(options: HarnessOptions = {}) {
     await runner.execute(run.id);
     return service.get(run.id);
   }
+  /** A signal recorded by a person (manual), by default from the official publication source. */
+  const signal = (accountId: string, observation: string, over: Record<string, unknown> = {}) =>
+    signals.record({ userId: "analyst-1", actorType: "human", correlationId: null, now }, {
+      accountId,
+      typeKey: "onboarding_delay",
+      observation,
+      observedAt: now().toISOString(),
+      source: {
+        sourceId: "default-source-official_publication",
+        ref: `https://example.org/${Math.random().toString(36).slice(2)}`,
+      },
+      ...over,
+    } as never).signal;
+  const reviewer = (): ResearchActor => ({
+    userId: "reviewer-1",
+    actorType: "human",
+    correlationId: null,
+    now,
+  });
+  const approve = (signalId: string) =>
+    signalReview.review(reviewer(), signalId, { decision: "approve" });
   return {
     db,
     clock,
@@ -181,6 +226,13 @@ export function buildResearchHarness(options: HarnessOptions = {}) {
     runFor,
     addRule,
     now,
+    hypotheses,
+    hypothesisReview,
+    staleness,
+    signalReview,
+    signal,
+    approve,
+    reviewer,
   };
 }
 

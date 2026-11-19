@@ -25,6 +25,7 @@ export interface HypothesisRow {
   accepted_by: string | null;
   accepted_at: string | null;
   last_revived_at: string | null;
+  last_reviewed_at: string | null;
   flagged_for_review: number;
   flag_reason: string | null;
   updated_at: string;

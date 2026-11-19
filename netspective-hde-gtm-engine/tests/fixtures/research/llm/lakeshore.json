@@ -41,7 +41,7 @@
     },
     {
       "task": "synthesis",
-      "whenTextIncludes": ["onboarding_delay"],
+      "whenTextIncludes": ["onboarding delays"],
       "respond": {
         "proposals": [
           {

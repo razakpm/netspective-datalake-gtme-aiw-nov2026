@@ -192,7 +192,7 @@ export const COLUMN_CLASSIFICATION: ClassificationRegistry = {
   account_hypothesis: mergeFields(
     cc("statement, proposed_statement, confidence_explanation"),
     som(
-      "id, account_id, origin, acceptance, category, status, not_for_prioritisation, confidence_band, proposed_by_run_id, ai_model, ai_prompt_version_id, created_by, created_at, accepted_by, accepted_at, last_revived_at, flagged_for_review, flag_reason, updated_at",
+      "id, account_id, origin, acceptance, category, status, not_for_prioritisation, confidence_band, proposed_by_run_id, ai_model, ai_prompt_version_id, created_by, created_at, accepted_by, accepted_at, last_revived_at, last_reviewed_at, flagged_for_review, flag_reason, updated_at",
     ),
   ),
   hypothesis_tag: som("hypothesis_id, dimension, value"),

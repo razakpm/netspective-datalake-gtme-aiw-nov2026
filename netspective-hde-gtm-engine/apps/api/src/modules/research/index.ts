@@ -7,3 +7,4 @@ export {
   type ResearchActor,
   type ResearchSettings,
 } from "./settings.js";
+export { accountFacts, type AccountFacts } from "./repository.js";

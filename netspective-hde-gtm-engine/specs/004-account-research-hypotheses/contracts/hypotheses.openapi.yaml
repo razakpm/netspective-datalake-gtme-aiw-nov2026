@@ -232,7 +232,7 @@ components:
             supporting: { type: array, items: { $ref: '#/components/schemas/SignalRef' } }
             contradictory: { type: array, items: { $ref: '#/components/schemas/SignalRef' } }
             buyerConfirmedFacts: { type: array, items: { $ref: '#/components/schemas/SignalRef' }, description: "Linked signals whose evidence status is buyer-confirmed, shown apart from assumptions and inferences." }
-            assumptions: { type: array, items: { type: object, required: [text, source], properties: { text: { type: string }, source: { type: string, enum: [analyst, interpretation] }, interpretationId: { type: [string, 'null'] } } } }
+            assumptions: { type: array, items: { type: object, required: [text, source], properties: { text: { type: string }, source: { type: string, enum: [analyst, interpretation, ai] }, interpretationId: { type: [string, 'null'] } } } }
             relevance: { $ref: '#/components/schemas/Relevance' }
             dimensions: { type: array, items: { type: object, required: [dimension, band, explanation], properties: { dimension: { type: string }, band: { $ref: '#/components/schemas/Band' }, explanation: { type: string } } } }
             statusHistory: { type: array, items: { type: object, required: [toStatus, note, decidedByType, decidedAt], properties: { fromStatus: { type: [string, 'null'] }, toStatus: { type: string }, note: { type: string }, decidedBy: { type: [string, 'null'] }, decidedByType: { type: string, enum: [human, system] }, reasonCode: { type: [string, 'null'] }, decidedAt: { type: string } } } }

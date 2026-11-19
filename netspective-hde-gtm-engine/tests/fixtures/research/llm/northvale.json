@@ -76,7 +76,7 @@
     },
     {
       "task": "synthesis",
-      "whenTextIncludes": ["multi_format_sender"],
+      "whenTextIncludes": ["three formats"],
       "respond": {
         "proposals": [
           {

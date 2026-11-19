@@ -34,6 +34,7 @@ CREATE TABLE account_hypothesis (
   accepted_by           TEXT,
   accepted_at           TEXT,
   last_revived_at       TEXT,
+  last_reviewed_at      TEXT,
   flagged_for_review    INTEGER NOT NULL DEFAULT 0 CHECK (flagged_for_review IN (0,1)),
   flag_reason           TEXT CHECK (flag_reason IS NULL OR flag_reason IN ('supporting_signal_rejected','supporting_signal_stale','supporting_signal_contradicted')),
   updated_at            TEXT NOT NULL,
@@ -86,7 +87,7 @@ CREATE TABLE hypothesis_assumption (
   id                TEXT PRIMARY KEY,
   hypothesis_id     TEXT NOT NULL REFERENCES account_hypothesis (id),
   text              TEXT NOT NULL CHECK (length(text) BETWEEN 3 AND 300),
-  source            TEXT NOT NULL CHECK (source IN ('analyst','interpretation')),
+  source            TEXT NOT NULL CHECK (source IN ('analyst','interpretation','ai')),
   interpretation_id TEXT REFERENCES problem_interpretation (id),
   added_by          TEXT NOT NULL,
   added_at          TEXT NOT NULL
