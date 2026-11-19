@@ -107,7 +107,8 @@ A service lead keeps the three paid engagement types and the offer scoring table
 - An approved or available offer needs a correction: a new version is created and goes through review again; the approved version stays in force until the new one is approved.
 - An offer is withdrawn or expires while a period's capacity is partly used: its usage is kept for reporting and it reports as not available.
 - A claim's evidence is later withdrawn or expires: the claim moves to "needs review" and public use of it is flagged.
-- The same person tries to give both approvals on a restricted claim: refused; the second approval must come from a different designated approver.
+- The same person tries to give both approvals on a restricted claim, or the drafter tries to approve their own claim: refused; each approval must come from a different designated approver who did not draft it.
+- A session is booked in one period and rescheduled into another: it is released from the first period and counted in the second; if the second is full, the move is refused with a plain reason.
 - A deliverable or capability text includes patient-level data or credentials: refused under the data boundary.
 
 ## Requirements *(mandatory)*
@@ -118,11 +119,11 @@ A service lead keeps the three paid engagement types and the offer scoring table
 
 - **FR-001**: The system MUST represent every public claim (landing-page promise, content statement) as a claim record linked to its evidence.
 - **FR-002**: The system MUST treat these as restricted claim classes: quantified outcome, production status, SLA or RTO, SOC 2 or other certification, tenant isolation, legal or regulatory compliance, "AI-ready", and customer identity or case-study details.
-- **FR-003**: A claim in a restricted class MUST NOT be approved without linked evidence and sign-off from designated approvers; the default for any unapproved claim is omission.
+- **FR-003**: A claim in a restricted class MUST NOT be approved without linked evidence and sign-off from two different designated claim approvers, neither of whom drafted the claim; the default for any unapproved claim is omission.
 - **FR-004**: The system MUST provide a deterministic claim checker that flags restricted phrases in any text, returning for each match the class, the matched text and its position. It MUST NOT use a language model.
 - **FR-005**: The checker MUST flag at least: "AI-ready", SLA, SOC 2, "guarantee", "HIPAA compliant", and percentages tied to outcomes, and MUST handle capitalisation, hyphen and spacing variants.
-- **FR-006**: The restricted phrase list MUST be versioned configuration with a recorded owner and change history, so a change to it is itself reviewed.
-- **FR-007**: Approvals, rejections and false-positive dispositions MUST be recorded with who, when and why, and MUST NOT be editable afterwards.
+- **FR-006**: The restricted phrase list MUST be versioned configuration with a recorded owner and change history, so a change to it is itself reviewed. The marketing approver owns the list and a second designated approver MUST review each change.
+- **FR-007**: Only a designated claim approver MAY mark a flag as a false positive, with a reason, and only for that exact text. Approvals, rejections and false-positive dispositions MUST be recorded with who, when and why, and MUST NOT be editable afterwards.
 - **FR-008**: A claim whose evidence is withdrawn or expires MUST move to needs-review and be flagged wherever it is used.
 
 **Offers**
@@ -131,17 +132,17 @@ A service lead keeps the three paid engagement types and the offer scoring table
 - **FR-010**: The system MUST only allow status moves in the defined order (draft → internally reviewed → approved → available; any → withdrawn; available or approved → expired) and MUST refuse others with a plain reason.
 - **FR-011**: Every change to an offer MUST create a new immutable version; versions MUST be readable and MUST NOT be edited or deleted.
 - **FR-012**: The system MUST seed Offers 1, 5 and 6 as approved and Offers 2, 3, 4, 7, 8, 9 and 10 as draft and inactive. Any attribute not recorded in the repository MUST be stored as "to be provided", and an offer with such an attribute MUST NOT move to approved or available.
-- **FR-013**: An offer carrying a recorded limitation MUST NOT be activated until a named person has acknowledged the limitation; Offer 7's limitation "evaluation is a buyer prompt only" is seeded as such.
+- **FR-013**: An offer carrying a recorded limitation MUST NOT be activated until a service lead, named in the record, has acknowledged the limitation; the acknowledgement stays valid until the limitation's wording changes and MUST then be repeated; Offer 7's limitation "evaluation is a buyer prompt only" is seeded as such.
 - **FR-014**: Moving an offer to approved or available MUST be refused while its public text contains a restricted phrase that is not covered by an approved claim.
 - **FR-015**: The Netspective effort estimate and any score MUST be labelled as a hypothesis wherever shown.
 - **FR-016**: Each offer MUST reference its SQL rule by identifier; the rule itself is owned by qualification, not edited here.
 
 **Capacity**
 
-- **FR-017**: The system MUST let a delivery lead set a capacity limit per offer per period (week or month) and MUST keep the history of changes.
+- **FR-017**: The system MUST let a delivery lead set a capacity limit per offer per period (calendar week from Monday, or calendar month, in one configured business time zone) and MUST keep the history of changes.
 - **FR-018**: The system MUST report, per offer and period, the limit, usage, remaining room and utilisation, and MUST report "no limit set" when none exists.
 - **FR-019**: The system MUST expose an "exhausted" answer per offer and period that other features (notably offer routing) can query.
-- **FR-020**: Usage MUST come from recorded sessions supplied by workshop operations; until that feature exists, usage can be entered by a delivery lead and is labelled as manual.
+- **FR-020**: Usage is the number of booked sessions in the period, held or upcoming; a cancelled or rescheduled session MUST be released from the period it leaves and a no-show MUST still count. The number of held sessions MUST also be reported. Usage MUST come from recorded sessions supplied by workshop operations; until that feature exists, usage can be entered by a delivery lead and is labelled as manual.
 
 **Capabilities, paid engagement types and scoring**
 
@@ -192,14 +193,18 @@ A service lead keeps the three paid engagement types and the offer scoring table
 ### Session 2026-11-19
 
 - Q: Should the seed use content supplied now, or only the facts already in the repository? → A: Seed only what the repository records. Offers 1, 5, 6, 7 and 8 and the three paid engagement types are seeded from it. The remaining capabilities, Offers 2, 3, 4, 9 and 10, and the offer scores are "to be provided" placeholders until the business source is supplied (open question 47).
+- Q: Which sessions count towards an offer's capacity? → A: Booked sessions, held or upcoming. A cancelled or rescheduled session is released from the period it left; a no-show still counts. The count of held sessions is also reported.
+- Q: Who may acknowledge an offer's limitation, and how long does it last? → A: A service lead, who is named in the record. The acknowledgement stays valid until the limitation's wording changes, then must be repeated.
+- Q: How are capacity periods bounded? → A: Calendar weeks (Monday to Sunday) and calendar months, in one configured business time zone.
+- Q: Who counts as the two approvers for a restricted claim? → A: Two different designated claim approvers, neither of whom is the person who drafted the claim.
+- Q: Who owns the restricted phrase list and who can mark a flag as a false positive? → A: The marketing approver owns the list and a second designated approver reviews each change; only a designated claim approver may mark a flag as a false positive, with a reason, for that exact text only.
 
 ## Assumptions
 
 - The full content of the 19 capabilities, the ten offers and the scoring table belongs to the project's business source (sections 6 and 12), which is not in the repository. The first version seeds only what the repository records; every other capability, offer attribute and score is a visible placeholder marked "to be provided", and is never invented. A placeholder offer or capability cannot be approved or made available until a person fills it in.
 - Facts already in the repository are used as given: Offers 1, 5 and 6 and their routing (guardrails), Offer 7's limitation, Offer 8 as the Resilience Review offer (inactive until its scope is defined), and no pricing.
-- Initial capacity defaults, kept as hypotheses and editable: Offer 6 three sessions per month and Offer 1 three sessions per week during validation (open questions 6 and 7).
+- Capacity uses a single business time zone, which is configuration. Initial capacity defaults, kept as hypotheses and editable: Offer 6 three sessions per month and Offer 1 three sessions per week during validation (open questions 6 and 7).
 - Designated claim approvers are the service lead and a marketing approver, with two people required for restricted claims (open question 21).
-- The restricted phrase list is owned by the marketing approver; a change to it is reviewed by a second designated approver.
 - All numeric values, effort estimates and scores are hypotheses until the business confirms them.
 - Capacity usage will come from feature 007 (workshop operations); until then usage is entered by hand.
 - Feature 004 uses a provisional capability list; once this catalogue is available, research and hypotheses read capabilities from here.
