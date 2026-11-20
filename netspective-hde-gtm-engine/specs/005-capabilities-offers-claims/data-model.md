@@ -51,7 +51,7 @@ Capacity period status (computed): `room` (used below limit), `exhausted` (used 
 
 ## Seed (`packages/db/src/seed/feature005.ts`, idempotent, all labelled hypothesis)
 
-- Restricted phrase list version 1 (default rules, owner `campaign_approver` role, reviewed by seed).
+- Restricted phrase list version 1 (default rules, owner `campaign_approver` role, authored by `seed-author`, reviewed by `seed`).
 - 10 offer heads and version 1 snapshots: Offers 1, 5, 6 with the facts in the guardrails (name, format, routing, SQL rule reference, paid-type link), other attributes null, status `approved` by actor `seed` with a note; Offers 2, 3, 4, 7, 8, 9, 10 key and null attributes, status `draft`; Offer 7 with its limitation; Offer 8 linked to Resilience Review.
 - 3 paid engagement types and their in-source deliverables.
 - 19 capability slots, all attributes null.
@@ -65,7 +65,7 @@ Capacity period status (computed): `room` (used below limit), `exhausted` (used 
 | `offer.updated` | `offer_id`, `version_no`, `change` (version, status, limitation, score), `status` |
 | `offer.capacity.changed` | `offer_id`, `period_kind`, `limit_sessions` |
 | `claim.created` | `claim_id`, `effective_class` |
-| `claim.reviewed` | `claim_id`, `decision`, `claim_status` |
+| `claim.reviewed` | `claim_id`, `decision` (approve, reject only; withdrawal is audit-only), `claim_status` |
 | `claim.needs_review` | `claim_id` (emitted by the optional job) |
 
 No claim, offer, note or example text appears in any event.

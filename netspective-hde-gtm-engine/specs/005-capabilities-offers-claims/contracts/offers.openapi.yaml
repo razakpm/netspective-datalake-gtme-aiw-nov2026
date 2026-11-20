@@ -273,11 +273,11 @@ components:
         snapshotHash: { type: string }
     Limitation:
       type: object
-      required: [id, key, wording, active, acknowledged]
-      properties: { id: { type: string }, key: { type: string }, wording: { type: string }, active: { type: boolean }, acknowledged: { type: boolean }, acknowledgedBy: { type: [string, 'null'] }, acknowledgedAt: { type: [string, 'null'], format: date-time } }
+      required: [id, key, wording, active, acknowledged, acknowledgementStale]
+      properties: { acknowledgementStale: { type: boolean, description: 'True when the wording changed after the last acknowledgement.' }, id: { type: string }, key: { type: string }, wording: { type: string }, active: { type: boolean }, acknowledged: { type: boolean }, acknowledgedBy: { type: [string, 'null'] }, acknowledgedAt: { type: [string, 'null'], format: date-time } }
     OfferSummary:
       type: object
-      required: [id, number, key, lockNo, status, baselineIncomplete, capacity]
+      required: [id, number, key, lockNo, status, baselineIncomplete, acknowledgementStale, claimCover, capacity]
       properties:
         id: { type: string }
         number: { type: integer }
@@ -287,7 +287,17 @@ components:
         status: { $ref: '#/components/schemas/OfferStatus' }
         inForceVersionNo: { type: [integer, 'null'] }
         baselineIncomplete: { type: boolean }
+        acknowledgementStale: { type: boolean, description: 'True when any active limitation has a stale acknowledgement.' }
+        claimCover: { $ref: '#/components/schemas/ClaimCover' }
         capacity: { $ref: '#/components/schemas/CapacityStatus' }
+    ClaimCover:
+      type: object
+      description: Read-time check of the in-force version's public text against approved claims. Carries identifiers only, never text.
+      required: [status, claimIds, ruleIds]
+      properties:
+        status: { type: string, enum: [ok, lapsed] }
+        claimIds: { type: array, items: { type: string } }
+        ruleIds: { type: array, items: { type: string } }
     Offer:
       allOf:
         - { $ref: '#/components/schemas/OfferSummary' }
