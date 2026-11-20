@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CLAIM_CLASSES, CLAIM_STATUSES } from "../claims/types.js";
 import { OFFER_STATUSES } from "../offers/types.js";
 
 // Feature 005 event payloads (data-model.md "Events"). Identifiers and codes only: no claim, offer, note,
@@ -7,19 +8,6 @@ import { OFFER_STATUSES } from "../offers/types.js";
 // audit-only and emit no event (spec FR-029).
 
 const id = z.string().min(1);
-
-export const CLAIM_CLASSES = [
-  "general",
-  "quantified_outcome",
-  "production_status",
-  "sla_rto",
-  "certification",
-  "tenant_isolation",
-  "legal_regulatory_compliance",
-  "ai_ready",
-  "customer_identity",
-] as const;
-export const CLAIM_STATUSES = ["draft", "in_review", "approved", "rejected", "withdrawn"] as const;
 
 export const CapabilityUpdatedPayload = z
   .object({

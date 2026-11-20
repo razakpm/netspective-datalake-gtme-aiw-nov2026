@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { blankSnapshot, REQUIRED_OFFER_FIELDS, type OfferSnapshot } from "@gtm/domain";
+import {
+  blankSnapshot,
+  DEFAULT_PHRASE_RULES,
+  REQUIRED_OFFER_FIELDS,
+  RestrictedPhraseListSchema,
+  type OfferSnapshot,
+} from "@gtm/domain";
 import { migrate, seedReference, SqliteDatabase } from "../src/index.js";
 
 // Feature 005 seed (task T010): only facts the repository records; everything else is null ("to be
@@ -28,6 +34,29 @@ const latestStatus = (db: SqliteDatabase, offerId: string) =>
     "SELECT status, changed_by, note FROM offer_version_status WHERE offer_id = ? AND version_no = 1 ORDER BY changed_at DESC, rowid DESC LIMIT 1",
     offerId,
   );
+
+describe("restricted phrase list", () => {
+  it("seeds version 1 from the default rules, owned by the marketing approver role and reviewed by someone other than the author", () => {
+    const db = seeded();
+    const rows = all<{
+      version: number;
+      rules_json: string;
+      owner: string;
+      reviewed_by: string;
+      created_by: string;
+    }>(db, "SELECT * FROM restricted_phrase_list");
+    expect(rows).toHaveLength(1);
+    const v1 = rows[0]!;
+    expect(v1).toMatchObject({
+      version: 1,
+      owner: "campaign_approver",
+      created_by: "seed-author",
+      reviewed_by: "seed",
+    });
+    const stored = RestrictedPhraseListSchema.parse({ rules: JSON.parse(v1.rules_json) });
+    expect(stored.rules).toEqual([...DEFAULT_PHRASE_RULES]);
+  });
+});
 
 describe("offers", () => {
   it("seeds ten offer heads with a version 1 snapshot each", () => {
@@ -255,6 +284,7 @@ describe("idempotence", () => {
       "paid_engagement_type",
       "paid_engagement_deliverable",
       "service_capability",
+      "restricted_phrase_list",
     ];
     const snapshot = () =>
       JSON.stringify(tables.map((t) => db.raw.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all()));

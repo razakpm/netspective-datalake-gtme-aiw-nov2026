@@ -1,5 +1,14 @@
 import { migrate, seedReference, SqliteDatabase } from "@gtm/db";
-import { FOUNDATION_ROLE_PERMISSIONS, type ActorType, type RoleKey } from "@gtm/domain";
+import {
+  DEFAULT_PHRASE_RULES,
+  effectiveClass,
+  FOUNDATION_ROLE_PERMISSIONS,
+  lintText,
+  type ActorType,
+  type ClaimClass,
+  type RoleKey,
+} from "@gtm/domain";
+import { ClaimService } from "../src/modules/claims/index.js";
 import type { CatalogueActor } from "../src/platform/catalogue.js";
 
 // A catalogue stack on an in-memory database with all migrations and the feature 005 seed, a fake clock
@@ -55,6 +64,47 @@ export function buildCatalogueHarness(options: CatalogueHarnessOptions = {}) {
       ...over,
     };
   };
+  const claims = new ClaimService(db, { evidenceDefaultExpiryMonths: 12 });
+  let seq = 0;
+  /** An approved claim with valid evidence, inserted directly (the review flow has its own tests). */
+  const insertApprovedClaim = (
+    text: string,
+    over: {
+      effectiveClass?: ClaimClass;
+      expiresAt?: string;
+      withdrawn?: boolean;
+      evidence?: boolean;
+    } = {},
+  ): string => {
+    const id = `claim-approved-${++seq}`;
+    const cls =
+      over.effectiveClass ??
+      effectiveClass(
+        null,
+        lintText(text, { rules: DEFAULT_PHRASE_RULES }).map((m) => m.class),
+      );
+    const at = now().toISOString();
+    db.raw
+      .prepare(
+        "INSERT INTO claim (id, text, declared_class, effective_class, status, drafted_by, drafted_at, version_no) VALUES (?,?,NULL,?,'approved','someone-else',?,1)",
+      )
+      .run(id, text, cls, at);
+    if (over.evidence !== false) {
+      db.raw
+        .prepare(
+          "INSERT INTO claim_evidence (id, claim_id, kind, reference, owner, added_by, added_at, expires_at, withdrawn_at, withdrawn_by) VALUES (?,?,'document','doc-1','owner','someone-else',?,?,?,?)",
+        )
+        .run(
+          `ev-${id}`,
+          id,
+          at,
+          over.expiresAt ?? "2027-11-19T10:00:00.000Z",
+          over.withdrawn ? at : null,
+          over.withdrawn ? "someone-else" : null,
+        );
+    }
+    return id;
+  };
   const count = (table: string, where = "1=1") =>
     (db.raw.prepare(`SELECT count(*) c FROM ${table} WHERE ${where}`).get() as { c: number }).c;
   const outbox = (type: string): Record<string, unknown>[] =>
@@ -89,6 +139,8 @@ export function buildCatalogueHarness(options: CatalogueHarnessOptions = {}) {
     advance,
     advanceDays,
     actor,
+    claims,
+    insertApprovedClaim,
     count,
     outbox,
     audit,

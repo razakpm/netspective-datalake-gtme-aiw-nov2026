@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
-import { blankSnapshot, type OfferSnapshot } from "@gtm/domain";
+import { blankSnapshot, DEFAULT_PHRASE_RULES, type OfferSnapshot } from "@gtm/domain";
 import type { Tx } from "../sqlite/database.js";
 
 // Feature 005 reference data (task T011): offers, paid engagement types, capability slots and capacity
 // limits. Only facts recorded in the repository are written (docs/context/01-guardrails.md); every other
 // attribute is null, which means "to be provided" (open question #47). Idempotent. The capacity limits
 // and the SQL rule identifiers are hypotheses (open question #48). The restricted phrase list is seeded
-// separately with the default rules.
+// with the default rules, as version 1.
 
 export const SEED_AT = "2026-11-19T00:00:00.000Z";
 const at = (offsetMs: number) => new Date(Date.parse(SEED_AT) + offsetMs).toISOString();
@@ -148,6 +148,20 @@ export const snapshotHash = (snapshot: OfferSnapshot): string =>
   createHash("sha256").update(canonical(snapshot)).digest("hex");
 
 export function seedFeature005(tx: Tx): void {
+  // Version 1 of the restricted phrase list: the default rules, authored by `seed-author` and reviewed by
+  // `seed`, owned by the marketing approver role. A change is a new version, never an update.
+  tx.prepare(
+    "INSERT OR IGNORE INTO restricted_phrase_list (version, rules_json, owner, reviewed_by, reviewed_at, created_by, created_at, note) VALUES (1,?,?,?,?,?,?,?)",
+  ).run(
+    JSON.stringify(DEFAULT_PHRASE_RULES),
+    "campaign_approver",
+    "seed",
+    SEED_AT,
+    "seed-author",
+    SEED_AT,
+    "Default restricted phrase list (hypothesis, open question #48)",
+  );
+
   const paidType = tx.prepare(
     "INSERT OR IGNORE INTO paid_engagement_type (key, name, weeks_min, weeks_max, scope_json, scope_confirmed, status, lock_no) VALUES (?,?,?,?,?,?,?,1)",
   );

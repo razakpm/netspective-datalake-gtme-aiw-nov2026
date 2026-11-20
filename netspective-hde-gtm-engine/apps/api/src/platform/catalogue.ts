@@ -75,7 +75,13 @@ export function requirePermission(actor: CatalogueActor, permission: Permission)
     actor.actorType !== "human" ||
     !hasPermission([{ key: "actor", permissions: actor.permissions }], permission)
   ) {
-    throw new CatalogueRefusal(403, "Not permitted", ["forbidden", permission]);
+    throw new CatalogueRefusal(
+      403,
+      "Not permitted",
+      ["forbidden", permission],
+      [],
+      "You do not have permission for this action.",
+    );
   }
 }
 
