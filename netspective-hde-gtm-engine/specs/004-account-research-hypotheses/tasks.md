@@ -11,6 +11,7 @@ description: "Task list for Feature 004 — Account Research and Hypotheses"
 - Known limit: the web fetch adapter cannot fully prevent DNS rebinding (off by default).
 - Feature 001 coverage: T096, T098, T100, T103 and T107 are covered in part by 004 (research and LLM interfaces, fakes, wrapper, gateway and its tests); T104–T106 and the other provider interfaces stay open.
 - README at the repository root is only a title, so there was no feature list to update.
+- Feature 005 note: research still uses its provisional capability list; it switches to the capability catalogue once names exist there (the 19 slots are seeded with every attribute to be provided).
 - Feature 004 UI note: the workspace route `/accounts/[id]/workspace` has no nav entry; it is reached from account links.
 
 **Input**: Design documents from `/specs/004-account-research-hypotheses/`

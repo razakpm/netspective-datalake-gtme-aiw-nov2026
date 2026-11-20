@@ -24,7 +24,8 @@ The project is built feature by feature with [GitHub Spec Kit](https://github.co
 | 002 | [Accounts, contacts and ICP](netspective-hde-gtm-engine/specs/002-accounts-contacts-icp)                 | Merged; some tasks open              |
 | 003 | [Signals and evidence](netspective-hde-gtm-engine/specs/003-signals-evidence)                            | Merged                               |
 | 004 | [Account research and hypotheses](netspective-hde-gtm-engine/specs/004-account-research-hypotheses)      | Implemented, in review (PR #10)      |
-| 005–013 | Capabilities and offers, routing, workshops, qualification, content, engagement, intent, analytics, dashboard | Planned ([feature map](netspective-hde-gtm-engine/docs/context/03-feature-map.md)) |
+| 005 | [Capabilities, offers and claims](netspective-hde-gtm-engine/specs/005-capabilities-offers-claims) | Implemented, in review (PR #12) |
+| 006–013 | Routing, workshops, qualification, content, engagement, intent, analytics, dashboard | Planned ([feature map](netspective-hde-gtm-engine/docs/context/03-feature-map.md)) |
 
 ### What feature 004 provides
 
