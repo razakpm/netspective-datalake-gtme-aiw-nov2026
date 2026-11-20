@@ -21,3 +21,18 @@ export {
   RescheduleInputSchema,
   type BookingView,
 } from "./bookings.js";
+export {
+  PaidTypeService,
+  PaidTypeChangeSchema,
+  DeliverableInputSchema,
+  DeliverableDecisionSchema,
+  type DeliverableView,
+  type PaidTypeView,
+} from "./paid-types.js";
+export {
+  ScoreService,
+  CriterionInputSchema,
+  ScoreInputSchema,
+  type ScoreSettings,
+  type ScoreView,
+} from "./scores.js";

@@ -8,6 +8,7 @@ import {
   type ClaimClass,
   type RoleKey,
 } from "@gtm/domain";
+import { CapabilityService } from "../src/modules/capabilities/index.js";
 import { ClaimService } from "../src/modules/claims/index.js";
 import {
   BookingService,
@@ -15,6 +16,8 @@ import {
   OfferLimitations,
   OfferService,
   OfferStatusService,
+  PaidTypeService,
+  ScoreService,
 } from "../src/modules/offers/index.js";
 import type { CatalogueActor } from "../src/platform/catalogue.js";
 
@@ -35,6 +38,18 @@ export const COMPLETE_PATCH = {
   intakeFields: ["Organisation", "Number of senders"],
   successHypotheses: ["Senders stall at onboarding"],
   sqlRuleRef: "sql-offer-test",
+} as const;
+
+/** Every capability attribute, so a capability can pass the placeholder check. */
+export const FULL_CAPABILITY = {
+  name: "CCDA-to-FHIR mapping",
+  description: "Maps clinical documents to FHIR resources with a decision register.",
+  inputTypes: ["CCDA documents"],
+  outputTypes: ["FHIR bundles", "Mapping decision register"],
+  buyerProblems: ["Unclear mapping decisions"],
+  limitations: ["Needs sample documents from the sender"],
+  requiredExpertise: "Interoperability engineer",
+  potentialPaidTypeKey: "input_audit",
 } as const;
 
 export interface Who {
@@ -92,6 +107,24 @@ export function buildCatalogueHarness(options: CatalogueHarnessOptions = {}) {
   const offerStatus = new OfferStatusService(db);
   const limitations = new OfferLimitations(db);
   const capacity = new CapacityService(db, { businessTimeZone: options.businessTimeZone ?? "UTC" });
+  const capabilities = new CapabilityService(db, { now });
+  const paidTypes = new PaidTypeService(db);
+  const scores = new ScoreService(db, { scoreMin: 1, scoreMax: 5 });
+  /** Fill a capability, record evidence and link an approved claim, so it shows in the public view. */
+  const makeCapabilityPublic = (capabilityId: string) => {
+    const lead = actor("lead");
+    const current = capabilities.get(lead, capabilityId);
+    capabilities.update(lead, capabilityId, {
+      lockNo: current.lockNo,
+      attributes: FULL_CAPABILITY,
+    });
+    capabilities.addEvidence(lead, capabilityId, {
+      basisKind: "delivery_record",
+      reference: `rec-${capabilityId}`,
+    });
+    const claimId = insertApprovedClaim("We map CCDA documents to FHIR.");
+    return capabilities.setPublicClaimStatus(lead, capabilityId, { status: "approved", claimId });
+  };
   const bookings = new BookingService(db, { businessTimeZone: options.businessTimeZone ?? "UTC" });
   /** Give an offer a complete new version and take it through review to approved (service lead). */
   const approveOffer = (offerId: string, patch: Record<string, unknown> = {}) => {
@@ -189,6 +222,10 @@ export function buildCatalogueHarness(options: CatalogueHarnessOptions = {}) {
     limitations,
     capacity,
     bookings,
+    capabilities,
+    paidTypes,
+    scores,
+    makeCapabilityPublic,
     approveOffer,
     insertApprovedClaim,
     count,
