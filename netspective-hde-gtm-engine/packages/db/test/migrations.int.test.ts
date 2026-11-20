@@ -42,6 +42,9 @@ describe("migrations", () => {
       "0014_ai_gateway.sql",
       "0015_research.sql",
       "0016_hypotheses.sql",
+      "0017_claims.sql",
+      "0018_offers.sql",
+      "0019_capabilities.sql",
     ]);
     expect(migrate(db)).toEqual([]);
     const tables = (
@@ -131,6 +134,10 @@ describe("reference seed", () => {
         "research.run",
         "hypotheses.read",
         "hypotheses.edit",
+        "capabilities.read",
+        "offers.read",
+        "claims.read",
+        "claims.draft",
       ].sort(),
     );
     expect(byRole["read_only_executive"]).toEqual(
@@ -144,10 +151,15 @@ describe("reference seed", () => {
         "signals.read",
         "research.read",
         "hypotheses.read",
+        "capabilities.read",
+        "offers.read",
+        "claims.read",
       ].sort(),
     );
-    expect(byRole["administrator"]).toHaveLength(32);
-    expect(byRole["campaign_approver"]).toBeUndefined();
+    expect(byRole["administrator"]).toHaveLength(47);
+    expect(byRole["campaign_approver"]).toEqual(
+      ["claims.approve", "claims.draft", "claims.phrases.manage", "claims.read"].sort(),
+    );
     expect(db.raw.prepare("SELECT count(*) c FROM role").get()).toEqual({ c: 7 });
   });
 

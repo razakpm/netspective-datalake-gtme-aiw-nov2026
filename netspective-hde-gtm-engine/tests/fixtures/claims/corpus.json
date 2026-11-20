@@ -1,0 +1,467 @@
+[
+  {
+    "id": "p-ai-ready-hyphen",
+    "text": "Our platform is AI-ready for every health system.",
+    "expected": [
+      {
+        "class": "ai_ready",
+        "rule": "ai-ready",
+        "text": "AI-ready",
+        "start": 16,
+        "end": 24
+      }
+    ]
+  },
+  {
+    "id": "p-ai-ready-space-lower",
+    "text": "We help teams become ai ready quickly.",
+    "expected": [
+      {
+        "class": "ai_ready",
+        "rule": "ai-ready",
+        "text": "ai ready",
+        "start": 21,
+        "end": 29
+      }
+    ]
+  },
+  {
+    "id": "p-ai-ready-nonbreaking-hyphen",
+    "text": "The AI‑ready pipeline ships next quarter.",
+    "expected": [
+      {
+        "class": "ai_ready",
+        "rule": "ai-ready",
+        "text": "AI‑ready",
+        "start": 4,
+        "end": 12
+      }
+    ]
+  },
+  {
+    "id": "p-sla-and-uptime",
+    "text": "We commit to 99.9% uptime under an SLA.",
+    "expected": [
+      {
+        "class": "quantified_outcome",
+        "rule": "outcome-percentage",
+        "text": "99.9%",
+        "start": 13,
+        "end": 18
+      },
+      {
+        "class": "sla_rto",
+        "rule": "sla",
+        "text": "SLA",
+        "start": 35,
+        "end": 38
+      }
+    ]
+  },
+  {
+    "id": "p-rto-rpo",
+    "text": "Recovery is within the agreed RTO and RPO.",
+    "expected": [
+      {
+        "class": "sla_rto",
+        "rule": "rto",
+        "text": "RTO",
+        "start": 30,
+        "end": 33
+      },
+      {
+        "class": "sla_rto",
+        "rule": "rpo",
+        "text": "RPO",
+        "start": 38,
+        "end": 41
+      }
+    ]
+  },
+  {
+    "id": "p-sla-dotted",
+    "text": "Governed by an S.L.A. with penalties.",
+    "expected": [
+      {
+        "class": "sla_rto",
+        "rule": "sla-dotted",
+        "text": "S.L.A.",
+        "start": 15,
+        "end": 21
+      }
+    ]
+  },
+  {
+    "id": "p-soc2-spaced",
+    "text": "We are SOC 2 compliant.",
+    "expected": [
+      {
+        "class": "certification",
+        "rule": "soc2",
+        "text": "SOC 2",
+        "start": 7,
+        "end": 12
+      }
+    ]
+  },
+  {
+    "id": "p-soc2-joined",
+    "text": "Our controls hold SOC2 attestation.",
+    "expected": [
+      {
+        "class": "certification",
+        "rule": "soc2",
+        "text": "SOC2",
+        "start": 18,
+        "end": 22
+      }
+    ]
+  },
+  {
+    "id": "p-guarantee",
+    "text": "We guarantee delivery within six weeks.",
+    "expected": [
+      {
+        "class": "quantified_outcome",
+        "rule": "guarantee",
+        "text": "guarantee",
+        "start": 3,
+        "end": 12
+      }
+    ]
+  },
+  {
+    "id": "p-guaranteed",
+    "text": "Guaranteed results for every sender.",
+    "expected": [
+      {
+        "class": "quantified_outcome",
+        "rule": "guaranteed",
+        "text": "Guaranteed",
+        "start": 0,
+        "end": 10
+      }
+    ]
+  },
+  {
+    "id": "p-guarantees",
+    "text": "The plan guarantees a faster review.",
+    "expected": [
+      {
+        "class": "quantified_outcome",
+        "rule": "guarantees",
+        "text": "guarantees",
+        "start": 9,
+        "end": 19
+      }
+    ]
+  },
+  {
+    "id": "p-hipaa-space",
+    "text": "The solution is HIPAA compliant.",
+    "expected": [
+      {
+        "class": "legal_regulatory_compliance",
+        "rule": "hipaa-compliant",
+        "text": "HIPAA compliant",
+        "start": 16,
+        "end": 31
+      }
+    ]
+  },
+  {
+    "id": "p-hipaa-hyphen",
+    "text": "HIPAA-compliant hosting is included.",
+    "expected": [
+      {
+        "class": "legal_regulatory_compliance",
+        "rule": "hipaa-compliant",
+        "text": "HIPAA-compliant",
+        "start": 0,
+        "end": 15
+      }
+    ]
+  },
+  {
+    "id": "p-production-hyphen",
+    "text": "A production-ready connector for senders.",
+    "expected": [
+      {
+        "class": "production_status",
+        "rule": "production-ready",
+        "text": "production-ready",
+        "start": 2,
+        "end": 18
+      }
+    ]
+  },
+  {
+    "id": "p-production-space",
+    "text": "Production ready by default.",
+    "expected": [
+      {
+        "class": "production_status",
+        "rule": "production-ready",
+        "text": "Production ready",
+        "start": 0,
+        "end": 16
+      }
+    ]
+  },
+  {
+    "id": "p-multi-tenant",
+    "text": "It offers multi-tenant isolation between customers.",
+    "expected": [
+      {
+        "class": "tenant_isolation",
+        "rule": "tenant-isolation",
+        "text": "multi-tenant isolation",
+        "start": 10,
+        "end": 32
+      }
+    ]
+  },
+  {
+    "id": "p-tenant-isolation",
+    "text": "Strong tenant isolation is built in.",
+    "expected": [
+      {
+        "class": "tenant_isolation",
+        "rule": "tenant-isolation",
+        "text": "tenant isolation",
+        "start": 7,
+        "end": 23
+      }
+    ]
+  },
+  {
+    "id": "p-certified",
+    "text": "We are certified and audited.",
+    "expected": [
+      {
+        "class": "certification",
+        "rule": "certified",
+        "text": "certified",
+        "start": 7,
+        "end": 16
+      }
+    ]
+  },
+  {
+    "id": "p-percent-reduced",
+    "text": "Reduced sender rejections by 40% in a quarter.",
+    "expected": [
+      {
+        "class": "quantified_outcome",
+        "rule": "outcome-percentage",
+        "text": "40%",
+        "start": 29,
+        "end": 32
+      }
+    ]
+  },
+  {
+    "id": "p-percent-saving",
+    "text": "Cut onboarding time by half, saving 25% of effort.",
+    "expected": [
+      {
+        "class": "quantified_outcome",
+        "rule": "outcome-percentage",
+        "text": "25%",
+        "start": 36,
+        "end": 39
+      }
+    ]
+  },
+  {
+    "id": "p-case-study",
+    "text": "Read our case study from a regional network.",
+    "expected": [
+      {
+        "class": "customer_identity",
+        "rule": "case-study",
+        "text": "case study",
+        "start": 9,
+        "end": 19
+      }
+    ]
+  },
+  {
+    "id": "p-customer-story",
+    "text": "Here is a customer story about onboarding.",
+    "expected": [
+      {
+        "class": "customer_identity",
+        "rule": "customer-story",
+        "text": "customer story",
+        "start": 10,
+        "end": 24
+      }
+    ]
+  },
+  {
+    "id": "p-success-story",
+    "text": "See the success story for details.",
+    "expected": [
+      {
+        "class": "customer_identity",
+        "rule": "success-story",
+        "text": "success story",
+        "start": 8,
+        "end": 21
+      }
+    ]
+  },
+  {
+    "id": "p-our-client",
+    "text": "Our client saw faster onboarding.",
+    "expected": [
+      {
+        "class": "customer_identity",
+        "rule": "our-client",
+        "text": "Our client",
+        "start": 0,
+        "end": 10
+      }
+    ]
+  },
+  {
+    "id": "p-named-customer",
+    "text": "A named customer example is attached.",
+    "expected": [
+      {
+        "class": "customer_identity",
+        "rule": "named-customer",
+        "text": "named customer",
+        "start": 2,
+        "end": 16
+      }
+    ]
+  },
+  {
+    "id": "p-several-in-order",
+    "text": "AI-ready, SOC 2 certified, HIPAA compliant, and guaranteed.",
+    "expected": [
+      {
+        "class": "ai_ready",
+        "rule": "ai-ready",
+        "text": "AI-ready",
+        "start": 0,
+        "end": 8
+      },
+      {
+        "class": "certification",
+        "rule": "soc2",
+        "text": "SOC 2",
+        "start": 10,
+        "end": 15
+      },
+      {
+        "class": "certification",
+        "rule": "certified",
+        "text": "certified",
+        "start": 16,
+        "end": 25
+      },
+      {
+        "class": "legal_regulatory_compliance",
+        "rule": "hipaa-compliant",
+        "text": "HIPAA compliant",
+        "start": 27,
+        "end": 42
+      },
+      {
+        "class": "quantified_outcome",
+        "rule": "guaranteed",
+        "text": "guaranteed",
+        "start": 48,
+        "end": 58
+      }
+    ]
+  },
+  {
+    "id": "n-slate",
+    "text": "The slate of options is on the table.",
+    "expected": []
+  },
+  {
+    "id": "n-translate",
+    "text": "Please translate the guide into plain language.",
+    "expected": []
+  },
+  {
+    "id": "n-page-percent",
+    "text": "Turn to page 50% of the way through the document and read the notes.",
+    "expected": []
+  },
+  {
+    "id": "n-contents-percent",
+    "text": "The table of contents lists 3% of sections as optional.",
+    "expected": []
+  },
+  {
+    "id": "n-readiness",
+    "text": "A readiness review for senders covers headers and formats.",
+    "expected": []
+  },
+  {
+    "id": "n-clean-sentence",
+    "text": "We help health information exchanges understand sender onboarding.",
+    "expected": []
+  },
+  {
+    "id": "n-capitalised-surname",
+    "text": "Sla is a surname in this synthetic example.",
+    "expected": []
+  },
+  {
+    "id": "n-studying-customer",
+    "text": "Studying a customer segment helps choose the first offer.",
+    "expected": []
+  },
+  {
+    "id": "n-reduce-no-percent",
+    "text": "We reduce risk by checking headers early.",
+    "expected": []
+  },
+  {
+    "id": "n-certifies",
+    "text": "Our process certifies nothing; it only reviews feeds.",
+    "expected": []
+  },
+  {
+    "id": "n-guarantor",
+    "text": "The guarantor field is not part of the feed.",
+    "expected": []
+  },
+  {
+    "id": "n-production-alone",
+    "text": "Production environments are described in the runbook.",
+    "expected": []
+  },
+  {
+    "id": "n-tenant-alone",
+    "text": "A tenant is a customer of the platform.",
+    "expected": []
+  },
+  {
+    "id": "n-numbers-no-percent",
+    "text": "Use 3 sessions per week for 6 weeks.",
+    "expected": []
+  },
+  {
+    "id": "n-percent-far-from-outcome",
+    "text": "Faster onboarding is our goal and the appendix lists many unrelated notes where 12% appears.",
+    "expected": []
+  },
+  {
+    "id": "n-empty",
+    "text": "",
+    "expected": []
+  },
+  {
+    "id": "n-clean-paragraph",
+    "text": "Netspective helps health information exchanges review sender feeds. The review looks at headers, formats and rejection reports. A short call decides whether a deeper engagement makes sense.",
+    "expected": []
+  }
+]

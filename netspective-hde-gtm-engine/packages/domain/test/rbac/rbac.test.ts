@@ -4,6 +4,7 @@ import {
   effectivePermissions,
   FOUNDATION_ROLE_PERMISSIONS,
   hasPermission,
+  isRestrictedPermission,
   PERMISSIONS,
   ROLE_KEYS,
 } from "../../src/index.js";
@@ -28,6 +29,9 @@ describe("effective permissions", () => {
         "accounts.read",
         "ai_invocations.read",
         "audit.read",
+        "capabilities.read",
+        "claims.draft",
+        "claims.read",
         "contacts.edit",
         "contacts.import",
         "contacts.read",
@@ -37,6 +41,7 @@ describe("effective permissions", () => {
         "icp.assess",
         "icp.read",
         "jobs.read",
+        "offers.read",
         "research.read",
         "research.run",
         "review.decide",
@@ -52,8 +57,25 @@ describe("effective permissions", () => {
     expect(effectivePermissions([role("administrator")])).toEqual([...PERMISSIONS].sort());
   });
 
-  it("grants nothing to campaign_approver in this feature", () => {
-    expect(effectivePermissions([role("campaign_approver")])).toEqual([]);
+  it("gives campaign_approver only the claim permissions (feature 005)", () => {
+    expect(effectivePermissions([role("campaign_approver")])).toEqual(
+      ["claims.approve", "claims.draft", "claims.phrases.manage", "claims.read"].sort(),
+    );
+  });
+
+  it("keeps claim and paid-type approval restricted and held only by the right roles (feature 005)", () => {
+    for (const key of ["claims.approve", "paid_types.approve"]) {
+      expect(isRestrictedPermission(key)).toBe(true);
+    }
+    const holders = (p: string) =>
+      ROLE_KEYS.filter((r) => (FOUNDATION_ROLE_PERMISSIONS[r] as readonly string[]).includes(p));
+    expect(holders("claims.approve")).toEqual([
+      "sales_service_lead",
+      "campaign_approver",
+      "administrator",
+    ]);
+    expect(holders("paid_types.approve")).toEqual(["sales_service_lead", "administrator"]);
+    expect(holders("capabilities.examples.read")).toEqual(["sales_service_lead", "administrator"]);
   });
 
   it("has no deny rules: adding a role never removes a permission", () => {

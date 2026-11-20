@@ -221,4 +221,70 @@ export const COLUMN_CLASSIFICATION: ClassificationRegistry = {
       "id, account_id, source_signal_id, statement_sha256, ai_model, ai_prompt_version_id, requested_by, cost_micros, created_at",
     ),
   ),
+  // Feature 005 (capabilities, offers, claims). Delivery example text is internal-only.
+  restricted_phrase_list: mergeFields(
+    cc("rules_json, note"),
+    som("version, owner, reviewed_by, reviewed_at, created_by, created_at"),
+  ),
+  claim: mergeFields(
+    cc("text"),
+    som("id, declared_class, effective_class, status, drafted_by, drafted_at, version_no"),
+  ),
+  claim_evidence: mergeFields(
+    cc("reference"),
+    som("id, claim_id, kind, owner, added_by, added_at, expires_at, withdrawn_at, withdrawn_by"),
+  ),
+  claim_review: mergeFields(cc("note"), som("id, claim_id, decision, reviewer_id, decided_at")),
+  lint_disposition: mergeFields(
+    cc("reason"),
+    som("id, sentence_hash, rule_id, reviewer_id, decided_at"),
+  ),
+  engagement_offer: som(
+    "id, number, key, latest_version_no, in_force_version_no, lock_no, created_at",
+  ),
+  offer_version: mergeFields(
+    cc("snapshot_json, reason"),
+    som("offer_id, version_no, snapshot_hash, created_by, created_at"),
+  ),
+  offer_version_status: mergeFields(
+    cc("note"),
+    som("id, offer_id, version_no, status, changed_by, changed_at"),
+  ),
+  offer_limitation: mergeFields(cc("wording"), som("id, offer_id, key, active")),
+  offer_limitation_ack: som("id, limitation_id, wording_hash, acknowledged_by, acknowledged_at"),
+  offer_capacity: mergeFields(
+    cc("reason"),
+    som("id, offer_id, period_kind, limit_sessions, effective_from, set_by, set_at"),
+  ),
+  offer_session_booking: som(
+    "id, offer_id, external_ref, state, session_date, period_start, source, recorded_by, recorded_at, updated_at",
+  ),
+  offer_score_criterion: som("key, label, position"),
+  offer_score: mergeFields(
+    cc("rationale"),
+    som("id, offer_id, criterion_key, score, status, set_by, set_at"),
+  ),
+  paid_engagement_type: mergeFields(
+    cc("scope_json"),
+    som("key, name, weeks_min, weeks_max, scope_confirmed, status, lock_no"),
+  ),
+  paid_engagement_deliverable: mergeFields(
+    cc("text"),
+    som("id, type_key, in_source, approval, approved_by, decided_at"),
+  ),
+  service_capability: mergeFields(
+    cc(
+      "name, description, input_types_json, output_types_json, buyer_problems_json, limitations_json, required_expertise",
+    ),
+    som("id, slot, potential_paid_type_key, public_claim_status, public_claim_id, lock_no"),
+  ),
+  capability_evidence: mergeFields(
+    cc("reference, note"),
+    som("id, capability_id, basis_kind, added_by, added_at"),
+  ),
+  capability_delivery_example: mergeFields(
+    fields("internal_case_study_restricted", "text"),
+    som("id, capability_id, added_by, added_at"),
+  ),
+  capability_offer_link: som("capability_id, offer_id"),
 };

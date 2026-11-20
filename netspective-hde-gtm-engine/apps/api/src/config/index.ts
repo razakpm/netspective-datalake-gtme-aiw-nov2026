@@ -55,6 +55,19 @@ const httpUrl = z.string().refine(
   { message: "must be an http:// or https:// URL" },
 );
 
+/** An IANA time zone name, checked with the platform's own tables. */
+const timeZone = z.string().refine(
+  (value) => {
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: value });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  { message: "must be a valid IANA time zone such as UTC or America/New_York" },
+);
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   APP_ROLE: z.enum(["http", "worker", "both"]).default("both"),
@@ -132,6 +145,11 @@ const EnvSchema = z.object({
   RESEARCH_FETCH_TIMEOUT_MS: int(10_000, 100),
   RESEARCH_MAX_PAGE_BYTES: int(1_048_576, 1024),
   HYPOTHESIS_STALE_DAYS: int(90),
+  // Feature 005 (hypotheses, open question #48).
+  BUSINESS_TIME_ZONE: timeZone.default("UTC"),
+  OFFER_SCORE_MIN: int(1, 0, 100),
+  OFFER_SCORE_MAX: int(5, 1, 100),
+  CLAIM_EVIDENCE_DEFAULT_EXPIRY_MONTHS: int(12, 1, 60),
 });
 
 type Env = z.infer<typeof EnvSchema>;
@@ -198,6 +216,13 @@ export interface AppConfig {
     maxPageBytes: number;
     hypothesisStaleDays: number;
   };
+  /** Feature 005 catalogue settings; every value is a hypothesis. */
+  catalogue: {
+    businessTimeZone: string;
+    scoreMin: number;
+    scoreMax: number;
+    evidenceDefaultExpiryMonths: number;
+  };
   /** Values the logger must scrub wherever they appear (see logging/logger.ts). */
   secretValues: string[];
 }
@@ -231,6 +256,10 @@ export function loadConfig(source: Record<string, string | undefined> = process.
   const env = parsed.data;
   const production = env.NODE_ENV === "production";
   const problems: ConfigProblem[] = [];
+
+  if (env.OFFER_SCORE_MAX <= env.OFFER_SCORE_MIN) {
+    problems.push({ variable: "OFFER_SCORE_MAX", message: "must be greater than OFFER_SCORE_MIN" });
+  }
 
   const useFakeOidc = env.USE_FAKE_OIDC === undefined ? !production : env.USE_FAKE_OIDC === "true";
   const useFakeProviders =
@@ -358,6 +387,12 @@ export function loadConfig(source: Record<string, string | undefined> = process.
       retentionMonths: env.SIGNAL_RETENTION_MONTHS,
       freshnessJobEnabled: env.SIGNAL_FRESHNESS_JOB_ENABLED === "true",
       retentionJobEnabled: env.SIGNAL_RETENTION_JOB_ENABLED === "true",
+    },
+    catalogue: {
+      businessTimeZone: env.BUSINESS_TIME_ZONE,
+      scoreMin: env.OFFER_SCORE_MIN,
+      scoreMax: env.OFFER_SCORE_MAX,
+      evidenceDefaultExpiryMonths: env.CLAIM_EVIDENCE_DEFAULT_EXPIRY_MONTHS,
     },
     secretValues: secretsFrom(env),
   };
