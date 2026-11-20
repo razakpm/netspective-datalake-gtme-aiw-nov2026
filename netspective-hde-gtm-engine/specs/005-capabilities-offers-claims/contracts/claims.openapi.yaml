@@ -201,7 +201,7 @@ components:
     LintMatch:
       type: object
       required: [class, ruleId, start, end, text]
-      properties: { class: { $ref: '#/components/schemas/ClaimClass' }, ruleId: { type: string }, start: { type: integer }, end: { type: integer }, text: { type: string } }
+      properties: { class: { $ref: '#/components/schemas/ClaimClass' }, ruleId: { type: string }, start: { type: integer }, end: { type: integer }, text: { type: string }, covered: { type: boolean, description: 'True when the whole sentence equals an approved claim or the flag was dismissed as a false positive.' } }
     LintResult:
       type: object
       required: [listVersion, matches]
@@ -219,13 +219,17 @@ components:
     Rule:
       type: object
       additionalProperties: false
+      description: "One rule of the phrase list. A phrase or acronym rule names its phrases; a pattern rule a regular expression; an outcome_percentage rule the outcome words (matched as word prefixes) and the window in words."
       required: [id, class, kind]
       properties:
-        id: { type: string }
-        class: { $ref: '#/components/schemas/ClaimClass' }
+        id: { type: string, pattern: '^[a-z0-9][a-z0-9-]{0,63}$' }
+        class: { type: string, enum: [quantified_outcome, production_status, sla_rto, certification, tenant_isolation, legal_regulatory_compliance, ai_ready, customer_identity] }
         kind: { type: string, enum: [phrase, acronym, pattern, outcome_percentage] }
-        value: { type: string, description: "The phrase, acronym or regular expression." }
-        outcomeTerms: { type: array, items: { type: string } }
+        phrases: { type: array, minItems: 1, items: { type: string, minLength: 1, maxLength: 100 } }
+        pattern: { type: string, maxLength: 300 }
+        flags: { type: string, maxLength: 8 }
+        terms: { type: array, minItems: 1, items: { type: string, minLength: 1, maxLength: 100 } }
+        window: { type: integer, minimum: 1, maximum: 20 }
     PhraseList:
       type: object
       required: [version, owner, reviewedBy, rules]

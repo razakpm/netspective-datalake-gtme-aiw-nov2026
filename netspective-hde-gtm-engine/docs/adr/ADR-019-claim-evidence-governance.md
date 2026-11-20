@@ -1,6 +1,6 @@
 # ADR-019: Claim and evidence governance
 
-Status: Accepted (feature 005 plan) — assumption (hypothesis) pending project-owner confirmation (open question #48)
+Status: Accepted and implemented in feature 005 — the assumptions in it (role mapping, null as the placeholder, computed capacity usage) are hypotheses pending project-owner confirmation (open question #48)
 
 ## Context
 

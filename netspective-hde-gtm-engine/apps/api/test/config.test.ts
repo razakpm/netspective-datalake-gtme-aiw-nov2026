@@ -216,3 +216,43 @@ describe("feature 004 configuration", () => {
     expect(c.secretValues).toContain("secret-key-value-123");
   });
 });
+
+describe("feature 005 configuration (hypotheses)", () => {
+  it("defaults to UTC, a 1 to 5 score scale and 12 months of evidence expiry", () => {
+    expect(loadConfig({ ...baseEnv }).catalogue).toEqual({
+      businessTimeZone: "UTC",
+      scoreMin: 1,
+      scoreMax: 5,
+      evidenceDefaultExpiryMonths: 12,
+    });
+  });
+  it("lets the environment override each value", () => {
+    expect(
+      loadConfig({
+        ...baseEnv,
+        BUSINESS_TIME_ZONE: "America/New_York",
+        OFFER_SCORE_MIN: "0",
+        OFFER_SCORE_MAX: "10",
+        CLAIM_EVIDENCE_DEFAULT_EXPIRY_MONTHS: "6",
+      }).catalogue,
+    ).toEqual({
+      businessTimeZone: "America/New_York",
+      scoreMin: 0,
+      scoreMax: 10,
+      evidenceDefaultExpiryMonths: 6,
+    });
+  });
+  it("rejects an unknown time zone, a score max not above the min and bad month counts", () => {
+    expect(() => loadConfig({ ...baseEnv, BUSINESS_TIME_ZONE: "Mars/Olympus" })).toThrow(
+      /BUSINESS_TIME_ZONE/,
+    );
+    expect(() => loadConfig({ ...baseEnv, OFFER_SCORE_MIN: "5", OFFER_SCORE_MAX: "5" })).toThrow(
+      /OFFER_SCORE_MAX/,
+    );
+    for (const bad of ["0", "61", "1.5", "x"]) {
+      expect(() => loadConfig({ ...baseEnv, CLAIM_EVIDENCE_DEFAULT_EXPIRY_MONTHS: bad })).toThrow(
+        /CLAIM_EVIDENCE_DEFAULT_EXPIRY_MONTHS/,
+      );
+    }
+  });
+});

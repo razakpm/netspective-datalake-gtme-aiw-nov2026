@@ -98,7 +98,9 @@ paths:
       responses:
         '200': { description: "Updated.", content: { application/json: { schema: { $ref: '#/components/schemas/Capability' } } } }
         '403': { $ref: '#/components/responses/Problem' }
+        '400': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
 components:
   securitySchemes:

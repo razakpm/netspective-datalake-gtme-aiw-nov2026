@@ -235,39 +235,66 @@ components:
     OfferStatus: { type: string, enum: [draft, internally_reviewed, approved, available, withdrawn, expired] }
     Attributes:
       type: object
-      description: "Every attribute may be null, meaning to be provided."
+      description: "The content of one offer version. Every attribute may be null, meaning to be provided. The effort estimate is always a hypothesis."
+      additionalProperties: false
+      required: [name, format, targetIcp, buyerOutput, buyerEffort, effortEstimate, conversionPath, landingPagePromise, cta, intakeFields, successHypotheses, sqlRuleRef, relatedCapabilityKeys, paidTypeKey]
+      properties:
+        name: { type: [string, 'null'], maxLength: 120 }
+        format: { type: [string, 'null'], maxLength: 300 }
+        targetIcp: { type: [string, 'null'], maxLength: 300 }
+        buyerOutput: { type: [string, 'null'], maxLength: 1000 }
+        buyerEffort: { type: [string, 'null'], maxLength: 500 }
+        effortEstimate:
+          type: object
+          additionalProperties: false
+          required: [text, status]
+          properties: { text: { type: [string, 'null'], maxLength: 500 }, status: { type: string, enum: [hypothesis] } }
+        conversionPath: { type: [string, 'null'], maxLength: 1000 }
+        landingPagePromise: { type: [string, 'null'], maxLength: 1000 }
+        cta: { type: [string, 'null'], maxLength: 200 }
+        intakeFields: { type: [array, 'null'], maxItems: 20, items: { type: string, maxLength: 300 } }
+        successHypotheses: { type: [array, 'null'], maxItems: 20, items: { type: string, maxLength: 300 } }
+        sqlRuleRef: { type: [string, 'null'], maxLength: 100 }
+        relatedCapabilityKeys: { type: array, items: { type: string } }
+        paidTypeKey: { type: [string, 'null'] }
+    Patch:
+      type: object
+      description: "The attributes to change; others keep their value. The effort estimate status cannot be set. A price, fee or rate key is rejected as unknown."
       additionalProperties: false
       properties:
-        name: { type: [string, 'null'], maxLength: 200 }
+        name: { type: [string, 'null'], maxLength: 120 }
         format: { type: [string, 'null'], maxLength: 300 }
-        targetIcp: { type: [string, 'null'], maxLength: 200 }
-        buyerOutput: { type: [string, 'null'], maxLength: 600 }
-        buyerEffort: { type: [string, 'null'], maxLength: 300 }
-        netspectiveEffortEstimate: { type: [string, 'null'], maxLength: 300, description: "Always shown as a hypothesis." }
-        conversionPath: { type: [string, 'null'], maxLength: 600 }
-        landingPagePromise: { type: [string, 'null'], maxLength: 600 }
-        callToAction: { type: [string, 'null'], maxLength: 200 }
-        intakeFields: { type: [array, 'null'], items: { type: string, maxLength: 120 } }
-        successHypotheses: { type: [array, 'null'], items: { type: string, maxLength: 300 } }
-        sqlRuleRef: { type: [string, 'null'], maxLength: 120 }
-        relatedCapabilityKeys: { type: [array, 'null'], items: { type: string } }
-        paidEngagementTypeKey: { type: [string, 'null'] }
+        targetIcp: { type: [string, 'null'], maxLength: 300 }
+        buyerOutput: { type: [string, 'null'], maxLength: 1000 }
+        buyerEffort: { type: [string, 'null'], maxLength: 500 }
+        effortEstimate: { type: object, additionalProperties: false, required: [text], properties: { text: { type: [string, 'null'], maxLength: 500 } } }
+        conversionPath: { type: [string, 'null'], maxLength: 1000 }
+        landingPagePromise: { type: [string, 'null'], maxLength: 1000 }
+        cta: { type: [string, 'null'], maxLength: 200 }
+        intakeFields: { type: [array, 'null'], maxItems: 20, items: { type: string, maxLength: 300 } }
+        successHypotheses: { type: [array, 'null'], maxItems: 20, items: { type: string, maxLength: 300 } }
+        sqlRuleRef: { type: [string, 'null'], maxLength: 100 }
+        relatedCapabilityKeys: { type: array, items: { type: string } }
+        paidTypeKey: { type: [string, 'null'] }
     OfferChange:
       type: object
       additionalProperties: false
-      required: [lockNo, reason, attributes]
-      properties: { lockNo: { type: integer }, reason: { type: string, minLength: 3, maxLength: 300 }, attributes: { $ref: '#/components/schemas/Attributes' } }
+      required: [lockNo, reason, patch]
+      properties: { lockNo: { type: integer, minimum: 1 }, reason: { type: string, minLength: 3, maxLength: 300 }, patch: { $ref: '#/components/schemas/Patch' } }
     OfferVersion:
       type: object
-      required: [offerId, versionNo, attributes, status, history, createdBy, createdAt, snapshotHash, superseded]
+      required: [offerId, versionNo, snapshot, status, history, createdBy, createdAt, snapshotHash, superseded, placeholderAttributes]
       properties:
         offerId: { type: string }
         versionNo: { type: integer }
-        attributes: { $ref: '#/components/schemas/Attributes' }
+        snapshot: { $ref: '#/components/schemas/Attributes' }
         placeholderAttributes: { type: array, items: { type: string } }
         status: { $ref: '#/components/schemas/OfferStatus' }
-        superseded: { type: boolean }
+        statusChangedBy: { type: string }
+        statusChangedAt: { type: string, format: date-time }
+        superseded: { type: boolean, description: "Derived: a later version has been approved." }
         history: { type: array, items: { type: object, required: [status, changedBy, changedAt], properties: { status: { $ref: '#/components/schemas/OfferStatus' }, changedBy: { type: string }, note: { type: [string, 'null'] }, changedAt: { type: string, format: date-time } } } }
+        reason: { type: string }
         createdBy: { type: string }
         createdAt: { type: string, format: date-time }
         snapshotHash: { type: string }
@@ -309,17 +336,20 @@ components:
             limitations: { type: array, items: { $ref: '#/components/schemas/Limitation' } }
     CapacityStatus:
       type: object
-      required: [state, periodKind, periodStart, periodEnd]
+      description: "Computed from limits and bookings, never stored. no_limit_set is not unlimited: the offer simply has no limit."
+      required: [offerId, state, periodKind, periodStart, periodEnd, limit, used, held, remaining, utilisation, offerStatus]
       properties:
+        offerId: { type: string }
         state: { type: string, enum: [room, exhausted, no_limit_set] }
-        periodKind: { type: [string, 'null'], enum: [week, month, null] }
+        periodKind: { type: string, enum: [week, month], description: "The limit's period; the calendar month is shown when no limit is set." }
         periodStart: { type: string, format: date }
-        periodEnd: { type: string, format: date }
-        limitSessions: { type: [integer, 'null'] }
-        used: { type: integer }
-        heldCount: { type: integer }
+        periodEnd: { type: string, format: date, description: "Exclusive." }
+        limit: { type: [integer, 'null'] }
+        used: { type: integer, description: "Booked, held and no-show sessions; a cancelled session is released." }
+        held: { type: integer, description: "Sessions already held, counted within used." }
         remaining: { type: [integer, 'null'] }
-        utilisation: { type: [number, 'null'], description: "Used divided by limit, 0 or more." }
+        utilisation: { type: [number, 'null'], description: "Used divided by limit, 0 or more; null with no limit or a limit of zero." }
+        offerStatus: { $ref: '#/components/schemas/OfferStatus' }
     Capacity:
       type: object
       required: [current, history]

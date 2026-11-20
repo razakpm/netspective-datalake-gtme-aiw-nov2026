@@ -10,12 +10,13 @@ export class HttpError extends Error {
   readonly title: string;
   readonly problemType: string;
   readonly ruleIds: string[] | undefined;
+  readonly codes: string[] | undefined;
 
   constructor(
     status: number,
     title: string,
     detail?: string,
-    options: { type?: string; ruleIds?: string[] } = {},
+    options: { type?: string; ruleIds?: string[]; codes?: string[] } = {},
   ) {
     super(detail ?? title);
     this.name = "HttpError";
@@ -23,6 +24,7 @@ export class HttpError extends Error {
     this.title = title;
     this.problemType = options.type ?? "about:blank";
     this.ruleIds = options.ruleIds;
+    this.codes = options.codes;
   }
 }
 
@@ -82,6 +84,7 @@ export function registerErrorHandling(app: FastifyInstance): void {
         status: error.status,
         ...(error.message !== error.title ? { detail: error.message } : {}),
         ...(error.ruleIds ? { ruleIds: error.ruleIds } : {}),
+        ...(error.codes ? { codes: error.codes } : {}),
       });
     }
 

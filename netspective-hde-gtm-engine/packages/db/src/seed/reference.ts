@@ -9,6 +9,7 @@ import type { Tx } from "../sqlite/database.js";
 import { seedFeature002 } from "./feature002.js";
 import { seedFeature003 } from "./feature003.js";
 import { seedFeature004 } from "./feature004.js";
+import { seedFeature005 } from "./feature005.js";
 
 // Reference data seed (task T040): the seven roles, seven permissions and the foundation matrix.
 // Idempotent, and run in every environment (it is not synthetic prospect data).
@@ -56,6 +57,22 @@ const PERMISSION_DESCRIPTIONS: Readonly<Record<Permission, string>> = {
   "hypotheses.read": "View account hypotheses",
   "hypotheses.edit": "Create, accept, edit and link evidence to hypotheses",
   "hypotheses.review": "Change the status of hypotheses (reviewers only)",
+  "capabilities.read": "View service capabilities (without internal delivery examples)",
+  "capabilities.edit": "Edit service capabilities, evidence and links",
+  "capabilities.examples.read": "View internal delivery examples of capabilities",
+  "offers.read": "View engagement offers, versions, capacity and scores",
+  "offers.edit": "Create offer versions, edit scores and criteria",
+  "offers.status.change": "Move an offer version through its statuses",
+  "offers.limitations.acknowledge": "Acknowledge a recorded offer limitation",
+  "offers.capacity.edit": "Set capacity limits per offer and period",
+  "offers.bookings.edit": "Record, reschedule and cancel session bookings",
+  "claims.read": "View claims, evidence, reviews and the restricted phrase list",
+  "claims.draft": "Draft claims and add evidence",
+  "claims.approve": "Approve or reject claims and mark false positives (designated approvers only)",
+  "claims.phrases.manage": "Propose new versions of the restricted phrase list",
+  "paid_types.edit": "Edit paid engagement types and propose deliverables",
+  "paid_types.approve":
+    "Approve deliverables not in the source material (designated approvers only)",
 };
 
 export function seedReference(tx: Tx): void {
@@ -80,4 +97,5 @@ export function seedReference(tx: Tx): void {
   seedFeature002(tx);
   seedFeature003(tx);
   seedFeature004(tx);
+  seedFeature005(tx);
 }

@@ -21,6 +21,17 @@ describe("permission-gated navigation", () => {
     expect(screen.queryByRole("link", { name: "Users" })).toBeNull();
   });
 
+  it("shows Offers, Capabilities and Claims only with their read permissions", () => {
+    expect(visibleNavItems(["offers.read"]).map((i) => i.label)).toEqual(["Offers"]);
+    expect(visibleNavItems(["capabilities.read", "claims.read"]).map((i) => i.label)).toEqual([
+      "Capabilities",
+      "Claims",
+    ]);
+    render(<Nav permissions={["offers.read"]} />);
+    expect(screen.getByRole("link", { name: "Offers" }).getAttribute("href")).toBe("/offers");
+    expect(screen.queryByRole("link", { name: "Claims" })).toBeNull();
+  });
+
   it("shows user administration only with users.manage", () => {
     render(<Nav permissions={["users.manage"]} />);
     expect(screen.getByRole("link", { name: "Users" }).getAttribute("href")).toBe("/admin/users");

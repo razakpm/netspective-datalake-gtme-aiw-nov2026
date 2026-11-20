@@ -9,6 +9,8 @@ export const ProblemSchema = z.object({
   detail: z.string().optional(),
   correlationId: z.string(),
   ruleIds: z.array(z.string()).optional(),
+  /** Stable refusal codes (for example stale_version) a screen can turn into a plain message. */
+  codes: z.array(z.string()).optional(),
 });
 
 export type Problem = z.infer<typeof ProblemSchema>;

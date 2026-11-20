@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { DEFAULT_PHRASE_RULES, FOUNDATION_ROLE_PERMISSIONS } from "@gtm/domain";
 import { buildIdentityFixture, type IdentityFixture } from "../test-support/identity-fixture.js";
 
 // SC-002 and FR-010/011 across ALL routes (task T055). The route list comes from Fastify's registry, so
@@ -318,8 +319,199 @@ DRIVERS["POST /api/v1/hypotheses/:id/assumptions"] = async (f) => ({
   forbiddenRole: "read_only_executive",
 });
 
+// Feature 005 routes (claims, offers, capacity, scores, paid engagement types, capabilities). The services
+// check permissions and audit refusals, so a signed-in reader gets exactly one denied event.
+const cat = () => ({
+  userId: "coverage-driver",
+  actorType: "human" as const,
+  correlationId: null,
+  permissions: FOUNDATION_ROLE_PERMISSIONS.administrator,
+});
+const draftClaim = (f: IdentityFixture, text = "We review sender feeds weekly.") =>
+  f.catalogue.claims.draft(cat(), { text }).id;
+const claimWithEvidence = (f: IdentityFixture) => {
+  const id = draftClaim(f);
+  f.catalogue.claims.addEvidence(cat(), id, {
+    kind: "document",
+    reference: "report-1",
+    owner: "Owner",
+  });
+  return id;
+};
+const dayToday = () => new Date().toISOString().slice(0, 10);
+const reader = { forbiddenRole: "read_only_executive" as const };
+
+DRIVERS["POST /api/v1/claims"] = async () => ({
+  url: "/api/v1/claims",
+  payload: { text: "We review sender feeds weekly." },
+  ...reader,
+});
+DRIVERS["POST /api/v1/claims/dispositions"] = async () => ({
+  url: "/api/v1/claims/dispositions",
+  payload: {
+    sentence: "Our SOC 2 reading list is public.",
+    ruleId: "soc2",
+    reason: "A reading list",
+  },
+  ...reader,
+});
+DRIVERS["POST /api/v1/claims/:id/evidence"] = async (f) => ({
+  url: `/api/v1/claims/${draftClaim(f)}/evidence`,
+  payload: { kind: "document", reference: "report-1", owner: "Owner" },
+  ...reader,
+});
+DRIVERS["POST /api/v1/claims/:id/evidence/:evidenceId/withdraw"] = async (f) => {
+  const id = claimWithEvidence(f);
+  const evidenceId = f.catalogue.claims.get(cat(), id).evidence[0]!.id;
+  return { url: `/api/v1/claims/${id}/evidence/${evidenceId}/withdraw`, ...reader };
+};
+DRIVERS["POST /api/v1/claims/:id/review"] = async (f) => ({
+  url: `/api/v1/claims/${claimWithEvidence(f)}/review`,
+  payload: { decision: "approve", note: "Checked it" },
+  ...reader,
+});
+DRIVERS["POST /api/v1/claims/:id/withdraw"] = async (f) => ({
+  url: `/api/v1/claims/${draftClaim(f)}/withdraw`,
+  payload: { note: "No longer needed" },
+  ...reader,
+});
+DRIVERS["PUT /api/v1/restricted-phrases"] = async (f) => ({
+  url: "/api/v1/restricted-phrases",
+  payload: {
+    rules: DEFAULT_PHRASE_RULES,
+    reviewerId: (await f.makeUser(`reviewer-${Math.random()}@example.org`, ["sales_service_lead"]))
+      .id,
+    note: "No change, republish",
+  },
+  ...reader,
+});
+DRIVERS["PATCH /api/v1/offers/:id"] = async () => ({
+  url: "/api/v1/offers/offer-2",
+  payload: { lockNo: 1, reason: "A small change", patch: { name: "Changed name" } },
+  ...reader,
+});
+DRIVERS["POST /api/v1/offers/:id/versions/:versionNo/status"] = async () => ({
+  url: "/api/v1/offers/offer-2/versions/1/status",
+  payload: { to: "internally_reviewed", note: "Reviewed" },
+  ...reader,
+});
+DRIVERS["POST /api/v1/offers/:id/limitations/:limitationId/acknowledge"] = async () => ({
+  url: "/api/v1/offers/offer-7/limitations/limitation-offer-7-evaluation/acknowledge",
+  ...reader,
+});
+DRIVERS["PUT /api/v1/offers/:id/capacity"] = async () => ({
+  url: "/api/v1/offers/offer-6/capacity",
+  payload: { periodKind: "month", limitSessions: 4, reason: "More room" },
+  ...reader,
+});
+DRIVERS["POST /api/v1/offers/:id/bookings"] = async () => ({
+  url: "/api/v1/offers/offer-6/bookings",
+  payload: { sessionDate: dayToday() },
+  ...reader,
+});
+DRIVERS["PATCH /api/v1/offers/:id/bookings/:bookingId"] = async (f) => ({
+  url: `/api/v1/offers/offer-6/bookings/${f.catalogue.bookings.record(cat(), "offer-6", { sessionDate: dayToday() }).id}`,
+  payload: { state: "held" },
+  ...reader,
+});
+DRIVERS["PUT /api/v1/offer-scores"] = async (f) => {
+  f.catalogue.scores.addCriterion(cat(), {
+    key: "coverage_pull",
+    label: "Buyer pull",
+    position: 1,
+  });
+  return {
+    url: "/api/v1/offer-scores",
+    payload: { offerId: "offer-1", criterionKey: "coverage_pull", score: 3 },
+    ...reader,
+  };
+};
+DRIVERS["PATCH /api/v1/paid-engagement-types/:key"] = async () => ({
+  url: "/api/v1/paid-engagement-types/input_audit",
+  payload: { lockNo: 1, scope: ["one use case"] },
+  ...reader,
+});
+DRIVERS["POST /api/v1/paid-engagement-types/:key/deliverables"] = async () => ({
+  url: "/api/v1/paid-engagement-types/input_audit/deliverables",
+  payload: { text: "A weekly status call" },
+  ...reader,
+});
+DRIVERS["POST /api/v1/paid-engagement-types/:key/deliverables/:deliverableId/decision"] = async (
+  f,
+) => {
+  const type = f.catalogue.paidTypes.proposeDeliverable(cat(), "input_audit", {
+    text: "A weekly status call",
+  });
+  const id = type.deliverables.find((d) => d.text === "A weekly status call")!.id;
+  return {
+    url: `/api/v1/paid-engagement-types/input_audit/deliverables/${id}/decision`,
+    payload: { decision: "approve", note: "Agreed" },
+    ...reader,
+  };
+};
+DRIVERS["PATCH /api/v1/service-capabilities/:id"] = async () => ({
+  url: "/api/v1/service-capabilities/capability-01",
+  payload: { lockNo: 1, attributes: { name: "Coverage name" } },
+  ...reader,
+});
+DRIVERS["POST /api/v1/service-capabilities/:id/evidence"] = async () => ({
+  url: "/api/v1/service-capabilities/capability-01/evidence",
+  payload: { basisKind: "delivery_record", reference: "rec-1" },
+  ...reader,
+});
+DRIVERS["POST /api/v1/service-capabilities/:id/delivery-examples"] = async () => ({
+  url: "/api/v1/service-capabilities/capability-01/delivery-examples",
+  payload: { text: "An internal delivery note" },
+  ...reader,
+});
+DRIVERS["PUT /api/v1/service-capabilities/:id/offers/:offerId"] = async () => ({
+  url: "/api/v1/service-capabilities/capability-01/offers/offer-1",
+  ...reader,
+});
+DRIVERS["DELETE /api/v1/service-capabilities/:id/offers/:offerId"] = async (f) => {
+  f.catalogue.capabilities.link(cat(), "capability-01", "offer-1");
+  return { url: "/api/v1/service-capabilities/capability-01/offers/offer-1", ...reader };
+};
+DRIVERS["PUT /api/v1/service-capabilities/:id/public-claim-status"] = async (f) => {
+  const caps = f.catalogue.capabilities;
+  caps.update(cat(), "capability-02", {
+    lockNo: 1,
+    attributes: {
+      name: "Mapping",
+      description: "Maps clinical documents to FHIR.",
+      inputTypes: ["CCDA"],
+      outputTypes: ["FHIR"],
+      buyerProblems: ["Unclear mapping"],
+      limitations: ["Needs samples"],
+      requiredExpertise: "Interoperability engineer",
+      potentialPaidTypeKey: "input_audit",
+    },
+  });
+  caps.addEvidence(cat(), "capability-02", { basisKind: "delivery_record", reference: "rec-2" });
+  const claimId = "claim-coverage-approved";
+  const at = new Date().toISOString();
+  f.db.raw
+    .prepare(
+      "INSERT INTO claim (id, text, declared_class, effective_class, status, drafted_by, drafted_at, version_no) VALUES (?, 'We map documents to FHIR.', NULL, 'general', 'approved', 'someone', ?, 1)",
+    )
+    .run(claimId, at);
+  f.db.raw
+    .prepare(
+      "INSERT INTO claim_evidence (id, claim_id, kind, reference, owner, added_by, added_at, expires_at) VALUES ('ev-coverage', ?, 'document', 'doc', 'owner', 'someone', ?, '2099-01-01T00:00:00.000Z')",
+    )
+    .run(claimId, at);
+  return {
+    url: "/api/v1/service-capabilities/capability-02/public-claim-status",
+    payload: { status: "approved", claimId },
+    ...reader,
+  };
+};
+
 /** Routes that cannot be driven through the fake issuer (none yet; webhook ingress arrives with US5). */
-const EXEMPT: Record<string, string> = {};
+const EXEMPT: Record<string, string> = {
+  // Reads and checks text, stores nothing and so writes no success audit event; a refusal is still audited.
+  "POST /api/v1/claims/lint": "stores nothing",
+};
 
 const REQUIRED = [
   "id",

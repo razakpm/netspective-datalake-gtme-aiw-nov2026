@@ -37,6 +37,22 @@ export const PERMISSIONS = [
   "hypotheses.read",
   "hypotheses.edit",
   "hypotheses.review",
+  // Feature 005 (capabilities, offers, claims). Role mapping is a hypothesis (open question #48).
+  "capabilities.read",
+  "capabilities.edit",
+  "capabilities.examples.read",
+  "offers.read",
+  "offers.edit",
+  "offers.status.change",
+  "offers.limitations.acknowledge",
+  "offers.capacity.edit",
+  "offers.bookings.edit",
+  "claims.read",
+  "claims.draft",
+  "claims.approve",
+  "claims.phrases.manage",
+  "paid_types.edit",
+  "paid_types.approve",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -58,6 +74,23 @@ const READERS = [
   "signals.read",
   "research.read",
   "hypotheses.read",
+  "capabilities.read",
+  "offers.read",
+  "claims.read",
+] as const;
+
+// Feature 005: the service lead also covers delivery-lead duties (no separate role exists yet).
+const SERVICE_LEAD_CATALOGUE = [
+  "capabilities.edit",
+  "capabilities.examples.read",
+  "offers.edit",
+  "offers.status.change",
+  "offers.limitations.acknowledge",
+  "offers.capacity.edit",
+  "offers.bookings.edit",
+  "paid_types.edit",
+  "claims.approve",
+  "paid_types.approve",
 ] as const;
 
 export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Permission[]>> = {
@@ -76,11 +109,24 @@ export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Perm
     "signals.record",
     "research.run",
     "hypotheses.edit",
+    "claims.draft",
   ],
-  research_analyst: [...READERS, "icp.assess", "signals.record", "research.run", "hypotheses.edit"],
+  research_analyst: [
+    ...READERS,
+    "icp.assess",
+    "signals.record",
+    "research.run",
+    "hypotheses.edit",
+    "claims.draft",
+  ],
   technical_sme_reviewer: [...READERS, "signals.review", "hypotheses.review"],
-  sales_service_lead: [...READERS, "stakeholders.edit", "evidence.record"],
-  campaign_approver: [],
+  sales_service_lead: [
+    ...READERS,
+    "stakeholders.edit",
+    "evidence.record",
+    ...SERVICE_LEAD_CATALOGUE,
+  ],
+  campaign_approver: ["claims.read", "claims.draft", "claims.approve", "claims.phrases.manage"],
   administrator: [...PERMISSIONS],
   read_only_executive: ["audit.read", "jobs.read", "ai_invocations.read", ...READERS],
 };

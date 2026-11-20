@@ -16,3 +16,6 @@ export * from "./events/feature003.js";
 export * from "./research/index.js";
 export * from "./hypotheses/index.js";
 export * from "./events/feature004.js";
+export * from "./claims/index.js";
+export * from "./offers/index.js";
+export * from "./events/feature005.js";

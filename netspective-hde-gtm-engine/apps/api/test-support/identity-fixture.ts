@@ -24,6 +24,10 @@ import { loadConfig } from "../src/config/index.js";
 import { FakeLLM, FakeResearchSource } from "@gtm/providers";
 import { registerHypothesisRoutes } from "../src/modules/hypotheses/index.js";
 import { registerResearchRoutes } from "../src/modules/research/index.js";
+import { buildCatalogueStack, type CatalogueStack } from "../src/catalogue-stack.js";
+import { registerCapabilityRoutes } from "../src/modules/capabilities/index.js";
+import { registerClaimRoutes } from "../src/modules/claims/index.js";
+import { registerOfferRoutes } from "../src/modules/offers/index.js";
 import { buildResearchStack, type ResearchStack } from "../src/research-stack.js";
 import { loadPages, loadScenario } from "./research-harness.js";
 import { FakeIssuer } from "./fake-oidc/issuer.js";
@@ -55,6 +59,7 @@ export interface IdentityFixture extends TestServer {
   signalReviews: ReviewService;
   signalSources: SourceService;
   research: ResearchStack;
+  catalogue: CatalogueStack;
   fakeLlm: FakeLLM;
   fakeSource: FakeResearchSource;
   /** Insert an active user directly (bypassing the API) and return a bearer token for them. */
@@ -114,6 +119,11 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
     source: fakeSource,
     now: () => clock.now,
   });
+  const catalogue = buildCatalogueStack({
+    db,
+    config: loadConfig({ NODE_ENV: "test", DATABASE_URL: "postgres://gtm:x@localhost:5432/gtm" }),
+    now: () => clock.now,
+  });
   const server = await buildTestServer({
     phiGuardSink: createPhiGuardSink(db, notifier),
     ...(options.quarantineEntryPoints
@@ -152,6 +162,31 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
         authz,
         now: () => clock.now,
       });
+      registerClaimRoutes(app, {
+        db,
+        claims: catalogue.claims,
+        review: catalogue.claimReview,
+        authz,
+        now: () => clock.now,
+      });
+      registerOfferRoutes(app, {
+        db,
+        offers: catalogue.offers,
+        status: catalogue.offerStatus,
+        limitations: catalogue.limitations,
+        capacity: catalogue.capacity,
+        bookings: catalogue.bookings,
+        scores: catalogue.scores,
+        paidTypes: catalogue.paidTypes,
+        authz,
+        now: () => clock.now,
+      });
+      registerCapabilityRoutes(app, {
+        db,
+        capabilities: catalogue.capabilities,
+        authz,
+        now: () => clock.now,
+      });
       registerSignalRoutes(app, {
         db,
         signals,
@@ -176,6 +211,7 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
     signalReviews,
     signalSources,
     research,
+    catalogue,
     fakeLlm,
     fakeSource,
     clock,

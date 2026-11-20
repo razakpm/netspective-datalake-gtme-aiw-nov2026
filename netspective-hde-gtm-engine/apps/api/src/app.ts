@@ -26,6 +26,10 @@ import {
   SourceService,
 } from "./modules/signals/index.js";
 import { PhiNotifier } from "./platform/events/phi-notifier.js";
+import { buildCatalogueStack, type CatalogueStack } from "./catalogue-stack.js";
+import { registerCapabilityRoutes } from "./modules/capabilities/index.js";
+import { registerClaimRoutes } from "./modules/claims/index.js";
+import { registerOfferRoutes } from "./modules/offers/index.js";
 import { buildResearchStack, type ResearchStack } from "./research-stack.js";
 
 // Composition root: builds the database, services and routes from configuration. The persistence is
@@ -41,6 +45,7 @@ export interface Services {
   signalReviews: ReviewService;
   signalSources: SourceService;
   research: ResearchStack;
+  catalogue: CatalogueStack;
 }
 
 export function openDatabase(path: string): SqliteDatabase {
@@ -81,6 +86,7 @@ export function buildServices(config: AppConfig, db: SqliteDatabase): Services {
     ),
     jobs,
     research: buildResearchStack({ db, config, jobs, signals }),
+    catalogue: buildCatalogueStack({ db, config }),
   };
 }
 
@@ -144,6 +150,28 @@ export async function buildHttpApp(config: AppConfig, logger: Logger, services: 
         db: services.db,
         service: services.research.hypotheses,
         review: services.research.review,
+        authz,
+      });
+      registerClaimRoutes(app, {
+        db: services.db,
+        claims: services.catalogue.claims,
+        review: services.catalogue.claimReview,
+        authz,
+      });
+      registerOfferRoutes(app, {
+        db: services.db,
+        offers: services.catalogue.offers,
+        status: services.catalogue.offerStatus,
+        limitations: services.catalogue.limitations,
+        capacity: services.catalogue.capacity,
+        bookings: services.catalogue.bookings,
+        scores: services.catalogue.scores,
+        paidTypes: services.catalogue.paidTypes,
+        authz,
+      });
+      registerCapabilityRoutes(app, {
+        db: services.db,
+        capabilities: services.catalogue.capabilities,
         authz,
       });
       registerSignalRoutes(app, {
