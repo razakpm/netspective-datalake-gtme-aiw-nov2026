@@ -1,0 +1,237 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — Claims and the claim checker
+  version: 0.1.0
+  description: |
+    Public claims, their evidence, two-person review for restricted claims, and the deterministic claim checker.
+    Default is omission: only an approved, unexpired claim can cover public text. Requires claims.read,
+    claims.draft, claims.approve or claims.phrases.manage as stated. Review records cannot be edited.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /claims:
+    get:
+      operationId: listClaims
+      summary: "Claims, newest first. Filter by effective status (needs_review is computed from evidence)."
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [draft, in_review, approved, rejected, withdrawn, needs_review] } }
+        - { in: query, name: class, schema: { type: string } }
+      responses:
+        '200': { description: "Claims.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/Claim' } } } } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: createClaim
+      summary: "Draft a claim. Its class is the declared class or any class the checker finds, whichever is stricter."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ClaimInput' } } }
+      responses:
+        '201': { description: "Created as draft.", content: { application/json: { schema: { $ref: '#/components/schemas/Claim' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /claims/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getClaim
+      summary: "A claim with its evidence, reviews and checker result."
+      responses:
+        '200': { description: "Claim.", content: { application/json: { schema: { $ref: '#/components/schemas/ClaimDetail' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+  /claims/{id}/evidence:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: addClaimEvidence
+      summary: "Link evidence (an identifier or address, never document text)."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/EvidenceInput' } } }
+      responses:
+        '201': { description: "Linked.", content: { application/json: { schema: { $ref: '#/components/schemas/ClaimDetail' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /claims/{id}/evidence/{evidenceId}/withdraw:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string } }
+      - { in: path, name: evidenceId, required: true, schema: { type: string } }
+    post:
+      operationId: withdrawClaimEvidence
+      summary: "Withdraw evidence once. The claim reads as needs_review if no valid evidence remains."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '200': { description: "Withdrawn.", content: { application/json: { schema: { $ref: '#/components/schemas/ClaimDetail' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /claims/{id}/review:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: reviewClaim
+      summary: "Approve or reject. Needs claims.approve. A restricted claim needs two different approvers, neither the drafter, plus valid evidence."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [decision, note], properties: { decision: { type: string, enum: [approve, reject] }, note: { type: string, minLength: 3, maxLength: 500 } } } } }
+      responses:
+        '200': { description: "Recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/ClaimDetail' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /claims/{id}/withdraw:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: withdrawClaim
+      summary: "Withdraw a claim (drafter or approver). It can no longer cover text."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [note], properties: { note: { type: string, minLength: 3, maxLength: 500 } } } } }
+      responses:
+        '200': { description: "Withdrawn.", content: { application/json: { schema: { $ref: '#/components/schemas/ClaimDetail' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /claims/lint:
+    post:
+      operationId: lintText
+      summary: "Run the deterministic checker over any text. Nothing is stored. The text is refused whole if it matches the PHI guard."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [text], properties: { text: { type: string, maxLength: 20000 } } } } }
+      responses:
+        '200': { description: "Matches (possibly none).", content: { application/json: { schema: { $ref: '#/components/schemas/LintResult' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /claims/dispositions:
+    post:
+      operationId: markFalsePositive
+      summary: "A designated approver marks a flag as a false positive for that exact sentence and rule. Recorded, never edited."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [sentence, ruleId, reason], properties: { sentence: { type: string, maxLength: 1000 }, ruleId: { type: string }, reason: { type: string, minLength: 3, maxLength: 500 } } } } }
+      responses:
+        '201': { description: "Recorded.", content: { application/json: { schema: { type: object, required: [id], properties: { id: { type: string } } } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /restricted-phrases:
+    get:
+      operationId: getRestrictedPhraseList
+      summary: "The current phrase list and its version, owner and reviewer."
+      responses:
+        '200': { description: "List.", content: { application/json: { schema: { $ref: '#/components/schemas/PhraseList' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: publishRestrictedPhraseList
+      summary: "Publish a new immutable version. Needs claims.phrases.manage; a reviewer other than the author must be named and hold claims.approve."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [rules, reviewerId, note], properties: { rules: { type: array, minItems: 1, items: { $ref: '#/components/schemas/Rule' } }, reviewerId: { type: string }, note: { type: string, minLength: 3, maxLength: 500 } } } } }
+      responses:
+        '201': { description: "Published.", content: { application/json: { schema: { $ref: '#/components/schemas/PhraseList' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: "Problem details. Refusals carry stable codes (for example claim_needs_evidence, second_approver_required, drafter_cannot_approve, phi_like_content)."
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties: { type: { type: string }, title: { type: string }, status: { type: integer }, detail: { type: string }, codes: { type: array, items: { type: string } } }
+    ClaimClass:
+      type: string
+      enum: [general, quantified_outcome, production_status, sla_rto, certification, tenant_isolation, legal_regulatory_compliance, ai_ready, customer_identity]
+    ClaimInput:
+      type: object
+      additionalProperties: false
+      required: [text]
+      properties: { text: { type: string, minLength: 3, maxLength: 600 }, declaredClass: { $ref: '#/components/schemas/ClaimClass' } }
+    Claim:
+      type: object
+      required: [id, text, effectiveClass, status, draftedBy, draftedAt, versionNo, restricted, approvalsNeeded, approvalsHave]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        declaredClass: { oneOf: [ { $ref: '#/components/schemas/ClaimClass' }, { type: 'null' } ] }
+        effectiveClass: { $ref: '#/components/schemas/ClaimClass' }
+        status: { type: string, enum: [draft, in_review, approved, rejected, withdrawn, needs_review] }
+        restricted: { type: boolean }
+        approvalsNeeded: { type: integer }
+        approvalsHave: { type: integer }
+        draftedBy: { type: string }
+        draftedAt: { type: string, format: date-time }
+        versionNo: { type: integer }
+    EvidenceInput:
+      type: object
+      additionalProperties: false
+      required: [kind, reference, owner]
+      properties:
+        kind: { type: string, enum: [document, published_page, internal_record, approved_case_study] }
+        reference: { type: string, minLength: 3, maxLength: 300 }
+        owner: { type: string, minLength: 2, maxLength: 120 }
+        expiresAt: { type: string, format: date-time }
+    Evidence:
+      type: object
+      required: [id, kind, reference, owner, expiresAt, valid]
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        reference: { type: string }
+        owner: { type: string }
+        expiresAt: { type: string, format: date-time }
+        withdrawnAt: { type: [string, 'null'], format: date-time }
+        valid: { type: boolean }
+    Review:
+      type: object
+      required: [decision, reviewerId, note, decidedAt]
+      properties: { decision: { type: string, enum: [approve, reject] }, reviewerId: { type: string }, note: { type: string }, decidedAt: { type: string, format: date-time } }
+    LintMatch:
+      type: object
+      required: [class, ruleId, start, end, text]
+      properties: { class: { $ref: '#/components/schemas/ClaimClass' }, ruleId: { type: string }, start: { type: integer }, end: { type: integer }, text: { type: string } }
+    LintResult:
+      type: object
+      required: [listVersion, matches]
+      properties: { listVersion: { type: integer }, matches: { type: array, items: { $ref: '#/components/schemas/LintMatch' } } }
+    ClaimDetail:
+      allOf:
+        - { $ref: '#/components/schemas/Claim' }
+        - type: object
+          required: [evidence, reviews, lint]
+          properties:
+            evidence: { type: array, items: { $ref: '#/components/schemas/Evidence' } }
+            reviews: { type: array, items: { $ref: '#/components/schemas/Review' } }
+            lint: { $ref: '#/components/schemas/LintResult' }
+            suggestion: { type: string, description: "Present when unapproved: omit the statement." }
+    Rule:
+      type: object
+      additionalProperties: false
+      required: [id, class, kind]
+      properties:
+        id: { type: string }
+        class: { $ref: '#/components/schemas/ClaimClass' }
+        kind: { type: string, enum: [phrase, acronym, pattern, outcome_percentage] }
+        value: { type: string, description: "The phrase, acronym or regular expression." }
+        outcomeTerms: { type: array, items: { type: string } }
+    PhraseList:
+      type: object
+      required: [version, owner, reviewedBy, rules]
+      properties:
+        version: { type: integer }
+        owner: { type: string }
+        reviewedBy: { type: string }
+        reviewedAt: { type: string, format: date-time }
+        rules: { type: array, items: { $ref: '#/components/schemas/Rule' } }
