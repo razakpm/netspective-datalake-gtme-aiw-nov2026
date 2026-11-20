@@ -9,10 +9,27 @@ import {
   type RoleKey,
 } from "@gtm/domain";
 import { ClaimService } from "../src/modules/claims/index.js";
+import { OfferLimitations, OfferService, OfferStatusService } from "../src/modules/offers/index.js";
 import type { CatalogueActor } from "../src/platform/catalogue.js";
 
 // A catalogue stack on an in-memory database with all migrations and the feature 005 seed, a fake clock
 // and actors for each role (feature 005 tests, task T014). Services are added to it as they are built.
+
+/** Every required offer attribute, with wording that trips no restricted phrase. */
+export const COMPLETE_PATCH = {
+  name: "Complete test offer",
+  format: "45-minute session, no PHI",
+  targetIcp: "ICP1",
+  buyerOutput: "A friction map of sender onboarding",
+  buyerEffort: "One hour of one person",
+  effortEstimate: { text: "About two days of preparation" },
+  conversionPath: "Book a session, then scope a sprint",
+  landingPagePromise: "See where senders stall in onboarding.",
+  cta: "Book a session",
+  intakeFields: ["Organisation", "Number of senders"],
+  successHypotheses: ["Senders stall at onboarding"],
+  sqlRuleRef: "sql-offer-test",
+} as const;
 
 export interface Who {
   userId: string;
@@ -65,6 +82,25 @@ export function buildCatalogueHarness(options: CatalogueHarnessOptions = {}) {
     };
   };
   const claims = new ClaimService(db, { evidenceDefaultExpiryMonths: 12 });
+  const offers = new OfferService(db);
+  const offerStatus = new OfferStatusService(db);
+  const limitations = new OfferLimitations(db);
+  /** Give an offer a complete new version and take it through review to approved (service lead). */
+  const approveOffer = (offerId: string, patch: Record<string, unknown> = {}) => {
+    const lead = actor("lead");
+    const head = offers.get(lead, offerId);
+    const v = offers.createVersion(
+      lead,
+      offerId,
+      { patch: { ...COMPLETE_PATCH, ...patch }, reason: "Complete" },
+      head.lockNo,
+    );
+    advance(1000);
+    offerStatus.moveStatus(lead, offerId, v.versionNo, "internally_reviewed", "Reviewed");
+    advance(1000);
+    offerStatus.moveStatus(lead, offerId, v.versionNo, "approved", "Approved");
+    return v.versionNo;
+  };
   let seq = 0;
   /** An approved claim with valid evidence, inserted directly (the review flow has its own tests). */
   const insertApprovedClaim = (
@@ -140,6 +176,10 @@ export function buildCatalogueHarness(options: CatalogueHarnessOptions = {}) {
     advanceDays,
     actor,
     claims,
+    offers,
+    offerStatus,
+    limitations,
+    approveOffer,
     insertApprovedClaim,
     count,
     outbox,
