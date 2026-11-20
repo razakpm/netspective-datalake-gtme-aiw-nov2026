@@ -42,6 +42,9 @@ A run-and-validate guide. It contains no implementation code. Details live in [c
 | V28 | RBAC | Call each mutation as a role without the permission | 403 and an audited refusal | FR-028 |
 | V29 | Audit and events | Perform a version, status move, review, limit change and acknowledgement | One audit record each with who; events carry identifiers only | FR-029, SC-008 |
 | V30 | Scenario E and G | Run cross-feature scenario E (claims) and G (capacity) over the fixtures | Content with "AI-ready", an SLA, SOC 2 and a case-study figure is flagged and cannot be approved; Offer 6 at capacity reads `exhausted` | Scenarios E, G |
+| V31 | Lapsed claim cover | Approve an offer whose promise is covered by an approved claim, then expire that claim's evidence; read the offer and the linked capability | The offer shows `claimCover.status = lapsed` with claim and rule ids only; the capability shows `publicClaimNeedsReview`; valid evidence clears both | FR-008 |
+| V32 | Stale acknowledgement | Acknowledge Offer 7's limitation, approve the offer, then change the limitation wording | The offer stays in force with `acknowledgementStale = true`; the next move to approved or available is refused until acknowledged again | FR-013 |
+| V33 | No price keys | Send a paid-type request with a `price`, `fee`, `rate` or `currency` key | Rejected by the request schema; nothing stored | FR-025 |
 
 ## Run
 

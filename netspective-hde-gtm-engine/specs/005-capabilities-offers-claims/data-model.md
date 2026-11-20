@@ -65,7 +65,7 @@ Capacity period status (computed): `room` (used below limit), `exhausted` (used 
 | `offer.updated` | `offer_id`, `version_no`, `change` (version, status, limitation, score), `status` |
 | `offer.capacity.changed` | `offer_id`, `period_kind`, `limit_sessions` |
 | `claim.created` | `claim_id`, `effective_class` |
-| `claim.reviewed` | `claim_id`, `decision`, `claim_status` |
+| `claim.reviewed` | `claim_id`, `decision` (approve, reject only; withdrawal is audit-only), `claim_status` |
 | `claim.needs_review` | `claim_id` (emitted by the optional job) |
 
 No claim, offer, note or example text appears in any event.

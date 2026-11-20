@@ -134,13 +134,14 @@ components:
       properties: { lockNo: { type: integer }, attributes: { $ref: '#/components/schemas/Attributes' } }
     CapabilitySummary:
       type: object
-      required: [id, slot, lockNo, publicClaimStatus, placeholderAttributes]
+      required: [id, slot, lockNo, publicClaimStatus, publicClaimNeedsReview, placeholderAttributes]
       properties:
         id: { type: string }
         slot: { type: integer }
         lockNo: { type: integer }
         name: { type: [string, 'null'] }
         publicClaimStatus: { type: string, enum: [not_approved, approved] }
+        publicClaimNeedsReview: { type: boolean, description: 'True when the linked public claim reads as needs_review (evidence withdrawn or expired).' }
         placeholderAttributes: { type: array, items: { type: string } }
     Capability:
       allOf:
