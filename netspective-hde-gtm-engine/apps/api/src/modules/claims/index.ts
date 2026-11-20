@@ -10,11 +10,23 @@ export {
 } from "./service.js";
 export {
   checkText,
+  coverReport,
   effectiveStatus,
   sha256,
   usableClaims,
   type CheckedMatch,
   type CheckResult,
+  type CoverReport,
   type ClaimView,
 } from "./queries.js";
 export { currentPhraseList, getClaim, listEvidence } from "./repository.js";
+export {
+  ClaimReviewService,
+  ReviewInputSchema,
+  WithdrawInputSchema,
+  DispositionInputSchema,
+  PublishListSchema,
+  sqlPermissionsOf,
+  type PermissionsOf,
+} from "./review.js";
+export { ClaimStaleness, type StalenessActor } from "./staleness.js";

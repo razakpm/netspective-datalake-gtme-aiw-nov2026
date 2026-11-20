@@ -59,11 +59,17 @@ export function emitClaimReviewed(
   );
 }
 
-export function emitClaimNeedsReview(tx: Tx, c: Ctx, p: { claimId: string }): void {
+/** `idempotencyKey` makes the event once per lapse: the same key is never written twice by the job. */
+export function emitClaimNeedsReview(
+  tx: Tx,
+  c: Ctx,
+  p: { claimId: string; idempotencyKey: string },
+): void {
   writeOutbox(
     tx,
     {
       ...base(c, "claim.needs_review"),
+      idempotency_key: p.idempotencyKey,
       payload: toClaimNeedsReviewPayload({ claim_id: p.claimId }),
     },
     c.now,

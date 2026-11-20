@@ -71,6 +71,11 @@ export function audited<T>(
   }
 }
 
+/** True when the actor is a person who holds the permission. */
+export const holds = (actor: CatalogueActor, permission: Permission): boolean =>
+  actor.actorType === "human" &&
+  hasPermission([{ key: "actor", permissions: actor.permissions }], permission);
+
 /** 403 unless the actor holds the permission. AI and system actors never act through the catalogue. */
 export function requirePermission(actor: CatalogueActor, permission: Permission): void {
   if (

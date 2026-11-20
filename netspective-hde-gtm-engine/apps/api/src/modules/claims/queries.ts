@@ -6,6 +6,7 @@ import {
   hasValidEvidence,
   isRestrictedClass,
   lintText,
+  normaliseForCompare,
   splitSentences,
   type ClaimClass,
   type ClaimStatus,
@@ -109,3 +110,54 @@ export function checkText(tx: Tx, text: string, now: string): CheckResult {
 }
 
 export { combineClass };
+
+export interface CoverEntry {
+  rule: string;
+  /** Identifiers only: the claims whose text equals the flagged sentence. */
+  claimIds: string[];
+}
+export interface CoverReport {
+  covered: CoverEntry[];
+  uncovered: CoverEntry[];
+}
+
+/**
+ * Re-check a text against the claims as they are now, for read-time warnings (spec FR-008). Covered flags
+ * list the usable claims behind them; uncovered ones list every claim with the same sentence, whatever its
+ * state, so a lapsed claim can be found. Nothing is stored.
+ */
+export function coverReport(tx: Tx, text: string, now: string): CoverReport {
+  const list = currentPhraseList(tx);
+  const matches = lintText(text, { rules: list.rules });
+  const report: CoverReport = { covered: [], uncovered: [] };
+  if (matches.length === 0) return report;
+  const sentences = splitSentences(text);
+  const usable = new Set(
+    listClaims(tx, { status: "approved" })
+      .filter((c) => hasValidEvidence(listEvidence(tx, c.id).map(stateOf), now))
+      .map((c) => c.id),
+  );
+  const all = listClaims(tx);
+  const dispositions = listDispositions(tx);
+  for (const m of matches) {
+    const sentence = sentences.find((s) => m.start >= s.start && m.end <= s.end)?.text ?? m.text;
+    const target = normaliseForCompare(sentence);
+    const same = all.filter((c) => normaliseForCompare(c.text) === target);
+    const covered = flagIsCovered({
+      sentence,
+      ruleId: m.rule,
+      claims: usableClaims(tx, now),
+      dispositions,
+      hash: sha256,
+    });
+    if (covered) {
+      report.covered.push({
+        rule: m.rule,
+        claimIds: same.filter((c) => usable.has(c.id)).map((c) => c.id),
+      });
+    } else {
+      report.uncovered.push({ rule: m.rule, claimIds: same.map((c) => c.id) });
+    }
+  }
+  return report;
+}

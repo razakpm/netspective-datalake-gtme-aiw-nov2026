@@ -100,7 +100,7 @@ export class CapacityService {
       periodKind: period.kind,
       periodStart: period.start,
       periodEnd: period.end,
-      offerStatus: offerSummary(tx, head).status,
+      offerStatus: offerSummary(tx, head, at.toISOString()).status,
     };
   }
 

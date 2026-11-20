@@ -3,9 +3,11 @@ import type { Tx } from "@gtm/db";
 import {
   missingRequiredFields,
   OfferSnapshotSchema,
+  PUBLIC_OFFER_FIELDS,
   type OfferSnapshot,
   type OfferStatus,
 } from "@gtm/domain";
+import { coverReport } from "../claims/index.js";
 import {
   getVersionRow,
   isSuperseded,
@@ -52,6 +54,14 @@ export interface LimitationView {
   acknowledgementStale: boolean;
 }
 
+/** Read-time check of the in-force version's public text against the claims as they are now (FR-008). */
+export interface ClaimCover {
+  /** lapsed: a restricted phrase in public text is no longer covered by an approved, valid claim. */
+  status: "ok" | "lapsed";
+  claimIds: string[];
+  ruleIds: string[];
+}
+
 export interface OfferSummary {
   id: string;
   number: number;
@@ -66,6 +76,7 @@ export interface OfferSummary {
   /** Approved once by the seed while required attributes are still to be provided. */
   baselineIncomplete: boolean;
   acknowledgementStale: boolean;
+  claimCover: ClaimCover;
 }
 
 export const parseSnapshot = (row: VersionRow): OfferSnapshot =>
@@ -107,7 +118,28 @@ export function limitationView(tx: Tx, l: LimitationRow): LimitationView {
 export const limitationViews = (tx: Tx, offerId: string): LimitationView[] =>
   listLimitations(tx, offerId).map((l) => limitationView(tx, l));
 
-export function offerSummary(tx: Tx, head: OfferHead): OfferSummary {
+export function claimCoverOf(tx: Tx, snapshot: OfferSnapshot | null, at: string): ClaimCover {
+  if (snapshot === null) return { status: "ok", claimIds: [], ruleIds: [] };
+  const ids = new Set<string>();
+  const rules = new Set<string>();
+  let lapsed = false;
+  for (const field of PUBLIC_OFFER_FIELDS) {
+    const text = snapshot[field];
+    if (!text) continue;
+    const report = coverReport(tx, text, at);
+    for (const e of report.uncovered) {
+      lapsed = true;
+      rules.add(e.rule);
+      e.claimIds.forEach((id) => ids.add(id));
+    }
+    if (!lapsed) report.covered.forEach((e) => e.claimIds.forEach((id) => ids.add(id)));
+  }
+  return lapsed
+    ? { status: "lapsed", claimIds: [...ids].sort(), ruleIds: [...rules].sort() }
+    : { status: "ok", claimIds: [...ids].sort(), ruleIds: [] };
+}
+
+export function offerSummary(tx: Tx, head: OfferHead, at: string): OfferSummary {
   const latestRow = getVersionRow(tx, head.id, head.latestVersionNo) as VersionRow;
   const latest = latestStatus(tx, head.id, head.latestVersionNo);
   const inForceRow =
@@ -136,5 +168,6 @@ export function offerSummary(tx: Tx, head: OfferHead): OfferSummary {
     acknowledgementStale: limitationViews(tx, head.id).some(
       (l) => l.active && l.acknowledgementStale,
     ),
+    claimCover: claimCoverOf(tx, inForceRow ? parseSnapshot(inForceRow) : null, at),
   };
 }

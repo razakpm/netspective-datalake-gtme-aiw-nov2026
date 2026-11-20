@@ -234,3 +234,7 @@ export function insertPhraseList(tx: Tx, l: Omit<PhraseListRecord, "version">): 
   );
   return next;
 }
+
+export function setEffectiveClass(tx: Tx, id: string, effectiveClass: ClaimClass): void {
+  tx.prepare("UPDATE claim SET effective_class = ? WHERE id = ?").run(effectiveClass, id);
+}

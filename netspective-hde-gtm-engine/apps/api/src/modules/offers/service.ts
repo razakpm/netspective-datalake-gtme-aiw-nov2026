@@ -60,7 +60,9 @@ export class OfferService {
   list(actor: CatalogueActor): OfferSummary[] {
     return audited(this.db, actor, "offer.read.refused", "engagement_offer", null, () => {
       requirePermission(actor, "offers.read");
-      return this.db.transaction((tx) => listHeads(tx).map((h) => offerSummary(tx, h)));
+      return this.db.transaction((tx) =>
+        listHeads(tx).map((h) => offerSummary(tx, h, nowOf(actor).toISOString())),
+      );
     });
   }
 
@@ -72,7 +74,7 @@ export class OfferService {
         const inForce =
           head.inForceVersionNo === null ? null : getVersionRow(tx, offerId, head.inForceVersionNo);
         return {
-          ...offerSummary(tx, head),
+          ...offerSummary(tx, head, nowOf(actor).toISOString()),
           latest: versionView(tx, getVersionRow(tx, offerId, head.latestVersionNo) as VersionRow),
           inForce: inForce ? versionView(tx, inForce) : null,
           limitations: limitationViews(tx, offerId),

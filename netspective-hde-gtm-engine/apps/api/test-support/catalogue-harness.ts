@@ -9,7 +9,7 @@ import {
   type RoleKey,
 } from "@gtm/domain";
 import { CapabilityService } from "../src/modules/capabilities/index.js";
-import { ClaimService } from "../src/modules/claims/index.js";
+import { ClaimReviewService, ClaimService, ClaimStaleness } from "../src/modules/claims/index.js";
 import {
   BookingService,
   CapacityService,
@@ -103,6 +103,11 @@ export function buildCatalogueHarness(options: CatalogueHarnessOptions = {}) {
     };
   };
   const claims = new ClaimService(db, { evidenceDefaultExpiryMonths: 12 });
+  const claimReview = new ClaimReviewService(db, claims, (_tx, userId) => {
+    const person = Object.values(PEOPLE).find((p) => p.userId === userId);
+    return person ? FOUNDATION_ROLE_PERMISSIONS[person.role] : [];
+  });
+  const claimStaleness = new ClaimStaleness(db);
   const offers = new OfferService(db);
   const offerStatus = new OfferStatusService(db);
   const limitations = new OfferLimitations(db);
@@ -217,6 +222,8 @@ export function buildCatalogueHarness(options: CatalogueHarnessOptions = {}) {
     advanceDays,
     actor,
     claims,
+    claimReview,
+    claimStaleness,
     offers,
     offerStatus,
     limitations,
