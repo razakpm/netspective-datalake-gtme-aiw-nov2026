@@ -9,7 +9,13 @@ import {
   type RoleKey,
 } from "@gtm/domain";
 import { ClaimService } from "../src/modules/claims/index.js";
-import { OfferLimitations, OfferService, OfferStatusService } from "../src/modules/offers/index.js";
+import {
+  BookingService,
+  CapacityService,
+  OfferLimitations,
+  OfferService,
+  OfferStatusService,
+} from "../src/modules/offers/index.js";
 import type { CatalogueActor } from "../src/platform/catalogue.js";
 
 // A catalogue stack on an in-memory database with all migrations and the feature 005 seed, a fake clock
@@ -85,6 +91,8 @@ export function buildCatalogueHarness(options: CatalogueHarnessOptions = {}) {
   const offers = new OfferService(db);
   const offerStatus = new OfferStatusService(db);
   const limitations = new OfferLimitations(db);
+  const capacity = new CapacityService(db, { businessTimeZone: options.businessTimeZone ?? "UTC" });
+  const bookings = new BookingService(db, { businessTimeZone: options.businessTimeZone ?? "UTC" });
   /** Give an offer a complete new version and take it through review to approved (service lead). */
   const approveOffer = (offerId: string, patch: Record<string, unknown> = {}) => {
     const lead = actor("lead");
@@ -179,6 +187,8 @@ export function buildCatalogueHarness(options: CatalogueHarnessOptions = {}) {
     offers,
     offerStatus,
     limitations,
+    capacity,
+    bookings,
     approveOffer,
     insertApprovedClaim,
     count,

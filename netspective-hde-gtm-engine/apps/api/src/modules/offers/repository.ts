@@ -214,3 +214,123 @@ export function latestAck(tx: Tx, limitationId: string): AckRow | null {
       }
     : null;
 }
+
+// Capacity limits and bookings (feature 005, tasks T040 and T041).
+
+export interface CapacityRow {
+  id: string;
+  offerId: string;
+  periodKind: "week" | "month";
+  limitSessions: number;
+  effectiveFrom: string;
+  setBy: string;
+  setAt: string;
+  reason: string | null;
+}
+export interface BookingRow {
+  id: string;
+  offerId: string;
+  externalRef: string | null;
+  state: "booked" | "held" | "cancelled" | "no_show";
+  sessionDate: string;
+  periodStart: string;
+  source: "manual" | "workshop";
+  recordedBy: string;
+  recordedAt: string;
+  updatedAt: string;
+}
+
+const capacity = (r: Row): CapacityRow => ({
+  id: r["id"] as string,
+  offerId: r["offer_id"] as string,
+  periodKind: r["period_kind"] as "week" | "month",
+  limitSessions: r["limit_sessions"] as number,
+  effectiveFrom: r["effective_from"] as string,
+  setBy: r["set_by"] as string,
+  setAt: r["set_at"] as string,
+  reason: r["reason"] as string | null,
+});
+const booking = (r: Row): BookingRow => ({
+  id: r["id"] as string,
+  offerId: r["offer_id"] as string,
+  externalRef: r["external_ref"] as string | null,
+  state: r["state"] as BookingRow["state"],
+  sessionDate: r["session_date"] as string,
+  periodStart: r["period_start"] as string,
+  source: r["source"] as BookingRow["source"],
+  recordedBy: r["recorded_by"] as string,
+  recordedAt: r["recorded_at"] as string,
+  updatedAt: r["updated_at"] as string,
+});
+
+export const listCapacity = (tx: Tx, offerId: string): CapacityRow[] =>
+  (
+    tx
+      .prepare("SELECT * FROM offer_capacity WHERE offer_id = ? ORDER BY set_at, rowid")
+      .all(offerId) as Row[]
+  ).map(capacity);
+
+export function insertCapacity(tx: Tx, c: CapacityRow): void {
+  tx.prepare(
+    "INSERT INTO offer_capacity (id, offer_id, period_kind, limit_sessions, effective_from, set_by, set_at, reason) VALUES (?,?,?,?,?,?,?,?)",
+  ).run(
+    c.id,
+    c.offerId,
+    c.periodKind,
+    c.limitSessions,
+    c.effectiveFrom,
+    c.setBy,
+    c.setAt,
+    c.reason,
+  );
+}
+
+export const listBookings = (tx: Tx, offerId: string): BookingRow[] =>
+  (
+    tx
+      .prepare(
+        "SELECT * FROM offer_session_booking WHERE offer_id = ? ORDER BY session_date, rowid",
+      )
+      .all(offerId) as Row[]
+  ).map(booking);
+
+export function getBooking(tx: Tx, id: string): BookingRow | null {
+  const row = tx.prepare("SELECT * FROM offer_session_booking WHERE id = ?").get(id) as
+    Row | undefined;
+  return row ? booking(row) : null;
+}
+
+export function insertBooking(tx: Tx, b: BookingRow): void {
+  tx.prepare(
+    "INSERT INTO offer_session_booking (id, offer_id, external_ref, state, session_date, period_start, source, recorded_by, recorded_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+  ).run(
+    b.id,
+    b.offerId,
+    b.externalRef,
+    b.state,
+    b.sessionDate,
+    b.periodStart,
+    b.source,
+    b.recordedBy,
+    b.recordedAt,
+    b.updatedAt,
+  );
+}
+
+export function updateBooking(
+  tx: Tx,
+  id: string,
+  patch: { state?: BookingRow["state"]; sessionDate?: string; periodStart?: string },
+  at: string,
+): void {
+  const current = getBooking(tx, id) as BookingRow;
+  tx.prepare(
+    "UPDATE offer_session_booking SET state = ?, session_date = ?, period_start = ?, updated_at = ? WHERE id = ?",
+  ).run(
+    patch.state ?? current.state,
+    patch.sessionDate ?? current.sessionDate,
+    patch.periodStart ?? current.periodStart,
+    at,
+    id,
+  );
+}
