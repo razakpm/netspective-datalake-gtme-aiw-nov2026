@@ -1,10 +1,5 @@
 import type { SqliteDatabase, Tx } from "@gtm/db";
-import {
-  effectiveClass,
-  lintText,
-  CLAIM_CLASSES,
-  type ClaimStatus,
-} from "@gtm/domain";
+import { effectiveClass, lintText, CLAIM_CLASSES, type ClaimStatus } from "@gtm/domain";
 import { v7 as uuidv7 } from "uuid";
 import { z } from "zod";
 import { parseOrThrow } from "../../http/errors.js";
