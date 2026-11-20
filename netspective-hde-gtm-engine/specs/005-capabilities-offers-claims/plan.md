@@ -1,6 +1,6 @@
 # Implementation Plan: Service Capabilities, Offer Catalog and Claims
 
-**Branch**: `005-capabilities-offers-claims` | **Date**: 2026-11-19 | **Spec**: [spec.md](spec.md)
+**Branch**: `005-capabilities-offers-claims-impl` (spec directory `005-capabilities-offers-claims`) | **Date**: 2026-11-19 | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `/specs/005-capabilities-offers-claims/spec.md` (clarified 2026-11-19)
 
@@ -105,7 +105,7 @@ apps/web/src/app/
 └── claims/{page.tsx,claims-view.tsx}            # Claim review queue
 apps/web/src/lib/{offers-api,capabilities-api,claims-api}.ts
 tests/fixtures/claims/corpus.json    # positive and negative checker cases with class and position
-tests/{unit,integration,contracts}/…
+tests live beside each package: packages/*/test, apps/api/test (integration, contract), apps/web/test
 docs/adr/ADR-019-claim-evidence-governance.md
 ```
 
@@ -113,5 +113,5 @@ docs/adr/ADR-019-claim-evidence-governance.md
 
 ## Dependencies and ordering
 
-- **Feature 004 (PR #10)** adds migrations `0014`–`0016` and edits the same shared files (permissions, seeds, classification, composition root). This branch was cut from `main`; merge 004 or rebase before implementing, then renumber migrations if 005 lands first (research R-14).
+- **Feature 004 (PR #10)** adds migrations `0014`–`0016` and edits the same shared files (permissions, seeds, classification, composition root). Feature 004 is already on `main` (PR #10), so migrations `0017`–`0019` follow `0016` directly (research R-14).
 - Feature 006 reads `capacityStatus`; feature 007 writes bookings; feature 008 reads paid engagement types; feature 009 reads claims and the checker.

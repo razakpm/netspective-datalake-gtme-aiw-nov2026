@@ -121,21 +121,21 @@ A service lead keeps the three paid engagement types and the offer scoring table
 - **FR-002**: The system MUST treat these as restricted claim classes: quantified outcome, production status, SLA or RTO, SOC 2 or other certification, tenant isolation, legal or regulatory compliance, "AI-ready", and customer identity or case-study details.
 - **FR-003**: A claim in a restricted class MUST NOT be approved without linked evidence and sign-off from two different designated claim approvers, neither of whom drafted the claim; the default for any unapproved claim is omission.
 - **FR-004**: The system MUST provide a deterministic claim checker that flags restricted phrases in any text, returning for each match the class, the matched text and its position. It MUST NOT use a language model.
-- **FR-005**: The checker MUST flag at least: "AI-ready", SLA, SOC 2, "guarantee", "HIPAA compliant", and percentages tied to outcomes, and MUST handle capitalisation, hyphen and spacing variants.
+- **FR-005**: The checker MUST flag at least: "AI-ready", SLA, SOC 2, "guarantee", "HIPAA compliant", and percentages tied to outcomes, and MUST handle capitalisation, hyphen and spacing variants. For the customer-identity and case-study class it MUST flag a fixed set of wording ("case study", "customer story", "success story", "our client", "named customer"); naming a specific customer cannot be detected by words and is covered by keeping delivery examples internal-only (FR-022) and by the PHI guard (FR-030).
 - **FR-006**: The restricted phrase list MUST be versioned configuration with a recorded owner and change history, so a change to it is itself reviewed. The marketing approver owns the list and a second designated approver MUST review each change.
 - **FR-007**: Only a designated claim approver MAY mark a flag as a false positive, with a reason, and only for that exact text. Approvals, rejections and false-positive dispositions MUST be recorded with who, when and why, and MUST NOT be editable afterwards.
-- **FR-008**: A claim whose evidence is withdrawn or expires MUST move to needs-review and be flagged wherever it is used.
+- **FR-008**: A claim whose evidence is withdrawn or expires MUST move to needs-review and be flagged wherever it is used, including offers and capabilities whose claim cover depends on it.
 
 **Offers**
 
 - **FR-009**: The system MUST hold the ten engagement offers with the attributes listed in User Story 2 and a status of draft, internally reviewed, approved, available, withdrawn or expired.
-- **FR-010**: The system MUST only allow status moves in the defined order (draft → internally reviewed → approved → available; any → withdrawn; available or approved → expired) and MUST refuse others with a plain reason.
+- **FR-010**: The system MUST only allow status moves in the defined order (draft → internally reviewed → approved → available; any → withdrawn; available or approved → expired) and MUST refuse others with a plain reason. Expiry is a manual move by a service lead; no date triggers it in this feature.
 - **FR-011**: Every change to an offer MUST create a new immutable version; versions MUST be readable and MUST NOT be edited or deleted.
-- **FR-012**: The system MUST seed Offers 1, 5 and 6 as approved and Offers 2, 3, 4, 7, 8, 9 and 10 as draft and inactive. Any attribute not recorded in the repository MUST be stored as "to be provided", and an offer with such an attribute MUST NOT move to approved or available.
-- **FR-013**: An offer carrying a recorded limitation MUST NOT be activated until a service lead, named in the record, has acknowledged the limitation; the acknowledgement stays valid until the limitation's wording changes and MUST then be repeated; Offer 7's limitation "evaluation is a buyer prompt only" is seeded as such.
+- **FR-012**: The system MUST seed Offers 1, 5 and 6 as approved and Offers 2, 3, 4, 7, 8, 9 and 10 as draft and inactive. Any attribute not recorded in the repository MUST be stored as "to be provided", and an offer with such an attribute MUST NOT move to approved or available. The seeded approval of Offers 1, 5 and 6 is a one-time baseline decision recorded against the actor `seed`; the placeholder rule applies to every later move made by a person, and those offers show a "baseline, attributes incomplete" notice until the placeholders are filled.
+- **FR-013**: An offer carrying a recorded limitation MUST NOT be activated until a service lead, named in the record, has acknowledged the limitation; the acknowledgement stays valid until the limitation's wording changes and MUST then be repeated; if the wording of an active limitation changes after an offer is approved, the offer stays in force but is flagged "acknowledgement stale" and its next move to approved or available is refused until the limitation is acknowledged again; Offer 7's limitation "evaluation is a buyer prompt only" is seeded as such.
 - **FR-014**: Moving an offer to approved or available MUST be refused while its public text contains a restricted phrase that is not covered by an approved claim.
 - **FR-015**: The Netspective effort estimate and any score MUST be labelled as a hypothesis wherever shown.
-- **FR-016**: Each offer MUST reference its SQL rule by identifier; the rule itself is owned by qualification, not edited here.
+- **FR-016**: Each offer MUST reference its SQL rule by identifier; the rule itself is owned by qualification, not edited here. The identifier is a non-empty reference of at most 100 characters and is not checked against qualification in this feature.
 
 **Capacity**
 
@@ -150,14 +150,14 @@ A service lead keeps the three paid engagement types and the offer scoring table
 - **FR-022**: Internal delivery examples MUST be visible only to internal users and MUST NOT appear in any public-facing output.
 - **FR-023**: A capability MUST NOT be marked approved for public claims without a recorded evidence basis and an approved claim.
 - **FR-024**: The system MUST hold Sender Readiness Sprint, Input Audit and Resilience Review as paid engagement types with the scope details given, Resilience Review inactive.
-- **FR-025**: The system MUST NOT store or accept any price, fee or rate for a paid engagement type.
+- **FR-025**: The system MUST NOT store or accept any price, fee or rate for a paid engagement type; a request carrying a price, fee, rate or currency key is rejected.
 - **FR-026**: A deliverable not present in the source material MUST be rejected unless a designated approver approves it, with the approval recorded.
 - **FR-027**: The system MUST store the offer scoring table as judgement scores labelled hypothesis, with change history.
 
 **Access, audit and data boundary**
 
-- **FR-028**: Service leads MUST be able to edit capabilities and offers; delivery leads MUST be able to set capacity; only designated claim approvers MUST be able to approve claims; everyone with read access to the catalogue MUST be able to read it.
-- **FR-029**: Every create, change, status move, approval and capacity change MUST be recorded in the audit trail with who and when, and MUST publish a change notice carrying identifiers only.
+- **FR-028**: Service leads MUST be able to edit capabilities and offers; the service lead role, which also covers delivery-lead duties until a separate delivery-lead role exists, MUST be able to set capacity; only designated claim approvers MUST be able to approve claims; everyone with read access to the catalogue MUST be able to read it.
+- **FR-029**: Every create, change, status move, approval and capacity change MUST be recorded in the audit trail with who and when, and MUST be audited. Changes to capabilities, offer versions, statuses, limitations and scores, capacity limits and claims MUST publish a change notice carrying identifiers only; booking changes, paid-type and deliverable decisions and evidence changes are audit-only in this feature.
 - **FR-030**: The system MUST NOT store patient-level data, credentials or customer-identifying case-study details in any catalogue field, and MUST refuse text that matches the PHI guard.
 - **FR-031**: The catalogue MUST provide screens for browsing capabilities, working on offers and reviewing claims, showing a plain message for every refusal.
 - **FR-032**: Publishing landing pages and setting prices are out of scope; this feature only governs what may be said and offered.
@@ -184,7 +184,7 @@ A service lead keeps the three paid engagement types and the offer scoring table
 - **SC-003**: Offer 7 cannot be activated while its limitation is unacknowledged; 100% of attempts are refused with a plain reason.
 - **SC-004**: Every earlier offer version can be read back exactly as saved after any number of later changes.
 - **SC-005**: Another feature can learn whether an offer is exhausted for the current period in one request, and the answer matches the recorded limit and usage in 100% of test cases.
-- **SC-006**: A service lead can find any capability or offer and see its status and limitations within 30 seconds of opening the catalogue.
+- **SC-006**: A service lead can reach the status and limitations of any capability or offer within three interactions of opening the catalogue, and the catalogue data loads in under 2 seconds.
 - **SC-007**: No price field exists on any paid engagement type, and no internal delivery example appears in any public-facing output.
 - **SC-008**: Every change to a capability, offer, capacity limit or claim has a matching audit record naming who made it.
 

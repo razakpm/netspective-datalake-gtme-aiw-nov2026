@@ -4,7 +4,7 @@ A run-and-validate guide. It contains no implementation code. Details live in [c
 
 ## Prerequisites
 
-- Features 001 to 004 running locally (interim SQLite, ADR-015), branch `005-capabilities-offers-claims`, migrations `0017`–`0019` applied.
+- Features 001 to 004 running locally (interim SQLite, ADR-015), branch `005-capabilities-offers-claims-impl`, migrations `0017`–`0019` applied.
 - Seeded users: a service lead (`sales_service_lead`), a marketing approver (`campaign_approver`) and a second approver, an analyst and an administrator.
 - Seed applied: phrase list version 1, ten offers, Offer 7's limitation, three paid types, 19 capability slots, capacity limits (hypotheses).
 
