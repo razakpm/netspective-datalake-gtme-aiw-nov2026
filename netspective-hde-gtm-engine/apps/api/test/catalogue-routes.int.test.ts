@@ -98,6 +98,7 @@ describe("concurrent edits", () => {
     });
     expect(second.statusCode).toBe(409);
     expect(second.json().detail).toMatch(/Reload/);
+    expect(second.json().codes).toEqual(["stale_version"]);
     expect(count("offer_version")).toBe(11);
   });
 

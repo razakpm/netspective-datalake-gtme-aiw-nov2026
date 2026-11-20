@@ -66,7 +66,7 @@ export function audited<T>(
           : error.ruleIds.length
             ? `Rejected by the PHI boundary guard (${error.ruleIds.join(", ")})`
             : `Refused: ${error.codes.join(", ")}`),
-      { ...(error.ruleIds.length ? { ruleIds: error.ruleIds } : {}) },
+      { ...(error.ruleIds.length ? { ruleIds: error.ruleIds } : {}), codes: error.codes },
     );
   }
 }
