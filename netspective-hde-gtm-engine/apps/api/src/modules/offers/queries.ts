@@ -38,6 +38,8 @@ export interface VersionView {
   statusChangedBy: string;
   statusChangedAt: string;
   superseded: boolean;
+  /** Every status the version has been through, oldest first. */
+  history: { status: OfferStatus; changedBy: string; note: string | null; changedAt: string }[];
 }
 
 export interface LimitationView {
@@ -96,6 +98,7 @@ export function versionView(tx: Tx, row: VersionRow): VersionView {
     statusChangedBy: status.changedBy,
     statusChangedAt: status.changedAt,
     superseded: isSuperseded(tx, row.offerId, row.versionNo),
+    history: statusHistory(tx, row.offerId, row.versionNo),
   };
 }
 

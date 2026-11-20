@@ -30,3 +30,4 @@ export {
   type PermissionsOf,
 } from "./review.js";
 export { ClaimStaleness, type StalenessActor } from "./staleness.js";
+export { registerClaimRoutes, lintOut, type ClaimRouteDeps } from "./routes.js";

@@ -11,3 +11,4 @@ export {
   type CapabilitySummary,
 } from "./service.js";
 export { toPublicCapability, type PublicCapability } from "./projection.js";
+export { registerCapabilityRoutes, type CapabilityRouteDeps } from "./routes.js";

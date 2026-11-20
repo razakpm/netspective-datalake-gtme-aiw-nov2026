@@ -36,3 +36,4 @@ export {
   type ScoreSettings,
   type ScoreView,
 } from "./scores.js";
+export { registerOfferRoutes, type OfferRouteDeps } from "./routes.js";

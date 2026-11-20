@@ -109,6 +109,14 @@ export class CapacityService {
     return this.db.transaction((tx) => this.statusIn(tx, offerId, at));
   }
 
+  /** The same answer for a signed-in caller: needs offers.read, and a refusal is audited. */
+  statusFor(actor: CatalogueActor, offerId: string, at: Date): CapacityStatus {
+    return audited(this.db, actor, "offer.read.refused", "engagement_offer", offerId, () => {
+      requirePermission(actor, "offers.read");
+      return this.capacityStatus(offerId, at);
+    });
+  }
+
   listLimits(actor: CatalogueActor, offerId: string): CapacityRow[] {
     return audited(this.db, actor, "offer.read.refused", "engagement_offer", offerId, () => {
       requirePermission(actor, "offers.read");
