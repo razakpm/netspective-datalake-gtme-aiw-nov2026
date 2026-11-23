@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import {
   PROMPTS,
   SCHEMA_REGISTRY,
+  type OfferRecommendationInput,
   promptText,
   exportJsonSchemas,
   type PromptDefinition,
@@ -40,6 +41,8 @@ export interface ModelInput {
   signalObservations: { id: string; text: string }[];
   /** A buyer-supplied non-PHI problem statement (untrusted), for interpretation only. */
   statement?: string | undefined;
+  /** Feature 006: a typed allow-list of identifiers and codes for the offer explanation; no external text. */
+  recommendation?: OfferRecommendationInput | undefined;
   /** Our own configuration values: allowed keys. Placed in the instruction channel, never in data. */
   reference: { signalTypeKeys: string[]; categoryKeys: string[]; capabilityKeys: string[] };
 }
@@ -50,11 +53,15 @@ const ALLOWED_KEYS = new Set([
   "signalObservations",
   "statement",
   "reference",
+  "recommendation",
 ]);
 
 /** Build the model input; a field outside the allow-list is refused (research R-06, spec FR-020). */
 export function buildModelInput(
-  input: Omit<ModelInput, "statement"> & { statement?: string },
+  input: Omit<ModelInput, "statement" | "recommendation"> & {
+    statement?: string;
+    recommendation?: OfferRecommendationInput;
+  },
 ): ModelInput {
   for (const key of Object.keys(input)) {
     if (!ALLOWED_KEYS.has(key)) throw new Error(`model input field "${key}" is not allowed`);
@@ -68,6 +75,7 @@ export function buildModelInput(
     sources: input.sources,
     signalObservations: input.signalObservations,
     statement: input.statement,
+    recommendation: input.recommendation,
     reference: input.reference,
   };
 }
@@ -161,6 +169,13 @@ export class LlmGateway {
     for (const s of input.sources) out.push({ id: s.id, label: s.label, text: NEUTRALISE(s.text) });
     for (const s of input.signalObservations)
       out.push({ id: s.id, label: "signal", text: NEUTRALISE(s.text) });
+    if (input.recommendation) {
+      out.push({
+        id: "recommendation",
+        label: "recommendation",
+        text: JSON.stringify(input.recommendation),
+      });
+    }
     if (input.statement)
       out.push({ id: "statement", label: "buyer statement", text: NEUTRALISE(input.statement) });
     return out;

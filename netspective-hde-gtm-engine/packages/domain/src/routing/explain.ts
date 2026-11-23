@@ -15,7 +15,7 @@ export const EXPLANATION_MAX = 600;
 const REASON: Record<ExclusionCode, string> = {
   account_excluded: "the account's ICP fit is excluded",
   fit_not_priority: "ICP fit is not a priority fit",
-  contact_suppressed: "the contact is suppressed",
+  contact_suppressed: "the contact or account is suppressed",
   no_communication_permission: "there is no permission to contact",
   offer_unavailable: "is not available",
   capacity_exhausted: "is full for this period",

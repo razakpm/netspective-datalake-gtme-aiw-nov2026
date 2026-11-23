@@ -101,3 +101,22 @@ export function guardFreeText(parts: Record<string, unknown>): void {
 }
 
 export const nowOf = (actor: CatalogueActor): Date => (actor.now ?? (() => new Date()))();
+
+/** The same as `audited`, for an asynchronous operation (a refusal is audited, then raised as a problem). */
+export async function auditedAsync<T>(
+  db: SqliteDatabase,
+  actor: CatalogueActor,
+  action: string,
+  entityType: string,
+  entityId: string | null,
+  fn: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    // Reuse the synchronous handler: it audits a CatalogueRefusal and rethrows anything else.
+    return audited(db, actor, action, entityType, entityId, () => {
+      throw error;
+    });
+  }
+}

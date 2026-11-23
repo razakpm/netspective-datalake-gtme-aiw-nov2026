@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
+import { OfferRecommendationExplainSchema } from "./offer-recommendation.js";
 import {
   AccountHypothesisProposalsSchema,
   AccountResearchSummarySchema,
@@ -39,6 +40,11 @@ export const SCHEMA_REGISTRY: Readonly<Record<string, SchemaEntry>> = {
     version: "1.0.0",
     schema: ProblemInterpretationSchema,
   },
+  "offer-recommendation-explain": {
+    id: "offer-recommendation-explain",
+    version: "1.0.0",
+    schema: OfferRecommendationExplainSchema,
+  },
 };
 
 export function exportJsonSchemas(): Record<string, unknown> {
@@ -51,7 +57,7 @@ export function exportJsonSchemas(): Record<string, unknown> {
 }
 
 export interface PromptDefinition {
-  name: "research-extract" | "hypothesis-propose" | "problem-interpret";
+  name: "research-extract" | "hypothesis-propose" | "problem-interpret" | "offer-explain";
   version: string;
   task: "extraction" | "synthesis" | "interpretation";
   outputSchemaId: string;
@@ -75,6 +81,12 @@ export const PROMPTS: readonly PromptDefinition[] = [
     version: "1.0.0",
     task: "interpretation",
     outputSchemaId: "problem-interpretation",
+  },
+  {
+    name: "offer-explain",
+    version: "1.0.0",
+    task: "synthesis",
+    outputSchemaId: "offer-recommendation-explain",
   },
 ];
 

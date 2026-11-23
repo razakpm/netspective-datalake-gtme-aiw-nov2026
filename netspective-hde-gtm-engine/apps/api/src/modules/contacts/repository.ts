@@ -193,3 +193,15 @@ export function accountOfContact(tx: Tx, contactId: string): string | null {
     .get(contactId) as { account_id: string } | undefined;
   return r?.account_id ?? null;
 }
+
+/** The stakeholder role as confirmed, else as inferred, for the contact at the account; null when unknown. */
+export function buyerRoleOf(tx: Tx, accountId: string, contactId: string): string | null {
+  const r = tx
+    .prepare(
+      `SELECT role_confirmed, role_inferred FROM account_contact_relationship
+       WHERE account_id = ? AND contact_id = ? AND ended_at IS NULL`,
+    )
+    .get(accountId, contactId) as
+    { role_confirmed: string | null; role_inferred: string | null } | undefined;
+  return r?.role_confirmed ?? r?.role_inferred ?? null;
+}

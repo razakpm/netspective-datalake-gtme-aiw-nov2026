@@ -1865,6 +1865,67 @@
         "excluded": [],
         "outreach": "allowed"
       }
+    },
+    {
+      "id": "account-suppressed-no-contact",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "account": {
+          "suppressed": true
+        },
+        "contact": null,
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "no_action",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:contact_suppressed"],
+        "outreach": "blocked:contact_suppressed"
+      }
+    },
+    {
+      "id": "account-suppressed-other-contact",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "account": {
+          "suppressed": true
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "no_action",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:contact_suppressed"],
+        "outreach": "blocked:contact_suppressed"
+      }
     }
   ]
 }

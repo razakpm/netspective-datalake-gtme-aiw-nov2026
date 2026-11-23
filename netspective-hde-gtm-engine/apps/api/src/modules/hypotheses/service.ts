@@ -530,6 +530,44 @@ export class HypothesisService {
     });
   }
 
+  /**
+   * The facts the routing engine needs about an account's accepted hypotheses (feature 006): category,
+   * capability tags, effective status (staleness applied), banded confidence and how many supporting
+   * signals count as current evidence right now. Read-only.
+   */
+  routingFacts(accountId: string, now: Date = this.clock()): RoutingHypothesisFact[] {
+    return this.db.transaction((tx) => {
+      const scope = scopeOf(tx, accountId);
+      if (!scope) return [];
+      const rows = tx
+        .prepare(
+          `SELECT * FROM account_hypothesis WHERE account_id IN (${scope.ids.map(() => "?").join(",")})
+           AND acceptance = 'accepted' ORDER BY id`,
+        )
+        .all(...scope.ids) as unknown as HypothesisRow[];
+      return rows.map((h) => {
+        const summary = this.summary(tx, h, now);
+        const capabilities = (
+          tx
+            .prepare(
+              "SELECT value FROM hypothesis_tag WHERE hypothesis_id = ? AND dimension = 'capability' ORDER BY value",
+            )
+            .all(h.id) as { value: string }[]
+        ).map((t) => t.value);
+        return {
+          id: h.id,
+          category: h.category,
+          capabilities,
+          acceptance: h.acceptance,
+          effectiveStatus: summary.effectiveStatus,
+          band: h.confidence_band,
+          currentSupportingSignals: evidenceView(tx, h.id, now).states.filter((e) => e.currentNow)
+            .length,
+        };
+      });
+    });
+  }
+
   list(
     accountId: string,
     filter: {
@@ -566,6 +604,16 @@ export class HypothesisService {
       };
     });
   }
+}
+
+export interface RoutingHypothesisFact {
+  id: string;
+  category: string;
+  capabilities: string[];
+  acceptance: "proposed" | "accepted" | "dismissed";
+  effectiveStatus: HypothesisStatus | null;
+  band: "low" | "medium" | "high";
+  currentSupportingSignals: number;
 }
 
 export interface HypothesisSummary {

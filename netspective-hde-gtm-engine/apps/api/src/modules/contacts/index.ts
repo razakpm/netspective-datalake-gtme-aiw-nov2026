@@ -12,4 +12,4 @@ export {
   checkSuppression,
   type SuppressionSubject,
 } from "./suppression.js";
-export { latestBasis, accountOfContact } from "./repository.js";
+export { latestBasis, accountOfContact, buyerRoleOf, contactById } from "./repository.js";

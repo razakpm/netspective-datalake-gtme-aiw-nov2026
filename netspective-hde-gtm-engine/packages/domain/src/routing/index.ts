@@ -6,3 +6,4 @@ export * from "./eligibility.js";
 export * from "./evaluate.js";
 export * from "./explain.js";
 export * from "./corpus.js";
+export * from "./corpus-data.js";

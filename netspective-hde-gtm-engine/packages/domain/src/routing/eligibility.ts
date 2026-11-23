@@ -22,9 +22,11 @@ export interface Blockers {
 export function blockersOf(ctx: Pick<RoutingContext, "account" | "contact">): Blockers {
   const fit = priorityEligibility(ctx.account.fit);
   const contactLevel: ExclusionCode[] = [];
-  if (ctx.contact) {
-    if (ctx.contact.suppressed) contactLevel.push("contact_suppressed");
-    if (!hasCommunicationPermission(ctx.contact)) contactLevel.push("no_communication_permission");
+  if (ctx.contact?.suppressed || ctx.account.suppressed === true) {
+    contactLevel.push("contact_suppressed");
+  }
+  if (ctx.contact && !hasCommunicationPermission(ctx.contact)) {
+    contactLevel.push("no_communication_permission");
   }
   return { accountLevel: fit.eligible ? null : fit.code, contactLevel };
 }

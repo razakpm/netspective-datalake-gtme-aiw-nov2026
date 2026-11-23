@@ -1,6 +1,7 @@
 import type { Tx } from "@gtm/db";
 import {
   toOfferCapacityChangedPayload,
+  toOfferRecommendedPayload,
   toOfferUpdatedPayload,
   type ActorType,
   type OfferStatus,
@@ -78,3 +79,30 @@ export const ctxOf = (a: {
   correlationId: a.correlationId,
   now: a.now,
 });
+
+export function emitOfferRecommended(
+  tx: Tx,
+  c: Ctx,
+  p: {
+    recommendationId: string;
+    accountId: string;
+    outcome: "offer" | "research" | "no_action";
+    outreach: "allowed" | "blocked";
+    ruleSetVersion: number;
+  },
+): void {
+  writeOutbox(
+    tx,
+    {
+      ...base(c, "offer.recommended"),
+      payload: toOfferRecommendedPayload({
+        recommendation_id: p.recommendationId,
+        account_id: p.accountId,
+        outcome: p.outcome,
+        outreach: p.outreach,
+        rule_set_version: p.ruleSetVersion,
+      }),
+    },
+    c.now,
+  );
+}

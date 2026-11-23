@@ -63,7 +63,7 @@ export interface PriorInteractionsFact {
 
 export interface RoutingContext {
   trigger: Trigger;
-  account: { id: string; icp: IcpKey | null; fit: FitStatus };
+  account: { id: string; icp: IcpKey | null; fit: FitStatus; suppressed?: boolean };
   contact: ContactFact | null;
   hypotheses: HypothesisFact[];
   offers: OfferFact[];
