@@ -33,7 +33,7 @@ import {
   type CatalogueActor,
 } from "../../platform/catalogue.js";
 import { recordAudit } from "../audit/index.js";
-import { buildModelInput, type LlmGateway } from "../providers/llm-gateway.js";
+import { buildModelInput, type LlmGateway } from "../providers/index.js";
 import { ctxOf, emitOfferRecommended } from "./events.js";
 import type { Recommender } from "./ports.js";
 import type { RoutingContextBuilder } from "./routing-context.js";

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { SqliteDatabase, Tx } from "@gtm/db";
 import { bestFit, evaluateFit, parseIcpDefinition, type FitStatus, type IcpKey } from "@gtm/domain";
 import { v7 as uuidv7 } from "uuid";
-import { currentClassification } from "../accounts/repository.js";
+import { currentClassification } from "../accounts/index.js";
 import { recordAudit } from "../audit/index.js";
 import type { WriteContext } from "../contacts/index.js";
 import {

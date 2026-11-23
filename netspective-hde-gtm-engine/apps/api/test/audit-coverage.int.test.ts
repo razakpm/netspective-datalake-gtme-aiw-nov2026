@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { DEFAULT_PHRASE_RULES, FOUNDATION_ROLE_PERMISSIONS } from "@gtm/domain";
+import { DEFAULT_PHRASE_RULES, FOUNDATION_ROLE_PERMISSIONS, RULE_SET_V1 } from "@gtm/domain";
 import { buildIdentityFixture, type IdentityFixture } from "../test-support/identity-fixture.js";
 
 // SC-002 and FR-010/011 across ALL routes (task T055). The route list comes from Fastify's registry, so
@@ -508,6 +508,45 @@ DRIVERS["PUT /api/v1/service-capabilities/:id/public-claim-status"] = async (f) 
 };
 
 /** Routes that cannot be driven through the fake issuer (none yet; webhook ingress arrives with US5). */
+// Feature 006 routes (recommendations and routing rule sets). Operators may recommend, so the forbidden
+// attempt for those uses a read-only role; rule set changes are forbidden to operators.
+const seedActor = (f: IdentityFixture) => ({
+  userId: "seed-lead",
+  actorType: "human" as const,
+  correlationId: null,
+  permissions: FOUNDATION_ROLE_PERMISSIONS.administrator,
+  now: () => f.clock.now,
+});
+async function pendingRecommendation(f: IdentityFixture): Promise<string> {
+  const account = makeAccount(f);
+  const r = await f.routing.recommendations.recommend(seedActor(f), { accountId: account });
+  return r.id;
+}
+DRIVERS["POST /api/v1/accounts/:id/offer-recommendations"] = async (f) => ({
+  url: `/api/v1/accounts/${makeAccount(f)}/offer-recommendations`,
+  payload: {},
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/offer-recommendations/:id/review"] = async (f) => ({
+  url: `/api/v1/offer-recommendations/${await pendingRecommendation(f)}/review`,
+  payload: { decision: "dismiss", reason: "Coverage check" },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/routing-rule-sets"] = async () => ({
+  url: "/api/v1/routing-rule-sets",
+  payload: { rules: RULE_SET_V1.rules, reason: "Coverage check" },
+});
+DRIVERS["POST /api/v1/routing-rule-sets/:version/activate"] = async (f) => {
+  const draft = f.routing.ruleSets.createDraft(seedActor(f), {
+    rules: RULE_SET_V1,
+    reason: "Coverage check",
+  });
+  return {
+    url: `/api/v1/routing-rule-sets/${draft.version}/activate`,
+    payload: { reason: "Coverage check" },
+  };
+};
+
 const EXEMPT: Record<string, string> = {
   // Reads and checks text, stores nothing and so writes no success audit event; a refusal is still audited.
   "POST /api/v1/claims/lint": "stores nothing",

@@ -29,7 +29,8 @@ import { PhiNotifier } from "./platform/events/phi-notifier.js";
 import { buildCatalogueStack, type CatalogueStack } from "./catalogue-stack.js";
 import { registerCapabilityRoutes } from "./modules/capabilities/index.js";
 import { registerClaimRoutes } from "./modules/claims/index.js";
-import { registerOfferRoutes } from "./modules/offers/index.js";
+import { registerOfferRoutes, registerRecommendationRoutes } from "./modules/offers/index.js";
+import { buildRoutingStack, type RoutingStack } from "./routing-stack.js";
 import { buildResearchStack, type ResearchStack } from "./research-stack.js";
 
 // Composition root: builds the database, services and routes from configuration. The persistence is
@@ -46,6 +47,7 @@ export interface Services {
   signalSources: SourceService;
   research: ResearchStack;
   catalogue: CatalogueStack;
+  routing: RoutingStack;
 }
 
 export function openDatabase(path: string): SqliteDatabase {
@@ -72,6 +74,8 @@ export function buildServices(config: AppConfig, db: SqliteDatabase): Services {
     similarityThreshold: config.signals.similarityThreshold,
     retentionMonths: config.signals.retentionMonths,
   });
+  const research = buildResearchStack({ db, config, jobs, signals });
+  const catalogue = buildCatalogueStack({ db, config });
   return {
     db,
     identity: new IdentityService(db),
@@ -85,8 +89,15 @@ export function buildServices(config: AppConfig, db: SqliteDatabase): Services {
       config.retention.quarantineDays,
     ),
     jobs,
-    research: buildResearchStack({ db, config, jobs, signals }),
-    catalogue: buildCatalogueStack({ db, config }),
+    research,
+    catalogue,
+    routing: buildRoutingStack({
+      db,
+      config,
+      catalogue,
+      hypotheses: research.hypotheses,
+      gateway: research.gateway,
+    }),
   };
 }
 
@@ -167,6 +178,12 @@ export async function buildHttpApp(config: AppConfig, logger: Logger, services: 
         bookings: services.catalogue.bookings,
         scores: services.catalogue.scores,
         paidTypes: services.catalogue.paidTypes,
+        authz,
+      });
+      registerRecommendationRoutes(app, {
+        db: services.db,
+        recommendations: services.routing.recommendations,
+        ruleSets: services.routing.ruleSets,
         authz,
       });
       registerCapabilityRoutes(app, {

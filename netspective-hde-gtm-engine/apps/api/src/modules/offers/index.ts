@@ -60,3 +60,7 @@ export {
   type PriorInteractions,
   type Recommender,
 } from "./ports.js";
+export {
+  registerRecommendationRoutes,
+  type RecommendationRouteDeps,
+} from "./recommendation-routes.js";

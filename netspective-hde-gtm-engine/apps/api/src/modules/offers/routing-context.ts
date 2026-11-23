@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { SqliteDatabase } from "@gtm/db";
 import type { OfferFact, RoutingContext, RuleSet, Trigger } from "@gtm/domain";
 import { HttpError } from "../../http/errors.js";
-import { getAccount } from "../accounts/repository.js";
+import { getAccount } from "../accounts/index.js";
 import { buyerRoleOf, checkSuppression, contactById, latestBasis } from "../contacts/index.js";
 import type { HypothesisService } from "../hypotheses/index.js";
 import type { IcpService } from "../icp/index.js";
