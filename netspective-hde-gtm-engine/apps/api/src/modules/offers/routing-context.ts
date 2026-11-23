@@ -121,7 +121,11 @@ export class RoutingContextBuilder {
 
 /** A stable hash of the facts a recommendation used; a change in any of them makes it out of date. */
 export function hashContext(context: RoutingContext): string {
-  return createHash("sha256").update(canonical(context)).digest("hex");
+  // Prior interactions are shown in an explanation but no rule reads them, so a repeat download does not
+  // make a pending recommendation out of date or create a second one (spec FR-022).
+  const { prior: _prior, ...facts } = context;
+  void _prior;
+  return createHash("sha256").update(canonical(facts)).digest("hex");
 }
 
 function canonical(value: unknown): string {

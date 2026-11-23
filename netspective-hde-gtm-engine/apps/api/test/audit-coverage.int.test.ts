@@ -547,9 +547,67 @@ DRIVERS["POST /api/v1/routing-rule-sets/:version/activate"] = async (f) => {
   };
 };
 
+// Feature 006: the request inbox and notice versions. Operators review; marketing approvers handle notices.
+let requestSeq = 0;
+function makeRequest(f: IdentityFixture): string {
+  const id = `request-${requestSeq++}`;
+  const offer = (
+    f.db.raw.prepare("SELECT id FROM engagement_offer WHERE number = 5").get() as { id: string }
+  ).id;
+  f.db.raw
+    .prepare(
+      "INSERT INTO offer_request (id, offer_id, form_slug, kind, email_hash, submitted_at) VALUES (?,?,?,?,?,?)",
+    )
+    .run(
+      id,
+      offer,
+      "ccda-to-fhir-mapping-decision-register",
+      "download",
+      `hash-${id}`,
+      new Date().toISOString(),
+    );
+  const at = new Date().toISOString();
+  f.db.raw
+    .prepare(
+      "INSERT OR IGNORE INTO notice_version (id, version, notice_text, consent_text, created_by, created_at, approved_by, approved_at) VALUES ('nv-cov', 1, 'Notice text for coverage.', 'Consent text.', 'someone', ?, 'other', ?)",
+    )
+    .run(at, at);
+  f.db.raw
+    .prepare(
+      "INSERT INTO consent_record (id, request_id, email_hash, notice_version_id, consent_given, recorded_at) VALUES (?,?,?,?,1,?)",
+    )
+    .run(`cr-${id}`, id, `hash-${id}`, "nv-cov", at);
+  return id;
+}
+DRIVERS["POST /api/v1/offer-requests/:id/review"] = async (f) => ({
+  url: `/api/v1/offer-requests/${makeRequest(f)}/review`,
+  payload: { action: "mark_reviewed" },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/notice-versions"] = async () => ({
+  url: "/api/v1/notice-versions",
+  payload: {
+    noticeText: "A notice with enough words to be valid.",
+    consentText: "I agree to be contacted.",
+  },
+});
+DRIVERS["POST /api/v1/notice-versions/:id/approve"] = async (f) => {
+  const id = `nv-${requestSeq++}`;
+  f.db.raw
+    .prepare(
+      "INSERT INTO notice_version (id, version, notice_text, consent_text, created_by, created_at) VALUES (?, ?, 'Notice text for coverage.', 'Consent text.', 'someone', ?)",
+    )
+    .run(id, 1000 + requestSeq, new Date().toISOString());
+  return { url: `/api/v1/notice-versions/${id}/approve`, payload: {} };
+};
+
 const EXEMPT: Record<string, string> = {
   // Reads and checks text, stores nothing and so writes no success audit event; a refusal is still audited.
   "POST /api/v1/claims/lint": "stores nothing",
+  // The public form has no signed-in actor: each accepted submission writes one `offer_request.receive` audit
+  // event (tests: public-download.int.test.ts), and a refusal is recorded by the PHI guard or not stored at all.
+  "POST /api/v1/public/offers/:slug/requests":
+    "public, unauthenticated; audited as offer_request.receive",
 };
 
 const REQUIRED = [

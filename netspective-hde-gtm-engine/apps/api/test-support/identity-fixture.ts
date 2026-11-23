@@ -29,6 +29,9 @@ import { registerCapabilityRoutes } from "../src/modules/capabilities/index.js";
 import { registerClaimRoutes } from "../src/modules/claims/index.js";
 import { registerOfferRoutes, registerRecommendationRoutes } from "../src/modules/offers/index.js";
 import { buildRoutingStack, type RoutingStack } from "../src/routing-stack.js";
+import { buildEngagementStack, type EngagementStack } from "../src/engagement-stack.js";
+import { registerEngagementRoutes, registerPublicRoutes } from "../src/modules/engagement/index.js";
+import { FakeFileStorage } from "@gtm/providers";
 import { buildResearchStack, type ResearchStack } from "../src/research-stack.js";
 import { loadPages, loadScenario } from "./research-harness.js";
 import { FakeIssuer } from "./fake-oidc/issuer.js";
@@ -46,6 +49,10 @@ export interface FixtureOptions {
   quarantineEntryPoints?: string[];
   /** Fake-model scenario for the research stack (default northvale). */
   researchScenario?: string;
+  /** Sites allowed to call the public forms from a browser (default none). */
+  publicOrigins?: string[];
+  /** Overrides the per-minute limit on public POSTs. */
+  postLimitPerMinute?: number;
 }
 
 export interface IdentityFixture extends TestServer {
@@ -62,6 +69,9 @@ export interface IdentityFixture extends TestServer {
   research: ResearchStack;
   catalogue: CatalogueStack;
   routing: RoutingStack;
+  engagement: EngagementStack;
+  /** The fake file store holding the synthetic register under the configured key. */
+  files: FakeFileStorage;
   fakeLlm: FakeLLM;
   fakeSource: FakeResearchSource;
   /** Insert an active user directly (bypassing the API) and return a bearer token for them. */
@@ -133,6 +143,13 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
     hypotheses: research.hypotheses,
     gateway: research.gateway,
   });
+  const config = loadConfig({
+    NODE_ENV: "test",
+    DATABASE_URL: "postgres://gtm:x@localhost:5432/gtm",
+  });
+  const files = new FakeFileStorage(config.routing.downloadSigningKey);
+  files.put(config.routing.registerFileKey, Buffer.from("synthetic register"), "application/pdf");
+  const engagement = buildEngagementStack({ db, config, routing, files });
   const server = await buildTestServer({
     phiGuardSink: createPhiGuardSink(db, notifier),
     ...(options.quarantineEntryPoints
@@ -141,7 +158,7 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
           quarantine: { hold: (input) => db.transaction((tx) => quarantine.hold(tx, input)) },
         }
       : {}),
-    routes: (app) => {
+    routes: async (app) => {
       app.addHook("onRoute", (route) => {
         for (const method of [route.method].flat()) routes.push({ method, url: route.url });
       });
@@ -190,6 +207,22 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
         authz,
         now: () => clock.now,
       });
+      await registerPublicRoutes(app, {
+        requests: engagement.requests,
+        delivery: engagement.delivery,
+        formTokenKey: config.routing.formTokenKey,
+        origins: options.publicOrigins ?? [],
+        postLimitPerMinute: options.postLimitPerMinute ?? config.routing.postRateLimitPerMinute,
+        getLimitPerMinute: config.routing.getRateLimitPerMinute,
+        now: () => clock.now,
+      });
+      registerEngagementRoutes(app, {
+        db,
+        requests: engagement.requests,
+        notices: engagement.notices,
+        authz,
+        now: () => clock.now,
+      });
       registerRecommendationRoutes(app, {
         db,
         recommendations: routing.recommendations,
@@ -229,6 +262,8 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
     research,
     catalogue,
     routing,
+    engagement,
+    files,
     fakeLlm,
     fakeSource,
     clock,

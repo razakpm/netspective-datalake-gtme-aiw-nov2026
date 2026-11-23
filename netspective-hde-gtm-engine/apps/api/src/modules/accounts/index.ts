@@ -9,6 +9,11 @@ export { registerAccountRoutes, type AccountRouteDeps, type ConflictResolver } f
 export { processAccountRow, ACCOUNT_CSV } from "./import.js";
 export { decideMerge, getReviewItem, type Actor } from "./merge.js";
 export {
+  resolveAccountForForm,
+  type FormAccountContext,
+  type FormAccountResult,
+} from "./first-party.js";
+export {
   currentClassification,
   getAccount,
   loadMatchAccounts,
