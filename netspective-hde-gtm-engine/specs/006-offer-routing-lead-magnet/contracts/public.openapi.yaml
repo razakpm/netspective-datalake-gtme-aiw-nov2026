@@ -1,0 +1,151 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine public API — lead magnet and intake forms
+  version: 0.1.0
+  description: |
+    Unauthenticated endpoints for the Offer 5 register download, the 30-minute working session request and the
+    Offer 1 and Offer 6 intake forms. No cookies and no session. Cross-origin calls are allowed only from the
+    configured list of sites. Submissions are checked for patient-like data and for automated abuse; a refusal
+    stores nothing. Nothing here sends an email.
+servers:
+  - url: /api/v1/public
+paths:
+  /offers/{slug}/form:
+    parameters: [ { $ref: '#/components/parameters/Slug' } ]
+    get:
+      operationId: getPublicForm
+      summary: "The form for an offer: its fields, the approved notice and consent wording, and a form token. 503 when no notice version is approved yet."
+      responses:
+        '200': { description: "Form.", content: { application/json: { schema: { $ref: '#/components/schemas/FormDefinition' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/Problem' }
+  /offers/{slug}/requests:
+    parameters: [ { $ref: '#/components/parameters/Slug' } ]
+    post:
+      operationId: submitPublicRequest
+      summary: "Submit a download, a working session request or an intake, depending on the slug and kind. Needs the form token, an empty honeypot and a minimum time since the form was issued."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/PublicRequest' } } }
+      responses:
+        '201': { description: "Received.", content: { application/json: { schema: { $ref: '#/components/schemas/Receipt' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/Problem' }
+  /downloads/{token}:
+    parameters: [ { in: path, name: token, required: true, schema: { type: string, maxLength: 400 } } ]
+    get:
+      operationId: downloadRegister
+      summary: "The register file, while the signed link is valid."
+      responses:
+        '200': { description: "The file.", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+components:
+  parameters:
+    Slug: { in: path, name: slug, required: true, schema: { type: string, enum: [ccda-to-fhir-mapping-decision-register, sender-onboarding-friction-map, pilot-input-trace-workshop] } }
+  responses:
+    Problem:
+      description: "Problem details with a plain message. Codes: invalid_form_token, too_fast, honeypot, phi_guard, rate_limited, no_notice, delivery_failed, link_expired."
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties: { type: { type: string }, title: { type: string }, status: { type: integer }, detail: { type: string }, codes: { type: array, items: { type: string } } }
+    FormDefinition:
+      type: object
+      required: [slug, title, kinds, notice, formToken, issuedAt]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        kinds: { type: array, items: { type: string, enum: [download, working_session, intake] } }
+        orgTypes: { type: array, items: { type: object, required: [key, label], properties: { key: { type: string }, label: { type: string } } } }
+        notice: { type: object, required: [versionId, noticeText, consentText], properties: { versionId: { type: string }, noticeText: { type: string }, consentText: { type: string } } }
+        formToken: { type: string }
+        issuedAt: { type: string, format: date-time }
+    Contact:
+      type: object
+      additionalProperties: false
+      required: [email, role, orgName, orgType]
+      properties:
+        email: { type: string, maxLength: 254 }
+        displayName: { type: string, maxLength: 120 }
+        role: { type: string, minLength: 2, maxLength: 120 }
+        orgName: { type: string, minLength: 2, maxLength: 200 }
+        orgType: { type: string, maxLength: 60 }
+    Common:
+      type: object
+      required: [formToken, noticeVersionId, website]
+      properties:
+        formToken: { type: string }
+        noticeVersionId: { type: string, description: "The notice version shown to the person." }
+        consentToContact: { type: boolean, description: "Optional. Never a condition of receiving the register." }
+        website: { type: string, maxLength: 0, description: "Honeypot: must be empty." }
+    DownloadRequest:
+      allOf:
+        - { $ref: '#/components/schemas/Common' }
+        - type: object
+          required: [kind, contact]
+          properties: { kind: { type: string, enum: [download] }, contact: { $ref: '#/components/schemas/Contact' } }
+    SessionRequest:
+      allOf:
+        - { $ref: '#/components/schemas/Common' }
+        - type: object
+          required: [kind, contact, decisions]
+          properties:
+            kind: { type: string, enum: [working_session] }
+            contact: { $ref: '#/components/schemas/Contact' }
+            decisions: { type: array, minItems: 1, maxItems: 5, items: { type: string, minLength: 3, maxLength: 300 } }
+    Offer1Intake:
+      type: object
+      additionalProperties: false
+      required: [programType, organisationName, recentOnboarding, attendingRoles, specsAvailable, scrubbedRejectionLogsAvailable]
+      properties:
+        programType: { type: string, maxLength: 60 }
+        organisationName: { type: string, maxLength: 200 }
+        recentOnboarding: { type: object, additionalProperties: false, required: [senderLabel, formatAndGuide, timelineAndStages], properties: { senderLabel: { type: string, maxLength: 120 }, formatAndGuide: { type: string, maxLength: 500 }, timelineAndStages: { type: string, maxLength: 500 } } }
+        knownDelays: { type: array, maxItems: 10, items: { type: string, maxLength: 500 } }
+        attendingRoles: { type: array, minItems: 1, maxItems: 10, items: { type: string, maxLength: 120 } }
+        specsAvailable: { type: string, enum: [yes, no, unsure] }
+        scrubbedRejectionLogsAvailable: { type: string, enum: [yes, no, unsure] }
+    Offer6Intake:
+      type: object
+      additionalProperties: false
+      required: [useCase, pilotOwner, sourceSystems, fieldNames, dataLead, attendees]
+      properties:
+        useCase: { type: string, maxLength: 200 }
+        pilotOwner: { type: string, maxLength: 120 }
+        sourceSystems: { type: array, minItems: 1, maxItems: 10, items: { type: string, maxLength: 120 } }
+        fieldNames: { type: array, minItems: 10, maxItems: 10, items: { type: string, maxLength: 60 }, description: "Exactly ten field names. Values are refused." }
+        dataLead: { type: string, maxLength: 120 }
+        fieldQualityConcerns: { type: array, maxItems: 10, items: { type: string, maxLength: 500 } }
+        interfaceTypes: { type: array, maxItems: 10, items: { type: string, maxLength: 120 } }
+        attendees: { type: array, minItems: 1, maxItems: 10, items: { type: string, maxLength: 120 } }
+    IntakeRequest:
+      allOf:
+        - { $ref: '#/components/schemas/Common' }
+        - type: object
+          required: [kind, contact, intake]
+          properties:
+            kind: { type: string, enum: [intake] }
+            contact: { $ref: '#/components/schemas/Contact' }
+            intake: { oneOf: [ { $ref: '#/components/schemas/Offer1Intake' }, { $ref: '#/components/schemas/Offer6Intake' } ] }
+    PublicRequest:
+      oneOf:
+        - { $ref: '#/components/schemas/DownloadRequest' }
+        - { $ref: '#/components/schemas/SessionRequest' }
+        - { $ref: '#/components/schemas/IntakeRequest' }
+    Receipt:
+      type: object
+      required: [requestId, status]
+      properties:
+        requestId: { type: string }
+        status: { type: string, enum: [received] }
+        flags: { type: array, items: { type: string, enum: [personal_email] }, description: "Shown so the person knows their address will be reviewed by a person." }
+        download: { type: object, required: [url, expiresAt, delivered], properties: { url: { type: [string, 'null'] }, expiresAt: { type: [string, 'null'], format: date-time }, delivered: { type: boolean } } }

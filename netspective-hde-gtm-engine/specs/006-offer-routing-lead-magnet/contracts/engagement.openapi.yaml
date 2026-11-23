@@ -1,0 +1,124 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — request inbox and notice versions
+  version: 0.1.0
+  description: |
+    The inbox of register downloads, working session requests and intake submissions that came in through the
+    public forms, and the versions of the privacy notice and consent wording those forms show. Requires
+    requests.read and requests.review for the inbox, notices.manage and notices.approve for notice versions.
+    Nothing here sends a message.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /offer-requests:
+    get:
+      operationId: listOfferRequests
+      summary: "Requests, newest first. Filter by state, kind and flag."
+      parameters:
+        - { in: query, name: state, schema: { type: string, enum: [received, reviewed, linked, closed] } }
+        - { in: query, name: kind, schema: { type: string, enum: [download, working_session, intake] } }
+        - { in: query, name: flag, schema: { type: string, enum: [personal_email, org_type_differs, suppressed, no_consent] } }
+      responses:
+        '200': { description: "Requests.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/RequestSummary' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+  /offer-requests/{id}:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    get:
+      operationId: getOfferRequest
+      summary: "One request with its consent record, download, session decisions or intake, and any recommendation made from it."
+      responses:
+        '200': { description: "Request.", content: { application/json: { schema: { $ref: '#/components/schemas/RequestDetail' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /offer-requests/{id}/review:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: reviewOfferRequest
+      summary: "Mark reviewed, link to an account and contact, or close with a reason. Needs requests.review. Linking a personal-email request creates the business contact only when a person supplies the business email."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [action], properties: { action: { type: string, enum: [mark_reviewed, link, close] }, accountId: { type: string }, contactId: { type: string }, businessEmail: { type: string, maxLength: 254 }, reason: { type: string, minLength: 3, maxLength: 300 } } } } }
+      responses:
+        '200': { description: "Recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/RequestDetail' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /notice-versions:
+    get:
+      operationId: listNoticeVersions
+      summary: "Every version of the notice and consent wording, with its approval."
+      responses:
+        '200': { description: "Versions.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/NoticeVersion' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: createNoticeVersion
+      summary: "Draft a new version. Needs notices.manage. Not shown by any form until approved."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [noticeText, consentText], properties: { noticeText: { type: string, minLength: 20, maxLength: 4000 }, consentText: { type: string, minLength: 10, maxLength: 600 } } } } }
+      responses:
+        '201': { description: "Draft.", content: { application/json: { schema: { $ref: '#/components/schemas/NoticeVersion' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /notice-versions/{id}/approve:
+    parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
+    post:
+      operationId: approveNoticeVersion
+      summary: "Approve a version. Needs notices.approve (the marketing approver; restricted, people only). The author cannot approve their own version."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '200': { description: "Approved.", content: { application/json: { schema: { $ref: '#/components/schemas/NoticeVersion' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+  responses:
+    Problem:
+      description: "Problem details with stable codes (author_cannot_approve, already_approved, request_closed, business_email_required, personal_email_not_business)."
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties: { type: { type: string }, title: { type: string }, status: { type: integer }, detail: { type: string }, codes: { type: array, items: { type: string } } }
+    RequestSummary:
+      type: object
+      required: [id, kind, offerId, state, flags, submittedAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [download, working_session, intake] }
+        offerId: { type: string }
+        state: { type: string, enum: [received, reviewed, linked, closed] }
+        email: { type: [string, 'null'] }
+        displayName: { type: [string, 'null'] }
+        orgName: { type: [string, 'null'] }
+        accountId: { type: [string, 'null'] }
+        contactId: { type: [string, 'null'] }
+        flags: { type: array, items: { type: string } }
+        submittedAt: { type: string, format: date-time }
+    RequestDetail:
+      allOf:
+        - { $ref: '#/components/schemas/RequestSummary' }
+        - type: object
+          required: [consent]
+          properties:
+            roleTitle: { type: [string, 'null'] }
+            orgType: { type: [string, 'null'] }
+            consent: { type: object, required: [noticeVersionId, consentGiven, recordedAt], properties: { noticeVersionId: { type: string }, consentGiven: { type: boolean }, recordedAt: { type: string, format: date-time } } }
+            download: { type: [object, 'null'], properties: { delivered: { type: boolean }, deliveryFailure: { type: [string, 'null'] }, linkExpiresAt: { type: [string, 'null'], format: date-time } } }
+            decisions: { type: [array, 'null'], items: { type: string } }
+            intake: { type: [object, 'null'], description: "The typed intake payload, labelled non-PHI." }
+            recommendationId: { type: [string, 'null'] }
+    NoticeVersion:
+      type: object
+      required: [id, version, noticeText, consentText, createdBy, createdAt]
+      properties: { id: { type: string }, version: { type: integer }, noticeText: { type: string }, consentText: { type: string }, createdBy: { type: string }, createdAt: { type: string, format: date-time }, approvedBy: { type: [string, 'null'] }, approvedAt: { type: [string, 'null'], format: date-time } }
