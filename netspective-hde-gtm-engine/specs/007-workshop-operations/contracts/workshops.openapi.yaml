@@ -1,0 +1,434 @@
+openapi: 3.1.0
+info:
+  title: GTM Engine API — workshop operations
+  version: 0.1.0
+  description: |
+    Workshops for Offer 1 and Offer 6: conversion of a linked request, booking and the lifecycle, participants,
+    non-PHI artifacts, the preparation brief, typed findings, the one-page buyer output and delivery effort.
+    Requires workshops.read to read, workshops.edit to change, workshops.output.approve to approve an output,
+    and quarantine.review (existing) to release a held artifact. Nothing here sends a message.
+servers:
+  - url: /api/v1
+security:
+  - oidcBearer: []
+paths:
+  /workshops:
+    get:
+      operationId: listWorkshops
+      summary: "Workshops, newest first. Filter by offer, state and account."
+      parameters:
+        - { in: query, name: offerId, schema: { type: string } }
+        - { in: query, name: state, schema: { $ref: '#/components/schemas/State' } }
+        - { in: query, name: accountId, schema: { type: string } }
+      responses:
+        '200': { description: "Workshops.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/WorkshopSummary' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: convertRequest
+      summary: "Convert a linked Offer 1 or Offer 6 request into a workshop (requested). Nothing is sent."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [requestId], properties: { requestId: { type: string } } } } }
+      responses:
+        '201': { description: "Created.", content: { application/json: { schema: { $ref: '#/components/schemas/Workshop' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: getWorkshop
+      summary: "One workshop with its intake, participants, history, checklist and latest brief, findings and output."
+      responses:
+        '200': { description: "Workshop.", content: { application/json: { schema: { $ref: '#/components/schemas/Workshop' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/transition:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: transitionWorkshop
+      summary: "Book, reschedule, hold, mark no-show, cancel or close. A booking uses one place of the offer's capacity and a cancellation releases it. Refused with capacity_exhausted when the offer is full."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/TransitionRequest' } } }
+      responses:
+        '200': { description: "Moved.", content: { application/json: { schema: { $ref: '#/components/schemas/Workshop' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/participants:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: addParticipant
+      summary: "Add a buyer-side or delivery-side participant by name and role."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [side, displayName], properties: { side: { type: string, enum: [buyer, delivery] }, displayName: { type: string, minLength: 2, maxLength: 120 }, roleTitle: { type: string, maxLength: 120 }, contactId: { type: string } } } } }
+      responses:
+        '201': { description: "Added.", content: { application/json: { schema: { $ref: '#/components/schemas/Participant' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/participants/{participantId}:
+    parameters: [ { $ref: '#/components/parameters/Id' }, { in: path, name: participantId, required: true, schema: { type: string } } ]
+    delete:
+      operationId: removeParticipant
+      summary: "Remove a participant (kept in history)."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '200': { description: "Removed.", content: { application/json: { schema: { $ref: '#/components/schemas/Participant' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/artifacts:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: listArtifacts
+      summary: "The checklist: each expected kind as received, held or not received, and every artifact recorded."
+      responses:
+        '200': { description: "Artifacts.", content: { application/json: { schema: { $ref: '#/components/schemas/ArtifactList' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: recordArtifact
+      summary: "Record a non-PHI artifact as a reference, or with text content (txt, md, csv, json, log). Content that looks like PHI is held for review, never stored or sent to a model, and the operator is alerted (202). Binary files are not accepted."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ArtifactRequest' } } }
+      responses:
+        '201': { description: "Recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/Artifact' } } } }
+        '202': { description: "Held for review.", content: { application/json: { schema: { $ref: '#/components/schemas/Artifact' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /workshop-artifacts/{artifactId}/decision:
+    parameters: [ { in: path, name: artifactId, required: true, schema: { type: string } } ]
+    post:
+      operationId: decideHeldArtifact
+      summary: "Release or discard a held artifact, with a reason. Needs quarantine.review. A released artifact is rechecked before use."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [decision, reason], properties: { decision: { type: string, enum: [release, discard] }, reason: { type: string, minLength: 3, maxLength: 300 } } } } }
+      responses:
+        '200': { description: "Decided.", content: { application/json: { schema: { $ref: '#/components/schemas/Artifact' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /workshop-artifacts/{artifactId}/content:
+    parameters: [ { in: path, name: artifactId, required: true, schema: { type: string } } ]
+    get:
+      operationId: readArtifactContent
+      summary: "The stored text of a received or released artifact. Authenticated; no signed link."
+      responses:
+        '200': { description: "The text.", content: { text/plain: { schema: { type: string } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/brief:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: getBrief
+      summary: "The latest preparation brief and the earlier ones (superseded)."
+      responses:
+        '200': { description: "Briefs.", content: { application/json: { schema: { type: object, required: [latest, earlier], properties: { latest: { oneOf: [ { $ref: '#/components/schemas/Brief' }, { type: 'null' } ] }, earlier: { type: array, items: { $ref: '#/components/schemas/Brief' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: generateBrief
+      summary: "Make a new brief. With the model off, or unavailable, or over its cost cap, the checklist-only baseline is returned. The earlier brief is kept."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '201': { description: "Made.", content: { application/json: { schema: { $ref: '#/components/schemas/Brief' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/findings:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: getFindings
+      summary: "The current findings draft or finalised version, every earlier version, and what is still missing before it can be finalised."
+      responses:
+        '200': { description: "Findings.", content: { application/json: { schema: { $ref: '#/components/schemas/FindingsView' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: saveFindingsDraft
+      summary: "Save the draft (content and lockNo). A value, sample record, price or patient-like text refuses the whole entry. Needs a held workshop."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [content], properties: { content: { type: object }, lockNo: { type: integer, minimum: 1 }, correctionReason: { type: string, minLength: 3, maxLength: 300 } } } } }
+      responses:
+        '200': { description: "Saved.", content: { application/json: { schema: { $ref: '#/components/schemas/Finding' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/findings/finalise:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: finaliseFindings
+      summary: "Finalise the draft. Refused with the list of shortfalls; fewer than three delay sources (Offer 1) or ten fields (Offer 6) is allowed only with a waiverReason. The first finalisation moves the workshop to findings recorded."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, properties: { waiverReason: { type: string, minLength: 10, maxLength: 300 } } } } }
+      responses:
+        '200': { description: "Finalised.", content: { application/json: { schema: { $ref: '#/components/schemas/Finding' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/findings/suggest:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: suggestFindings
+      summary: "A model may suggest a draft from the operator's pasted notes only. The suggestion is returned and not stored; each item shows the quoted note text that supports it."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [notes], properties: { notes: { type: string, minLength: 20, maxLength: 8000 } } } } }
+      responses:
+        '200': { description: "A suggestion (possibly empty).", content: { application/json: { schema: { $ref: '#/components/schemas/Suggestion' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/output:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: getOutput
+      summary: "The latest output revision, whether it is out of date, and every revision."
+      responses:
+        '200': { description: "Output.", content: { application/json: { schema: { $ref: '#/components/schemas/OutputView' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: generateOutput
+      summary: "Make a draft from the finalised findings. Needs finalised findings."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '201': { description: "Draft.", content: { application/json: { schema: { $ref: '#/components/schemas/Output' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: editOutput
+      summary: "Edit the section texts; each edit is a new revision. In scope and out of scope cannot be removed."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [sections], properties: { sections: { type: object } } } } }
+      responses:
+        '201': { description: "New revision.", content: { application/json: { schema: { $ref: '#/components/schemas/Output' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/output/approve:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: approveOutput
+      summary: "Approve the latest draft and make its one-page PDF. Needs workshops.output.approve (people only). Refused with the reasons (missing scope section, price, restricted wording, over one page, out of date)."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '200': { description: "Approved.", content: { application/json: { schema: { $ref: '#/components/schemas/Output' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/output/pdf:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: downloadOutputPdf
+      summary: "The approved one-page PDF. Authenticated; refused for a draft."
+      responses:
+        '200': { description: "The PDF.", content: { application/pdf: { schema: { type: string, format: binary } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/output/share:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: recordOutputShare
+      summary: "Record that an approved output was shared (who, when, how). Nothing is sent. Refused for a draft or an out-of-date output."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [how], properties: { how: { type: string, enum: [handed_over, copied_link, other] }, note: { type: string, maxLength: 300 } } } } }
+      responses:
+        '201': { description: "Recorded.", content: { application/json: { schema: { type: object, required: [id, how, sharedBy, sharedAt], properties: { id: { type: string }, how: { type: string }, sharedBy: { type: string }, sharedAt: { type: string, format: date-time } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/effort:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: getEffort
+      summary: "The current effort entry and the earlier ones."
+      responses:
+        '200': { description: "Effort.", content: { application/json: { schema: { type: object, required: [current, history], properties: { current: { oneOf: [ { $ref: '#/components/schemas/Effort' }, { type: 'null' } ] }, history: { type: array, items: { $ref: '#/components/schemas/Effort' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: recordEffort
+      summary: "Record delivery effort. A correction is a new entry."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [prepHours, sessionHours, people], properties: { prepHours: { type: number, minimum: 0, maximum: 80 }, sessionHours: { type: number, minimum: 0, maximum: 24 }, people: { type: integer, minimum: 1, maximum: 20 } } } } }
+      responses:
+        '201': { description: "Recorded.", content: { application/json: { schema: { $ref: '#/components/schemas/Effort' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /workshop-effort-summary:
+    get:
+      operationId: effortSummary
+      summary: "Per offer: workshops, how many have effort, totals, averages, how many are missing, and the offer's effort estimate (a hypothesis)."
+      responses:
+        '200': { description: "Summary.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/EffortSummary' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    oidcBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey: { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+    Id: { in: path, name: id, required: true, schema: { type: string } }
+  responses:
+    Problem:
+      description: "Problem details with stable codes (request_not_linked, offer_not_supported, workshop_open, invalid_transition, capacity_exhausted, offer_unavailable, calendar_failed, artifact_kind_not_allowed, binary_not_accepted, held_for_review, findings_incomplete, too_many_delay_sources, field_list_fixed, stale_version, output_not_ready, scope_section_missing, restricted_wording, price_stated, over_one_page, output_out_of_date, ai_unavailable, forbidden, phi_guard)."
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties: { type: { type: string }, title: { type: string }, status: { type: integer }, detail: { type: string }, codes: { type: array, items: { type: string } }, shortfalls: { type: array, items: { type: string } } }
+    State: { type: string, enum: [requested, booked, held, findings_recorded, closed, cancelled, no_show] }
+    WorkshopSummary:
+      type: object
+      required: [id, offerId, state, accountId, durationMinutes, createdAt]
+      properties: { id: { type: string }, offerId: { type: string }, offerKey: { type: string }, state: { $ref: '#/components/schemas/State' }, accountId: { type: string }, accountName: { type: string }, contactId: { type: string }, scheduledAt: { type: [string, 'null'], format: date-time }, durationMinutes: { type: integer }, createdAt: { type: string, format: date-time } }
+    Workshop:
+      allOf:
+        - { $ref: '#/components/schemas/WorkshopSummary' }
+        - type: object
+          required: [requestId, intakeId, lockNo, history, participants]
+          properties:
+            requestId: { type: string }
+            intakeId: { type: string }
+            lockNo: { type: integer }
+            bookingRoute: { type: [string, 'null'], enum: [manual, calendar, null] }
+            bookingId: { type: [string, 'null'] }
+            intake: { type: object, description: "The typed intake payload, labelled non-PHI." }
+            history: { type: array, items: { type: object, required: [toState, changedBy, changedAt], properties: { fromState: { type: [string, 'null'] }, toState: { type: string }, note: { type: [string, 'null'] }, scheduledFrom: { type: [string, 'null'] }, scheduledTo: { type: [string, 'null'] }, changedBy: { type: string }, changedAt: { type: string, format: date-time } } } }
+            participants: { type: array, items: { $ref: '#/components/schemas/Participant' } }
+            capacity: { type: object, description: "The offer's capacity answer for the booked date, or for today when not booked." }
+    TransitionRequest:
+      type: object
+      additionalProperties: false
+      required: [action, lockNo]
+      properties:
+        action: { type: string, enum: [book, reschedule, hold, no_show, cancel, close] }
+        lockNo: { type: integer, minimum: 1 }
+        scheduledAt: { type: string, format: date-time, description: "Required for book and reschedule." }
+        via: { type: string, enum: [manual, calendar], description: "How to book; calendar needs a configured provider." }
+        note: { type: string, minLength: 3, maxLength: 300, description: "Required for cancel, no_show, close and reschedule." }
+    Participant:
+      type: object
+      required: [id, side, displayName]
+      properties: { id: { type: string }, side: { type: string, enum: [buyer, delivery] }, displayName: { type: string }, roleTitle: { type: [string, 'null'] }, contactId: { type: [string, 'null'] }, removedAt: { type: [string, 'null'], format: date-time } }
+    ArtifactRequest:
+      type: object
+      additionalProperties: false
+      required: [kind, title]
+      properties:
+        kind: { type: string, enum: [specification, timeline, scrubbed_rejection_log, interface_description, field_list, other_non_phi] }
+        title: { type: string, minLength: 2, maxLength: 200 }
+        reference: { type: string, maxLength: 500 }
+        suppliedBy: { type: string, maxLength: 120 }
+        content: { type: string, maxLength: 1048576, description: "UTF-8 text only; binary files are not accepted." }
+        fileName: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,99}\.(txt|md|csv|json|log)$' }
+    Artifact:
+      type: object
+      required: [id, kind, title, state, classification, recordedAt]
+      properties: { id: { type: string }, kind: { type: string }, title: { type: string }, reference: { type: [string, 'null'] }, hasContent: { type: boolean }, sizeBytes: { type: [integer, 'null'] }, state: { type: string, enum: [received, held, released, discarded] }, classification: { type: string, enum: [non_phi] }, holdRuleIds: { type: array, items: { type: string } }, recordedBy: { type: string }, recordedAt: { type: string, format: date-time }, fileDeletedAt: { type: [string, 'null'], format: date-time } }
+    ArtifactList:
+      type: object
+      required: [checklist, items]
+      properties:
+        checklist: { type: array, items: { type: object, required: [kind, status], properties: { kind: { type: string }, label: { type: string }, status: { type: string, enum: [received, held, not_received] } } } }
+        items: { type: array, items: { $ref: '#/components/schemas/Artifact' } }
+    Brief:
+      type: object
+      required: [id, versionNo, source, content, createdAt]
+      properties:
+        id: { type: string }
+        versionNo: { type: integer }
+        source: { type: string, enum: [baseline, model] }
+        model: { type: [string, 'null'] }
+        promptVersion: { type: [string, 'null'] }
+        superseded: { type: boolean }
+        notice: { type: [string, 'null'], description: "Why the baseline was used (model off, unavailable, over cap or refused)." }
+        content:
+          type: object
+          required: [confirmedFacts, inferences, unknowns, suggestedQuestions, artifactChecklist]
+          properties:
+            confirmedFacts: { type: array, items: { type: object, required: [statement, evidenceIds], properties: { statement: { type: string }, evidenceIds: { type: array, minItems: 1, items: { type: string } } } } }
+            inferences: { type: array, items: { type: object, required: [statement], properties: { statement: { type: string }, basis: { type: string } } } }
+            unknowns: { type: array, items: { type: string } }
+            suggestedQuestions: { type: array, maxItems: 12, items: { type: string } }
+            artifactChecklist: { type: array, items: { type: object, required: [kind], properties: { kind: { type: string }, why: { type: string } } } }
+        createdAt: { type: string, format: date-time }
+    Finding:
+      type: object
+      required: [id, versionNo, kind, state, content, lockNo]
+      properties: { id: { type: string }, versionNo: { type: integer }, kind: { type: string, enum: [offer_1, offer_6] }, state: { type: string, enum: [draft, finalised] }, content: { type: object }, lockNo: { type: integer }, waiverReason: { type: [string, 'null'] }, correctionReason: { type: [string, 'null'] }, finalisedBy: { type: [string, 'null'] }, finalisedAt: { type: [string, 'null'], format: date-time }, updatedAt: { type: string, format: date-time } }
+    FindingsView:
+      type: object
+      required: [current, versions, shortfalls]
+      properties:
+        current: { oneOf: [ { $ref: '#/components/schemas/Finding' }, { type: 'null' } ] }
+        versions: { type: array, items: { $ref: '#/components/schemas/Finding' } }
+        shortfalls: { type: array, items: { type: object, required: [code, waivable, message], properties: { code: { type: string }, waivable: { type: boolean }, message: { type: string } } } }
+        summary: { type: object, description: "Offer 6: counts of known good, gap and unknown; unknown is never merged into gap.", properties: { knownGood: { type: integer }, gap: { type: integer }, unknown: { type: integer } } }
+    Suggestion:
+      type: object
+      required: [items, dropped]
+      properties:
+        items: { type: array, items: { type: object, required: [path, value, supportingText], properties: { path: { type: string }, value: {}, supportingText: { type: string } } } }
+        dropped: { type: integer, description: "Items dropped because the notes do not support them." }
+        notice: { type: [string, 'null'] }
+    Output:
+      type: object
+      required: [id, revisionNo, state, sections, findingVersionNo]
+      properties: { id: { type: string }, revisionNo: { type: integer }, state: { type: string, enum: [draft, approved] }, sections: { type: object }, findingVersionNo: { type: integer }, editedBy: { type: string }, editedAt: { type: string, format: date-time }, approvedBy: { type: [string, 'null'] }, approvedAt: { type: [string, 'null'], format: date-time }, pdfPages: { type: [integer, 'null'] }, outOfDate: { type: boolean }, problems: { type: array, items: { type: object, required: [code, message], properties: { code: { type: string }, message: { type: string } } } } }
+    OutputView:
+      type: object
+      required: [latest, revisions]
+      properties: { latest: { oneOf: [ { $ref: '#/components/schemas/Output' }, { type: 'null' } ] }, revisions: { type: array, items: { $ref: '#/components/schemas/Output' } }, shares: { type: array, items: { type: object, properties: { how: { type: string }, sharedBy: { type: string }, sharedAt: { type: string, format: date-time } } } } }
+    Effort:
+      type: object
+      required: [id, prepHours, sessionHours, people, recordedBy, recordedAt]
+      properties: { id: { type: string }, prepHours: { type: number }, sessionHours: { type: number }, people: { type: integer }, recordedBy: { type: string }, recordedAt: { type: string, format: date-time } }
+    EffortSummary:
+      type: object
+      required: [offerId, workshops, withEffort, missing, status]
+      properties: { offerId: { type: string }, offerKey: { type: string }, workshops: { type: integer }, withEffort: { type: integer }, missing: { type: integer }, totalPrepHours: { type: number }, totalSessionHours: { type: number }, averagePrepHours: { type: [number, 'null'] }, averageSessionHours: { type: [number, 'null'] }, averagePeople: { type: [number, 'null'] }, estimate: { type: [string, 'null'], description: "The offer's recorded effort estimate text." }, status: { type: string, enum: [hypothesis] } }
