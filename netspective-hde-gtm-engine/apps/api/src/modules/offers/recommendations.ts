@@ -71,7 +71,7 @@ export interface RecommendationView {
   eligible: { offerKey: string; reason: string }[];
   excluded: Exclusion[];
   matched: MatchedRule[];
-  alternatives: Alternative[];
+  alternatives: (Alternative & { offerId: string | null })[];
   ranking: string[] | null;
   explanation: string;
   limitations: string[];
@@ -367,7 +367,16 @@ export class RecommendationService implements Recommender {
       eligible: JSON.parse(r.eligible_json) as RecommendationView["eligible"],
       excluded: JSON.parse(r.excluded_json) as Exclusion[],
       matched: JSON.parse(r.matched_json) as MatchedRule[],
-      alternatives: JSON.parse(r.alternatives_json) as Alternative[],
+      alternatives: (JSON.parse(r.alternatives_json) as Alternative[]).map((a) => ({
+        ...a,
+        offerId: a.offerKey
+          ? ((
+              this.db.raw
+                .prepare("SELECT id FROM engagement_offer WHERE key = ?")
+                .get(a.offerKey) as { id: string } | undefined
+            )?.id ?? null)
+          : null,
+      })),
       ranking: r.ranking_json ? (JSON.parse(r.ranking_json) as string[]) : null,
       explanation: r.explanation,
       limitations: JSON.parse(r.limitations_json) as string[],

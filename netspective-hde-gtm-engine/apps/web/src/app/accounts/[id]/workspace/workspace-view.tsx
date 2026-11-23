@@ -21,6 +21,8 @@ import {
   type StartRunBody,
 } from "../../../../lib/research-api.js";
 import { browserSignalsApi, type SignalSummary } from "../../../../lib/signals-api.js";
+import type { RecommendationsApi } from "../../../../lib/recommendations-api.js";
+import { RecommendationPanel } from "./recommendation-panel.js";
 
 // Target Account Workspace v1 (task T060; spec FR-041): profile, ICP, signals, hypotheses with evidence
 // drill-down, the latest summary's unknowns and contradictions, and runs with cost. Controls appear only for
@@ -70,10 +72,12 @@ export function WorkspaceView({
   accountId,
   permissions,
   api = browserWorkspaceApi,
+  recommendationsApi,
 }: {
   accountId: string;
   permissions: readonly string[];
   api?: WorkspaceApi;
+  recommendationsApi?: RecommendationsApi;
 }) {
   const can = (p: string) => permissions.includes(p);
   const [profile, setProfile] = useState<AccountProfile | null>(null);
@@ -295,6 +299,13 @@ export function WorkspaceView({
           ))}
         </ul>
       </section>
+      {can("offers.read") ? (
+        <RecommendationPanel
+          accountId={accountId}
+          permissions={permissions}
+          {...(recommendationsApi ? { api: recommendationsApi } : {})}
+        />
+      ) : null}
     </main>
   );
 }

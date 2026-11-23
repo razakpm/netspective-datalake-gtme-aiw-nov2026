@@ -167,7 +167,7 @@ components:
         eligible: { type: array, items: { type: object, required: [offerKey, reason], properties: { offerKey: { type: string }, reason: { type: string } } } }
         excluded: { type: array, items: { type: object, required: [offerKey, code], properties: { offerKey: { type: string, description: "An offer key, or * when the whole account or contact is blocked." }, code: { type: string } } } }
         matched: { type: array, items: { type: object, required: [ruleId, priority, result], properties: { ruleId: { type: string }, priority: { type: integer }, result: { type: string } } } }
-        alternatives: { type: array, items: { type: object, required: [kind, reason], properties: { kind: { type: string, enum: [wait_list, offer, research, do_nothing] }, offerKey: { type: [string, 'null'] }, reason: { type: string } } } }
+        alternatives: { type: array, items: { type: object, required: [kind, reason], properties: { kind: { type: string, enum: [wait_list, offer, research, do_nothing] }, offerKey: { type: [string, 'null'] }, offerId: { type: [string, 'null'] }, reason: { type: string } } } }
         ranking: { type: [array, 'null'], items: { type: string } }
         aiUsed: { type: boolean }
         aiFallback: { type: boolean }

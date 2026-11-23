@@ -13,6 +13,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Jobs", href: "/admin/jobs", permission: "jobs.read" },
   { label: "Signals", href: "/signals", permission: "signals.read" },
   { label: "Offers", href: "/offers", permission: "offers.read" },
+  { label: "Requests", href: "/requests", permission: "requests.read" },
+  { label: "Notices", href: "/requests", permission: "notices.manage" },
   { label: "Capabilities", href: "/capabilities", permission: "capabilities.read" },
   { label: "Claims", href: "/claims", permission: "claims.read" },
   { label: "Webhooks", href: "/webhooks", permission: "webhooks.read" },
@@ -33,7 +35,7 @@ export function Nav({ permissions }: { permissions: readonly string[] }) {
     <nav aria-label="Main">
       <ul>
         {items.map((item) => (
-          <li key={item.href}>
+          <li key={item.label}>
             <a href={item.href}>{item.label}</a>
           </li>
         ))}
