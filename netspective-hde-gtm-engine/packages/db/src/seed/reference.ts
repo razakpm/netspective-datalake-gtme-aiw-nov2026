@@ -10,6 +10,7 @@ import { seedFeature002 } from "./feature002.js";
 import { seedFeature003 } from "./feature003.js";
 import { seedFeature004 } from "./feature004.js";
 import { seedFeature005 } from "./feature005.js";
+import { seedFeature006 } from "./feature006.js";
 
 // Reference data seed (task T040): the seven roles, seven permissions and the foundation matrix.
 // Idempotent, and run in every environment (it is not synthetic prospect data).
@@ -106,4 +107,5 @@ export function seedReference(tx: Tx): void {
   seedFeature003(tx);
   seedFeature004(tx);
   seedFeature005(tx);
+  seedFeature006(tx);
 }

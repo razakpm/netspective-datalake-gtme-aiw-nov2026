@@ -23,3 +23,4 @@ export * from "./icp/index.js";
 export * from "./routing/index.js";
 export * from "./workshops/index.js";
 export * from "./contacts/index.js";
+export * from "./events/feature006.js";

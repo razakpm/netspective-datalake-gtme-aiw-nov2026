@@ -5,4 +5,3 @@ export type IcpKey = (typeof ICP_KEYS)[number];
 
 export const FIT_STATUSES = ["strong", "possible", "weak", "excluded", "unknown"] as const;
 export type FitStatus = (typeof FIT_STATUSES)[number];
-

@@ -287,4 +287,43 @@ export const COLUMN_CLASSIFICATION: ClassificationRegistry = {
     som("id, capability_id, added_by, added_at"),
   ),
   capability_offer_link: som("capability_id, offer_id"),
+
+  // Feature 006 (offer routing and lead magnet). Requester email, name and role are business contact data.
+  routing_rule_set: mergeFields(
+    cc("rules_json, reason"),
+    som("version, state, author, created_at, activated_by, activated_at, tests_passed_at"),
+  ),
+  offer_recommendation: mergeFields(
+    cc("explanation, limitations_json, review_reason"),
+    som(
+      "id, account_id, contact_id, trigger, request_id, rule_set_version, outcome, offer_id, outreach, blocked_reasons_json, eligible_json, excluded_json, matched_json, alternatives_json, ranking_json, ai_invocation_id, ai_fallback, inputs_hash, review_state, reviewed_by, reviewed_at, created_by, created_at",
+    ),
+  ),
+  offer_waitlist_entry: mergeFields(
+    cc("reason, closed_reason"),
+    som("id, offer_id, account_id, contact_id, added_by, added_at, state, closed_by, closed_at"),
+  ),
+  notice_version: mergeFields(
+    cc("notice_text, consent_text"),
+    som("id, version, created_by, created_at, approved_by, approved_at"),
+  ),
+  consent_record: som(
+    "id, request_id, contact_id, email_hash, notice_version_id, consent_given, recorded_at",
+  ),
+  offer_request: mergeFields(
+    bc("email, display_name, role_title, org_name"),
+    cc("details_json"),
+    som(
+      "id, offer_id, form_slug, kind, state, email_hash, org_type, account_id, contact_id, flags_json, submitted_at, reviewed_by, reviewed_at, closed_reason",
+    ),
+  ),
+  lead_magnet_download: som(
+    "id, request_id, offer_id, account_id, contact_id, delivered, delivery_failure, link_expires_at, created_at",
+  ),
+  intake_submission: mergeFields(
+    cc("payload_json"),
+    som(
+      "id, request_id, offer_id, kind, schema_version, account_id, contact_id, classification, submitted_at, review_state",
+    ),
+  ),
 };

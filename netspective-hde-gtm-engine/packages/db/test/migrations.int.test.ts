@@ -45,6 +45,9 @@ describe("migrations", () => {
       "0017_claims.sql",
       "0018_offers.sql",
       "0019_capabilities.sql",
+      "0020_routing.sql",
+      "0021_engagement.sql",
+      "0022_intake.sql",
     ]);
     expect(migrate(db)).toEqual([]);
     const tables = (
