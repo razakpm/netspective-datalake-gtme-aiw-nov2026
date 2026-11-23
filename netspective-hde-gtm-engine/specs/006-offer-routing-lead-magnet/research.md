@@ -58,7 +58,7 @@ When ICP fit is unknown the fallback is research. A supported hypothesis is eval
 **Decision**: before any rule is matched, eligibility removes options in a fixed order, each recorded with a code:
 1. `account_excluded` or `fit_not_priority`: ICP fit excluded (or weak or unknown for outreach, by the 002 `priorityEligibility` rule);
 2. `contact_suppressed`: the contact, the account or the keyed email hash is suppressed (the 002 check, by rule);
-3. `no_communication_permission`: a contact is given and no consent or permitted-use basis exists;
+3. `no_communication_permission`: a contact is given and the latest `consent_record` for the contact or keyed email hash is missing or has `consent_given = 0`. In v1 there is no other basis: a contact imported without a consent record is blocked, and the limitation says "no recorded consent". A wider permitted-use basis belongs to feature 009 (open question #51);
 4. per offer: `offer_unavailable` (not in force, withdrawn, expired or draft) and `capacity_exhausted` (the 005 `capacityStatus` says exhausted).
 
 A recommendation has an **outcome** (`offer`, `research`, `no_action`) and an **outreach** flag (`allowed` or `blocked` with the reasons). Account-level blockers (1) and contact-level blockers (2, 3) set outreach to blocked and, when they leave no offer to suggest, the outcome to `no_action` with the reason; an offer-level blocker only removes that offer. `no_limit_set` capacity does not remove an offer and adds a limitation.
@@ -85,7 +85,7 @@ The call goes through the existing LLM gateway (PHI pre-flight, budget, schema v
 
 ## R-07 Rule set versions, activation and the test gate
 
-**Decision**: `routing_rule_set` rows are immutable once inserted; the lifecycle is `draft` to `active` to `retired`, at most one active (a partial unique index), the same shape as 002's ICP definitions. Activation needs `routing.rules.manage` (service lead or administrator, a restricted permission, humans only), a reason, and **a passing test run**: the service evaluates the candidate against the case corpus `tests/fixtures/routing/cases.json` (each case lists a context, the expected outcome and eligible set, and a flag `mustHold` for the rules the business has fixed) and refuses activation if a case fails or the document fails its schema. Rule changes that intentionally change outcomes are made by changing the corpus in the same pull request, which is reviewed.
+**Decision**: `routing_rule_set` rows are immutable once inserted; the lifecycle is `draft` to `active` to `retired`, at most one active (a partial unique index), the same shape as 002's ICP definitions. Activation needs `routing.rules.manage` (service lead or administrator, a restricted permission, humans only), a reason, and **a passing test run**: the service evaluates the candidate against the case corpus, which ships inside the package as `packages/domain/src/routing/corpus.json` (so it is present in a deployed container; `tests/fixtures/routing/cases.json` re-exports it for the tests) (each case lists a context, the expected outcome and eligible set, and a flag `mustHold` for the rules the business has fixed) and refuses activation if a case fails or the document fails its schema. Rule changes that intentionally change outcomes are made by changing the corpus in the same pull request, which is reviewed.
 
 **Rationale**: FR-009 and FR-013; the gate is real, not a convention.
 
