@@ -1,5 +1,5 @@
 import type { SqliteDatabase, Tx } from "@gtm/db";
-import { type ActorType } from "@gtm/domain";
+import { validateSessionDecisions, type ActorType } from "@gtm/domain";
 import { v7 as uuidv7 } from "uuid";
 import { z } from "zod";
 import { HttpError, parseOrThrow } from "../../http/errors.js";
@@ -215,6 +215,7 @@ export class RequestService {
       slug,
       title: spec.title,
       kinds: spec.kinds,
+      fields: spec.fields,
       orgTypes: FORM_ORG_TYPES,
       notice: {
         versionId: notice.id,
@@ -483,22 +484,15 @@ export class RequestService {
     | { refuse: HttpError } {
     if (body.kind === "download") return { details: null, intake: null };
     if (body.kind === "working_session") {
-      const decisions = body.decisions.map((d) => d.trim());
-      if (
-        decisions.length < 1 ||
-        decisions.length > 5 ||
-        decisions.some((d) => d.length < 3 || d.length > 300)
-      ) {
+      const checked = validateSessionDecisions(body.decisions);
+      if (!checked.ok) {
         return {
-          refuse: new HttpError(
-            422,
-            "Decisions not accepted",
-            "Please list between one and five open decisions, each up to 300 characters.",
-            { codes: ["decisions_invalid"] },
-          ),
+          refuse: new HttpError(422, "Decisions not accepted", checked.messages.join(" "), {
+            codes: ["decisions_invalid"],
+          }),
         };
       }
-      return { details: { decisions }, intake: null };
+      return { details: { decisions: checked.decisions }, intake: null };
     }
     const result = this.intake?.validate(slug, body.intake);
     if (!result || !result.ok) {
@@ -642,6 +636,9 @@ export class RequestService {
           tx.prepare(
             "UPDATE offer_request SET state = 'reviewed', reviewed_by = ?, reviewed_at = ? WHERE id = ?",
           ).run(actor.userId as string, at, id);
+          tx.prepare(
+            "UPDATE intake_submission SET review_state = 'reviewed' WHERE request_id = ? AND review_state = 'pending'",
+          ).run(id);
         } else if (input.action === "close") {
           if (!input.reason)
             throw new CatalogueRefusal(

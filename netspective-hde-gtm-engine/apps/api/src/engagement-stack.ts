@@ -8,6 +8,7 @@ import {
   PriorLookup,
   RequestService,
 } from "./modules/engagement/index.js";
+import { IntakeRules } from "./modules/workshops/index.js";
 import type { RoutingStack } from "./routing-stack.js";
 
 // Composition of the engagement stack (feature 006, task T050): notice versions, consent, delivery of the
@@ -44,6 +45,7 @@ export function buildEngagementStack(o: EngagementStackOptions) {
     ...(o.log ? { log: o.log } : {}),
   });
   requests.setRecommender(o.routing.recommendations);
+  requests.setIntakeValidator(new IntakeRules());
   const consent = new ConsentLookup(o.db);
   o.routing.ports.wire({ prior: new PriorLookup(o.db), consent });
   return { files, notices, delivery, requests, consent };

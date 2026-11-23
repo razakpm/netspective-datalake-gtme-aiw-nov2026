@@ -1,0 +1,42 @@
+{
+  "note": "Offer 6 intake field names (feature 006, research R-12). The accepted entries read as field names; the refused ones read as values, which the intake never takes. Synthetic only. This is the acceptance corpus for looksLikeFieldName and must only grow.",
+  "accepted": [
+    "DOB",
+    "patient_id",
+    "encounter_date",
+    "MRN",
+    "visit type",
+    "payer_id",
+    "OBX-5",
+    "PID-3",
+    "first_name",
+    "Last Name",
+    "dx_code_1",
+    "address line 2",
+    "Date of Birth",
+    "admit_ts",
+    "ordering_provider_npi"
+  ],
+  "refused": [
+    { "value": "1984-03-12", "reason": "date_shape" },
+    { "value": "03/12/1984", "reason": "date_shape" },
+    { "value": "12.03.1984", "reason": "date_shape" },
+    { "value": "10:45", "reason": "date_shape" },
+    { "value": "John Smith 1234", "reason": "number_token" },
+    { "value": "jane.doe@example.org", "reason": "email" },
+    { "value": "1234567", "reason": "long_number" },
+    { "value": "5551234567890", "reason": "long_number" },
+    { "value": "Patient has diabetes.", "reason": "sentence" },
+    { "value": "He was admitted on Monday and then discharged", "reason": "too_many_words" },
+    { "value": "Patient has diabetes and takes insulin daily.", "reason": "too_many_words" },
+    { "value": "Smith, John, 1984, 555", "reason": "row_or_quote" },
+    { "value": "Smith|John|male", "reason": "row_or_quote" },
+    { "value": "\"John Smith\"", "reason": "row_or_quote" },
+    {
+      "value": "a_field_name_that_is_far_too_long_to_be_a_real_field_name_in_any_message",
+      "reason": "too_long"
+    },
+    { "value": "", "reason": "empty" },
+    { "value": "   ", "reason": "empty" }
+  ]
+}

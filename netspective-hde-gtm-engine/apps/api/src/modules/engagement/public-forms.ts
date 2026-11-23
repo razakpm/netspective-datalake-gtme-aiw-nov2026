@@ -1,4 +1,10 @@
-import { ORG_TYPES } from "@gtm/domain";
+import {
+  OFFER1_FORM_FIELDS,
+  OFFER6_FORM_FIELDS,
+  ORG_TYPES,
+  SESSION_FORM_FIELDS,
+  type FormField,
+} from "@gtm/domain";
 
 // The public forms (feature 006, research R-08). Slugs are the offer keys feature 005 seeded. A form may
 // offer one or two kinds of request. Nothing on any form asks for a price, a budget, a credential or
@@ -16,6 +22,8 @@ export interface FormSpec {
   slug: FormSlug;
   title: string;
   kinds: RequestKind[];
+  /** The questions beyond the contact details, per kind. A download asks for nothing more. */
+  fields: Partial<Record<RequestKind, FormField[]>>;
 }
 
 export const FORMS: Readonly<Record<FormSlug, FormSpec>> = {
@@ -23,16 +31,19 @@ export const FORMS: Readonly<Record<FormSlug, FormSpec>> = {
     slug: "ccda-to-fhir-mapping-decision-register",
     title: "CCDA-to-FHIR Mapping Decision Register",
     kinds: ["download", "working_session"],
+    fields: { working_session: SESSION_FORM_FIELDS },
   },
   "sender-onboarding-friction-map": {
     slug: "sender-onboarding-friction-map",
     title: "Sender Onboarding Friction Map: before the session",
     kinds: ["intake"],
+    fields: { intake: OFFER1_FORM_FIELDS },
   },
   "pilot-input-trace-workshop": {
     slug: "pilot-input-trace-workshop",
     title: "Pilot Input Trace Workshop: before the session",
     kinds: ["intake"],
+    fields: { intake: OFFER6_FORM_FIELDS },
   },
 };
 
