@@ -34,3 +34,8 @@ fit, is only partly built.
 - A rule change is a reviewed diff plus a corpus change, not a deploy of code.
 - The public surface is small and has its own tests; adding a form means adding a slug and a typed schema.
 - The register file and the notice wording come from the business; until both exist the form says it is unavailable.
+
+## Dependencies added
+
+- `@fastify/cors` and `@fastify/rate-limit` (API): CORS allow-list and per-address rate limiting for the public group; both are official Fastify plugins.
+- `@playwright/test` (web, development only): the browser test for Scenario C, run with `pnpm test:e2e` and kept out of the default gate.

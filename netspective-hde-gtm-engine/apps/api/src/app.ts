@@ -29,7 +29,10 @@ import { PhiNotifier } from "./platform/events/phi-notifier.js";
 import { buildCatalogueStack, type CatalogueStack } from "./catalogue-stack.js";
 import { registerCapabilityRoutes } from "./modules/capabilities/index.js";
 import { registerClaimRoutes } from "./modules/claims/index.js";
-import { registerOfferRoutes } from "./modules/offers/index.js";
+import { registerOfferRoutes, registerRecommendationRoutes } from "./modules/offers/index.js";
+import { buildRoutingStack, type RoutingStack } from "./routing-stack.js";
+import { buildEngagementStack, type EngagementStack } from "./engagement-stack.js";
+import { registerEngagementRoutes, registerPublicRoutes } from "./modules/engagement/index.js";
 import { buildResearchStack, type ResearchStack } from "./research-stack.js";
 
 // Composition root: builds the database, services and routes from configuration. The persistence is
@@ -46,6 +49,8 @@ export interface Services {
   signalSources: SourceService;
   research: ResearchStack;
   catalogue: CatalogueStack;
+  routing: RoutingStack;
+  engagement: EngagementStack;
 }
 
 export function openDatabase(path: string): SqliteDatabase {
@@ -72,6 +77,15 @@ export function buildServices(config: AppConfig, db: SqliteDatabase): Services {
     similarityThreshold: config.signals.similarityThreshold,
     retentionMonths: config.signals.retentionMonths,
   });
+  const research = buildResearchStack({ db, config, jobs, signals });
+  const catalogue = buildCatalogueStack({ db, config });
+  const routing = buildRoutingStack({
+    db,
+    config,
+    catalogue,
+    hypotheses: research.hypotheses,
+    gateway: research.gateway,
+  });
   return {
     db,
     identity: new IdentityService(db),
@@ -85,8 +99,10 @@ export function buildServices(config: AppConfig, db: SqliteDatabase): Services {
       config.retention.quarantineDays,
     ),
     jobs,
-    research: buildResearchStack({ db, config, jobs, signals }),
-    catalogue: buildCatalogueStack({ db, config }),
+    research,
+    catalogue,
+    routing,
+    engagement: buildEngagementStack({ db, config, routing }),
   };
 }
 
@@ -127,7 +143,7 @@ export async function buildHttpApp(config: AppConfig, logger: Logger, services: 
     config,
     logger,
     phiGuardSink: createPhiGuardSink(services.db, notifier),
-    routes: (app) => {
+    routes: async (app) => {
       registerIdentityRoutes(app, { db: services.db, service: services.identity, authz });
       registerAuditRoutes(app, { db: services.db, authz });
       registerQuarantineRoutes(app, { db: services.db, service: services.quarantine, authz });
@@ -167,6 +183,27 @@ export async function buildHttpApp(config: AppConfig, logger: Logger, services: 
         bookings: services.catalogue.bookings,
         scores: services.catalogue.scores,
         paidTypes: services.catalogue.paidTypes,
+        authz,
+      });
+      await registerPublicRoutes(app, {
+        requests: services.engagement.requests,
+        delivery: services.engagement.delivery,
+        formTokenKey: config.routing.formTokenKey,
+        origins: config.routing.publicFormOrigins,
+        postLimitPerMinute: config.routing.postRateLimitPerMinute,
+        getLimitPerMinute: config.routing.getRateLimitPerMinute,
+      });
+      registerEngagementRoutes(app, {
+        db: services.db,
+        requests: services.engagement.requests,
+        notices: services.engagement.notices,
+        authz,
+      });
+      registerRecommendationRoutes(app, {
+        db: services.db,
+        recommendations: services.routing.recommendations,
+        ruleSets: services.routing.ruleSets,
+        waitlist: services.routing.waitlist,
         authz,
       });
       registerCapabilityRoutes(app, {

@@ -7,6 +7,7 @@ export {
   type HypothesisSummary,
   type HypothesisView,
   type Relevance,
+  type RoutingHypothesisFact,
 } from "./service.js";
 export { HypothesisReview } from "./review.js";
 export { HypothesisStaleness } from "./staleness.js";

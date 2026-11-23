@@ -51,7 +51,7 @@ components:
     Slug: { in: path, name: slug, required: true, schema: { type: string, enum: [ccda-to-fhir-mapping-decision-register, sender-onboarding-friction-map, pilot-input-trace-workshop] } }
   responses:
     Problem:
-      description: "Problem details with a plain message. Codes: invalid_form_token, too_fast, honeypot, phi_guard, rate_limited, no_notice, delivery_failed, link_expired."
+      description: "Problem details with a plain message. Codes: form_rejected (a missing, wrong, too early or expired form token, or a filled honeypot, all one generic answer), kind_not_available, notice_changed, no_notice, decisions_invalid, intake_invalid, rate_limited, origin_not_allowed, link_expired. A patient-like value is refused by the content guard with 422 and rule identifiers."
       content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
   schemas:
     Problem:
@@ -65,6 +65,7 @@ components:
         slug: { type: string }
         title: { type: string }
         kinds: { type: array, items: { type: string, enum: [download, working_session, intake] } }
+        fields: { type: object, description: "The questions beyond the contact details, per kind (a download asks for nothing more). Drawn from the typed schema; none asks for a price, budget or credential.", additionalProperties: { type: array, items: { type: object, required: [key, label, type, required], properties: { key: { type: string }, label: { type: string }, type: { type: string, enum: [text, longtext, select, list, names] }, required: { type: boolean }, maxLength: { type: integer }, maxItems: { type: integer }, minItems: { type: integer }, help: { type: string }, options: { type: array, items: { type: object, required: [key, label], properties: { key: { type: string }, label: { type: string } } } } } } } }
         orgTypes: { type: array, items: { type: object, required: [key, label], properties: { key: { type: string }, label: { type: string } } } }
         notice: { type: object, required: [versionId, noticeText, consentText], properties: { versionId: { type: string }, noticeText: { type: string }, consentText: { type: string } } }
         formToken: { type: string }

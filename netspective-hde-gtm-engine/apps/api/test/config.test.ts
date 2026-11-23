@@ -107,6 +107,8 @@ describe("typed config", () => {
       OIDC_AUDIENCE: "gtm-engine",
       QUARANTINE_ENCRYPTION_KEY: "x".repeat(32),
       SUPPRESSION_HASH_KEY: "y".repeat(32),
+      DOWNLOAD_SIGNING_KEY: "d".repeat(32),
+      FORM_TOKEN_KEY: "f".repeat(32),
       LLM_PROVIDER: "anthropic",
       ANTHROPIC_API_KEY: "k".repeat(16),
     };
@@ -201,6 +203,8 @@ describe("feature 004 configuration", () => {
       OIDC_AUDIENCE: "gtm-engine",
       QUARANTINE_ENCRYPTION_KEY: "x".repeat(32),
       SUPPRESSION_HASH_KEY: "y".repeat(32),
+      DOWNLOAD_SIGNING_KEY: "d".repeat(32),
+      FORM_TOKEN_KEY: "f".repeat(32),
     };
     expect(() => loadConfig(production)).toThrow(/LLM_PROVIDER/);
     expect(() =>
@@ -254,5 +258,77 @@ describe("feature 005 configuration (hypotheses)", () => {
         /CLAIM_EVIDENCE_DEFAULT_EXPIRY_MONTHS/,
       );
     }
+  });
+});
+
+describe("feature 006 configuration (hypotheses)", () => {
+  it("has the documented defaults", () => {
+    const { routing } = loadConfig({ ...baseEnv });
+    expect(routing).toMatchObject({
+      publicFormOrigins: [],
+      postRateLimitPerMinute: 20,
+      getRateLimitPerMinute: 120,
+      formMinSeconds: 3,
+      formMaxAgeHours: 24,
+      dedupeSeconds: 60,
+      registerLinkTtlHours: 24,
+      recommendationAi: false,
+      supportedMinBand: "medium",
+    });
+  });
+  it("splits and trims the origin allow-list and lets the environment override values", () => {
+    const { routing } = loadConfig({
+      ...baseEnv,
+      PUBLIC_FORM_ORIGINS: " https://www.example.org , https://forms.example.org ,",
+      REGISTER_LINK_TTL_HOURS: "48",
+      RECOMMENDATION_AI: "on",
+      SUPPORTED_MIN_BAND: "high",
+    });
+    expect(routing.publicFormOrigins).toEqual([
+      "https://www.example.org",
+      "https://forms.example.org",
+    ]);
+    expect(routing.registerLinkTtlHours).toBe(48);
+    expect(routing.recommendationAi).toBe(true);
+    expect(routing.supportedMinBand).toBe("high");
+  });
+  it("rejects non-integer, negative and unknown values", () => {
+    for (const [name, bad] of [
+      ["FORM_MIN_SECONDS", "-1"],
+      ["FORM_MAX_AGE_HOURS", "0"],
+      ["PUBLIC_DEDUPE_SECONDS", "1.5"],
+      ["REGISTER_LINK_TTL_HOURS", "x"],
+      ["SUPPORTED_MIN_BAND", "extreme"],
+      ["RECOMMENDATION_AI", "maybe"],
+      ["FORM_TOKEN_KEY", "short"],
+    ] as const) {
+      expect(() => loadConfig({ ...baseEnv, [name]: bad })).toThrow(new RegExp(name));
+    }
+  });
+  it("requires both signing keys in production and scrubs them from logs", () => {
+    const prod = { ...baseEnv, NODE_ENV: "production" };
+    const needed = [
+      "OIDC_ISSUER_URL",
+      "OIDC_AUDIENCE",
+      "QUARANTINE_ENCRYPTION_KEY",
+      "SUPPRESSION_HASH_KEY",
+      "DOWNLOAD_SIGNING_KEY",
+      "FORM_TOKEN_KEY",
+    ];
+    try {
+      loadConfig(prod);
+      throw new Error("expected a ConfigError");
+    } catch (error) {
+      const variables = (error as { problems?: { variable: string }[] }).problems?.map(
+        (p) => p.variable,
+      );
+      expect(variables).toEqual(expect.arrayContaining(needed));
+    }
+    const c = loadConfig({
+      ...baseEnv,
+      DOWNLOAD_SIGNING_KEY: "d".repeat(32),
+      FORM_TOKEN_KEY: "f".repeat(32),
+    });
+    expect(c.secretValues).toEqual(expect.arrayContaining(["d".repeat(32), "f".repeat(32)]));
   });
 });

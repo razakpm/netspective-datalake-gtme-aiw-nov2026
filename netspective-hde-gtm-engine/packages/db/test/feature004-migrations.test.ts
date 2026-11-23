@@ -84,16 +84,16 @@ describe("seed", () => {
       (db.raw.prepare(`SELECT count(*) c FROM ${t}`).get() as { c: number }).c;
     expect(count("hypothesis_category")).toBe(7);
     expect(count("service_capability_provisional")).toBe(10);
-    expect(count("prompt_version")).toBe(3);
+    expect(count("prompt_version")).toBe(4);
     expect(
       (
         db.raw.prepare("SELECT count(*) c FROM prompt_version WHERE status = 'approved'").get() as {
           c: number;
         }
       ).c,
-    ).toBe(3);
+    ).toBe(4);
     db.transaction((tx) => seedReference(tx));
-    expect(count("prompt_version")).toBe(3);
+    expect(count("prompt_version")).toBe(4);
   });
 });
 

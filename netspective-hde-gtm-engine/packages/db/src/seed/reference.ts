@@ -10,6 +10,7 @@ import { seedFeature002 } from "./feature002.js";
 import { seedFeature003 } from "./feature003.js";
 import { seedFeature004 } from "./feature004.js";
 import { seedFeature005 } from "./feature005.js";
+import { seedFeature006 } from "./feature006.js";
 
 // Reference data seed (task T040): the seven roles, seven permissions and the foundation matrix.
 // Idempotent, and run in every environment (it is not synthetic prospect data).
@@ -73,6 +74,14 @@ const PERMISSION_DESCRIPTIONS: Readonly<Record<Permission, string>> = {
   "paid_types.edit": "Edit paid engagement types and propose deliverables",
   "paid_types.approve":
     "Approve deliverables not in the source material (designated approvers only)",
+  "offers.recommend": "Request, accept and dismiss offer recommendations",
+  "requests.read": "View the request inbox: downloads, session requests and intake submissions",
+  "requests.review": "Review, link and close requests from the public forms",
+  "waitlist.edit": "Add accounts to an offer's wait-list and release or remove entries",
+  "routing.rules.manage":
+    "Create and activate routing rule set versions (service lead or administrator only)",
+  "notices.manage": "Draft privacy notice and consent wording versions",
+  "notices.approve": "Approve notice and consent wording before a form shows it (approvers only)",
 };
 
 export function seedReference(tx: Tx): void {
@@ -98,4 +107,5 @@ export function seedReference(tx: Tx): void {
   seedFeature003(tx);
   seedFeature004(tx);
   seedFeature005(tx);
+  seedFeature006(tx);
 }

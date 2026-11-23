@@ -22,7 +22,11 @@ const PREFIXES = [
 ];
 const catalogueRoutes = () =>
   fx.routes.filter(
-    (r) => PREFIXES.some((p) => r.url.startsWith(p)) && !["HEAD", "OPTIONS"].includes(r.method),
+    (r) =>
+      PREFIXES.some((p) => r.url.startsWith(p)) &&
+      // The wait-list (feature 006) lives under /offers but is tested in routing-rbac.int.test.ts.
+      !r.url.includes("/waitlist") &&
+      !["HEAD", "OPTIONS"].includes(r.method),
   );
 const concrete = (url: string) =>
   url

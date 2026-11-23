@@ -24,6 +24,7 @@
     "test": "vitest run --project unit --coverage --passWithNoTests",
     "test:integration": "vitest run --project integration --passWithNoTests",
     "test:contracts": "vitest run --project contracts --passWithNoTests",
+    "test:e2e": "pnpm --filter @gtm/web test:e2e",
     "build": "pnpm -r --if-present build"
   },
   "devDependencies": {

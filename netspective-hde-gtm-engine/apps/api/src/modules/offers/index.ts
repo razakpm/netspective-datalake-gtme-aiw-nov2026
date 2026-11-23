@@ -37,3 +37,36 @@ export {
   type ScoreView,
 } from "./scores.js";
 export { registerOfferRoutes, type OfferRouteDeps } from "./routes.js";
+export {
+  RuleSetService,
+  DraftInputSchema,
+  ActivateInputSchema,
+  type RuleSetView,
+} from "./rule-sets.js";
+export {
+  RecommendationService,
+  RecommendInputSchema,
+  DismissInputSchema,
+  type RecommendationSettings,
+  type RecommendationView,
+} from "./recommendations.js";
+export { RoutingContextBuilder, hashContext, type ContextDeps } from "./routing-context.js";
+export {
+  FakeConsentReader,
+  FakePriorInteractions,
+  NO_CONSENT_RECORDS,
+  NO_PRIOR_INTERACTIONS,
+  type ConsentReader,
+  type PriorInteractions,
+  type Recommender,
+} from "./ports.js";
+export {
+  registerRecommendationRoutes,
+  type RecommendationRouteDeps,
+} from "./recommendation-routes.js";
+export {
+  WaitlistService,
+  AddInputSchema,
+  CloseInputSchema,
+  type WaitlistView,
+} from "./waitlist.js";

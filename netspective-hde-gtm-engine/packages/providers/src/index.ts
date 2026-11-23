@@ -9,3 +9,6 @@ export * from "./fakes/research-source.js";
 export * from "./adapters/anthropic-llm.js";
 export * from "./adapters/web-fetch.js";
 export * from "./adapters/manual-capture.js";
+export * from "./interfaces/file-storage.js";
+export * from "./fakes/file-storage.js";
+export * from "./adapters/local-file-storage.js";

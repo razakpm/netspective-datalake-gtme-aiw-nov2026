@@ -174,6 +174,7 @@ describe("registry and JSON Schema export", () => {
     expect(Object.keys(SCHEMA_REGISTRY).sort()).toEqual([
       "account-hypothesis-proposals",
       "account-research-summary",
+      "offer-recommendation-explain",
       "problem-interpretation",
       "signal-extraction",
     ]);

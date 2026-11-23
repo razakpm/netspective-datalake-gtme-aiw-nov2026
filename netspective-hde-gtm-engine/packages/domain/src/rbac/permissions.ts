@@ -53,6 +53,14 @@ export const PERMISSIONS = [
   "claims.phrases.manage",
   "paid_types.edit",
   "paid_types.approve",
+  // Feature 006 (offer routing and lead magnet). Role mapping is a hypothesis (open question #51).
+  "offers.recommend",
+  "requests.read",
+  "requests.review",
+  "waitlist.edit",
+  "routing.rules.manage",
+  "notices.manage",
+  "notices.approve",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -93,6 +101,14 @@ const SERVICE_LEAD_CATALOGUE = [
   "paid_types.approve",
 ] as const;
 
+// Feature 006: operators work the recommendations, the request inbox and the wait-list.
+const OPERATOR_OFFER_ROUTING = [
+  "offers.recommend",
+  "requests.read",
+  "requests.review",
+  "waitlist.edit",
+] as const;
+
 export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Permission[]>> = {
   gtm_operator: [
     "jobs.read",
@@ -110,9 +126,11 @@ export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Perm
     "research.run",
     "hypotheses.edit",
     "claims.draft",
+    ...OPERATOR_OFFER_ROUTING,
   ],
   research_analyst: [
     ...READERS,
+    "requests.read",
     "icp.assess",
     "signals.record",
     "research.run",
@@ -125,8 +143,17 @@ export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Perm
     "stakeholders.edit",
     "evidence.record",
     ...SERVICE_LEAD_CATALOGUE,
+    ...OPERATOR_OFFER_ROUTING,
+    "routing.rules.manage",
   ],
-  campaign_approver: ["claims.read", "claims.draft", "claims.approve", "claims.phrases.manage"],
+  campaign_approver: [
+    "claims.read",
+    "claims.draft",
+    "claims.approve",
+    "claims.phrases.manage",
+    "notices.manage",
+    "notices.approve",
+  ],
   administrator: [...PERMISSIONS],
   read_only_executive: ["audit.read", "jobs.read", "ai_invocations.read", ...READERS],
 };
@@ -146,7 +173,8 @@ export function isRestrictedPermission(key: string): boolean {
     key === "suppressions.lift" ||
     key === "contacts.erase" ||
     key === "signals.review" ||
-    key === "hypotheses.review"
+    key === "hypotheses.review" ||
+    key === "routing.rules.manage"
   );
 }
 

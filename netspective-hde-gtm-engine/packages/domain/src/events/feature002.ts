@@ -7,7 +7,7 @@ export const AccountCreatedPayload = z
   .object({
     account_id: z.string().min(1),
     org_type: z.string().min(1),
-    source: z.enum(["import", "manual"]),
+    source: z.enum(["import", "manual", "first_party_form"]),
   })
   .strict();
 

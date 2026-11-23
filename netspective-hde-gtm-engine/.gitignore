@@ -27,3 +27,10 @@ Thumbs.db
 
 # Local SQLite database (ADR-015)
 .data/
+
+# Next.js generated files and the Playwright runtime folder (feature 006)
+next-env.d.ts
+apps/web/AGENTS.md
+apps/web/e2e/.runtime/
+apps/web/test-results/
+apps/web/playwright-report/

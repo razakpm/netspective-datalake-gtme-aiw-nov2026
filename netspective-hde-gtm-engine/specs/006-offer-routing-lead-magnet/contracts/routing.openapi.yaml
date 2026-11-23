@@ -31,6 +31,15 @@ paths:
         '201': { description: "Made.", content: { application/json: { schema: { $ref: '#/components/schemas/Recommendation' } } } }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
+  /offer-recommendations:
+    get:
+      operationId: listPendingOfferRecommendations
+      summary: "The review queue: recommendations still pending, oldest first (follow-ups from downloads land here)."
+      parameters:
+        - { in: query, name: state, required: false, schema: { type: string, enum: [pending] } }
+      responses:
+        '200': { description: "Pending recommendations.", content: { application/json: { schema: { type: object, required: [items], properties: { items: { type: array, items: { $ref: '#/components/schemas/Recommendation' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
   /offer-recommendations/{id}:
     parameters: [ { in: path, name: id, required: true, schema: { type: string } } ]
     get:
@@ -152,13 +161,15 @@ components:
         ruleSetVersion: { type: integer }
         outcome: { type: string, enum: [offer, research, no_action] }
         offerId: { type: [string, 'null'] }
+        offerKey: { type: [string, 'null'] }
         outreach: { type: string, enum: [allowed, blocked] }
         blockedReasons: { type: array, items: { type: string } }
-        eligible: { type: array, items: { type: object, required: [offerId, reason], properties: { offerId: { type: string }, reason: { type: string } } } }
-        excluded: { type: array, items: { type: object, required: [offerId, code], properties: { offerId: { type: string }, code: { type: string } } } }
-        matched: { type: array, items: { type: object, required: [ruleId, priority], properties: { ruleId: { type: string }, priority: { type: integer }, chosen: { type: boolean } } } }
-        alternatives: { type: array, items: { type: object, required: [kind, reason], properties: { kind: { type: string, enum: [waitlist, offer_5, research, do_nothing] }, reason: { type: string } } } }
+        eligible: { type: array, items: { type: object, required: [offerKey, reason], properties: { offerKey: { type: string }, reason: { type: string } } } }
+        excluded: { type: array, items: { type: object, required: [offerKey, code], properties: { offerKey: { type: string, description: "An offer key, or * when the whole account or contact is blocked." }, code: { type: string } } } }
+        matched: { type: array, items: { type: object, required: [ruleId, priority, result], properties: { ruleId: { type: string }, priority: { type: integer }, result: { type: string } } } }
+        alternatives: { type: array, items: { type: object, required: [kind, reason], properties: { kind: { type: string, enum: [wait_list, offer, research, do_nothing] }, offerKey: { type: [string, 'null'] }, offerId: { type: [string, 'null'] }, reason: { type: string } } } }
         ranking: { type: [array, 'null'], items: { type: string } }
+        aiUsed: { type: boolean }
         aiFallback: { type: boolean }
         explanation: { type: string, maxLength: 600 }
         limitations: { type: array, items: { type: string } }
@@ -166,6 +177,7 @@ components:
         reviewState: { type: string, enum: [pending, accepted, dismissed] }
         reviewedBy: { type: [string, 'null'] }
         reviewedAt: { type: [string, 'null'], format: date-time }
+        reviewReason: { type: [string, 'null'] }
         createdAt: { type: string, format: date-time }
     WaitlistEntry:
       type: object
@@ -174,10 +186,11 @@ components:
     Rule:
       type: object
       additionalProperties: false
-      required: [id, priority, then]
+      required: [id, priority, description, when, then]
       properties:
-        id: { type: string, pattern: '^[a-z0-9][a-z0-9-]{0,63}$' }
-        priority: { type: integer, minimum: 1, maximum: 999 }
+        id: { type: string, pattern: '^[a-z][a-z0-9-]{1,59}$' }
+        priority: { type: integer, minimum: 1, maximum: 1000, description: "The lowest number wins; ties go to the lower rule id." }
+        description: { type: string, minLength: 3, maxLength: 300 }
         when:
           type: object
           additionalProperties: false
@@ -185,16 +198,17 @@ components:
             trigger: { type: string, enum: [operator, offer5_download] }
             icp: { type: string, enum: [icp1, icp2] }
             supportedCategories: { type: array, minItems: 1, items: { type: string } }
-            supportedCapabilityTag: { type: string }
-            minDistinctCategories: { type: integer, minimum: 2, maximum: 10 }
+            supportedCapability: { type: string }
+            distinctCategories: { type: object, additionalProperties: false, required: [capability, count], properties: { capability: { type: string }, count: { type: integer, minimum: 2, maximum: 10 } } }
+            fallback: { type: boolean, const: true }
         then:
           type: object
           additionalProperties: false
           properties:
             offerKey: { type: string }
-            offerKeyByIcp: { type: object, additionalProperties: false, properties: { icp1: { type: string }, icp2: { type: string } } }
+            offerByIcp: { type: object, additionalProperties: false, required: [icp1, icp2], properties: { icp1: { type: string }, icp2: { type: string } } }
             outcome: { type: string, enum: [research, no_action] }
-            reason: { type: string, maxLength: 300 }
+            byFit: { type: boolean, const: true }
     RuleSet:
       type: object
       required: [version, state, rules, author, reason, createdAt]

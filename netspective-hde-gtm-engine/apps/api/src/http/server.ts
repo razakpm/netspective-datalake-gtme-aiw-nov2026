@@ -26,6 +26,8 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
   const app = Fastify({
     loggerInstance: logger,
     bodyLimit: config.limits.apiBodyBytes,
+    // A signed download link (feature 006) is longer than the default 100 characters of a path parameter.
+    routerOptions: { maxParamLength: 400 },
     // The built-in request log prints the raw URL, and a query string can hold PHI. We log the route
     // pattern ourselves below.
     disableRequestLogging: true,

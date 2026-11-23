@@ -262,6 +262,7 @@ describe("model input allow-list", () => {
     });
     expect(Object.keys(built).sort()).toEqual([
       "account",
+      "recommendation",
       "reference",
       "signalObservations",
       "sources",
