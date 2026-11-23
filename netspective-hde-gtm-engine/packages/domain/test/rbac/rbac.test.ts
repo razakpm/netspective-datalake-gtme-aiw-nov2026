@@ -42,12 +42,16 @@ describe("effective permissions", () => {
         "icp.read",
         "jobs.read",
         "offers.read",
+        "offers.recommend",
+        "requests.read",
+        "requests.review",
         "research.read",
         "research.run",
         "review.decide",
         "signals.read",
         "signals.record",
         "stakeholders.edit",
+        "waitlist.edit",
         "webhooks.read",
       ].sort(),
     );
@@ -57,10 +61,38 @@ describe("effective permissions", () => {
     expect(effectivePermissions([role("administrator")])).toEqual([...PERMISSIONS].sort());
   });
 
-  it("gives campaign_approver only the claim permissions (feature 005)", () => {
+  it("gives campaign_approver only the claim and notice permissions (features 005, 006)", () => {
     expect(effectivePermissions([role("campaign_approver")])).toEqual(
-      ["claims.approve", "claims.draft", "claims.phrases.manage", "claims.read"].sort(),
+      [
+        "claims.approve",
+        "claims.draft",
+        "claims.phrases.manage",
+        "claims.read",
+        "notices.approve",
+        "notices.manage",
+      ].sort(),
     );
+  });
+
+  it("keeps routing, notice and wait-list permissions with the right roles (feature 006)", () => {
+    for (const key of ["routing.rules.manage", "notices.approve"]) {
+      expect(isRestrictedPermission(key)).toBe(true);
+    }
+    const holders = (p: string) =>
+      ROLE_KEYS.filter((r) => (FOUNDATION_ROLE_PERMISSIONS[r] as readonly string[]).includes(p));
+    expect(holders("routing.rules.manage")).toEqual(["sales_service_lead", "administrator"]);
+    expect(holders("notices.approve")).toEqual(["campaign_approver", "administrator"]);
+    expect(holders("offers.recommend")).toEqual([
+      "gtm_operator",
+      "sales_service_lead",
+      "administrator",
+    ]);
+    expect(holders("requests.read")).toEqual([
+      "gtm_operator",
+      "research_analyst",
+      "sales_service_lead",
+      "administrator",
+    ]);
   });
 
   it("keeps claim and paid-type approval restricted and held only by the right roles (feature 005)", () => {

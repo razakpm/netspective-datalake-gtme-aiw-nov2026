@@ -73,6 +73,14 @@ const PERMISSION_DESCRIPTIONS: Readonly<Record<Permission, string>> = {
   "paid_types.edit": "Edit paid engagement types and propose deliverables",
   "paid_types.approve":
     "Approve deliverables not in the source material (designated approvers only)",
+  "offers.recommend": "Request, accept and dismiss offer recommendations",
+  "requests.read": "View the request inbox: downloads, session requests and intake submissions",
+  "requests.review": "Review, link and close requests from the public forms",
+  "waitlist.edit": "Add accounts to an offer's wait-list and release or remove entries",
+  "routing.rules.manage":
+    "Create and activate routing rule set versions (service lead or administrator only)",
+  "notices.manage": "Draft privacy notice and consent wording versions",
+  "notices.approve": "Approve notice and consent wording before a form shows it (approvers only)",
 };
 
 export function seedReference(tx: Tx): void {

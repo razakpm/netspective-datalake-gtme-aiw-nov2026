@@ -138,6 +138,10 @@ describe("reference seed", () => {
         "offers.read",
         "claims.read",
         "claims.draft",
+        "offers.recommend",
+        "requests.read",
+        "requests.review",
+        "waitlist.edit",
       ].sort(),
     );
     expect(byRole["read_only_executive"]).toEqual(
@@ -156,9 +160,16 @@ describe("reference seed", () => {
         "claims.read",
       ].sort(),
     );
-    expect(byRole["administrator"]).toHaveLength(47);
+    expect(byRole["administrator"]).toHaveLength(54);
     expect(byRole["campaign_approver"]).toEqual(
-      ["claims.approve", "claims.draft", "claims.phrases.manage", "claims.read"].sort(),
+      [
+        "claims.approve",
+        "claims.draft",
+        "claims.phrases.manage",
+        "claims.read",
+        "notices.approve",
+        "notices.manage",
+      ].sort(),
     );
     expect(db.raw.prepare("SELECT count(*) c FROM role").get()).toEqual({ c: 7 });
   });

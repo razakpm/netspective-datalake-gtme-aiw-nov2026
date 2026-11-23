@@ -150,6 +150,21 @@ const EnvSchema = z.object({
   OFFER_SCORE_MIN: int(1, 0, 100),
   OFFER_SCORE_MAX: int(5, 1, 100),
   CLAIM_EVIDENCE_DEFAULT_EXPIRY_MONTHS: int(12, 1, 60),
+
+  // Feature 006 (hypotheses, open question #51): public forms, register delivery and routing.
+  PUBLIC_FORM_ORIGINS: z.string().default(""),
+  PUBLIC_POST_RATE_LIMIT_PER_MINUTE: int(20),
+  PUBLIC_GET_RATE_LIMIT_PER_MINUTE: int(120),
+  FORM_MIN_SECONDS: int(3, 0, 3600),
+  FORM_MAX_AGE_HOURS: int(24, 1, 720),
+  PUBLIC_DEDUPE_SECONDS: int(60, 0, 3600),
+  REGISTER_LINK_TTL_HOURS: int(24, 1, 720),
+  REGISTER_FILE_KEY: z.string().min(1).default("ccda-to-fhir-mapping-decision-register.pdf"),
+  FILE_STORAGE_DIR: z.string().min(1).default("./var/files"),
+  DOWNLOAD_SIGNING_KEY: z.string().min(32).optional(),
+  FORM_TOKEN_KEY: z.string().min(32).optional(),
+  RECOMMENDATION_AI: z.enum(["on", "off"]).default("off"),
+  SUPPORTED_MIN_BAND: z.enum(["low", "medium", "high"]).default("medium"),
 });
 
 type Env = z.infer<typeof EnvSchema>;
@@ -223,6 +238,22 @@ export interface AppConfig {
     scoreMax: number;
     evidenceDefaultExpiryMonths: number;
   };
+  /** Feature 006 public forms, register delivery and routing; every value is a hypothesis. */
+  routing: {
+    publicFormOrigins: string[];
+    postRateLimitPerMinute: number;
+    getRateLimitPerMinute: number;
+    formMinSeconds: number;
+    formMaxAgeHours: number;
+    dedupeSeconds: number;
+    registerLinkTtlHours: number;
+    registerFileKey: string;
+    fileStorageDir: string;
+    downloadSigningKey: string;
+    formTokenKey: string;
+    recommendationAi: boolean;
+    supportedMinBand: "low" | "medium" | "high";
+  };
   /** Values the logger must scrub wherever they appear (see logging/logger.ts). */
   secretValues: string[];
 }
@@ -238,6 +269,8 @@ function secretsFrom(env: Env): string[] {
   if (env.QUARANTINE_ENCRYPTION_KEY) values.push(env.QUARANTINE_ENCRYPTION_KEY);
   if (env.SUPPRESSION_HASH_KEY) values.push(env.SUPPRESSION_HASH_KEY);
   if (env.ANTHROPIC_API_KEY) values.push(env.ANTHROPIC_API_KEY);
+  if (env.DOWNLOAD_SIGNING_KEY) values.push(env.DOWNLOAD_SIGNING_KEY);
+  if (env.FORM_TOKEN_KEY) values.push(env.FORM_TOKEN_KEY);
   return values;
 }
 
@@ -292,6 +325,12 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     }
     if (env.SUPPRESSION_HASH_KEY === undefined) {
       problems.push({ variable: "SUPPRESSION_HASH_KEY", message: "is required in production" });
+    }
+    if (env.DOWNLOAD_SIGNING_KEY === undefined) {
+      problems.push({ variable: "DOWNLOAD_SIGNING_KEY", message: "is required in production" });
+    }
+    if (env.FORM_TOKEN_KEY === undefined) {
+      problems.push({ variable: "FORM_TOKEN_KEY", message: "is required in production" });
     }
     if (env.LLM_PROVIDER === "fake") {
       problems.push({
@@ -393,6 +432,24 @@ export function loadConfig(source: Record<string, string | undefined> = process.
       scoreMin: env.OFFER_SCORE_MIN,
       scoreMax: env.OFFER_SCORE_MAX,
       evidenceDefaultExpiryMonths: env.CLAIM_EVIDENCE_DEFAULT_EXPIRY_MONTHS,
+    },
+    routing: {
+      publicFormOrigins: env.PUBLIC_FORM_ORIGINS.split(",")
+        .map((origin) => origin.trim())
+        .filter((origin) => origin.length > 0),
+      postRateLimitPerMinute: env.PUBLIC_POST_RATE_LIMIT_PER_MINUTE,
+      getRateLimitPerMinute: env.PUBLIC_GET_RATE_LIMIT_PER_MINUTE,
+      formMinSeconds: env.FORM_MIN_SECONDS,
+      formMaxAgeHours: env.FORM_MAX_AGE_HOURS,
+      dedupeSeconds: env.PUBLIC_DEDUPE_SECONDS,
+      registerLinkTtlHours: env.REGISTER_LINK_TTL_HOURS,
+      registerFileKey: env.REGISTER_FILE_KEY,
+      fileStorageDir: env.FILE_STORAGE_DIR,
+      downloadSigningKey:
+        env.DOWNLOAD_SIGNING_KEY ?? "dev-only-download-signing-key-not-for-production",
+      formTokenKey: env.FORM_TOKEN_KEY ?? "dev-only-form-token-key-not-for-production-use",
+      recommendationAi: env.RECOMMENDATION_AI === "on",
+      supportedMinBand: env.SUPPORTED_MIN_BAND,
     },
     secretValues: secretsFrom(env),
   };

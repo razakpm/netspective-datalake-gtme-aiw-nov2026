@@ -19,3 +19,7 @@ export * from "./events/feature004.js";
 export * from "./claims/index.js";
 export * from "./offers/index.js";
 export * from "./events/feature005.js";
+export * from "./icp/index.js";
+export * from "./routing/index.js";
+export * from "./workshops/index.js";
+export * from "./contacts/index.js";

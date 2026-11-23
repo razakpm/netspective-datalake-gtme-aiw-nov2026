@@ -1,0 +1,1870 @@
+{
+  "note": "Routing case corpus (feature 006, research R-07). It gates rule set activation and must only grow. Synthetic data only. Aliases O1, O5 and O6 stand for the three offer keys in `offerKeys`.",
+  "offerKeys": {
+    "O1": "sender-onboarding-friction-map",
+    "O5": "ccda-to-fhir-mapping-decision-register",
+    "O6": "pilot-input-trace-workshop"
+  },
+  "base": {
+    "trigger": "operator",
+    "account": {
+      "id": "acct-1",
+      "icp": "icp1",
+      "fit": "strong"
+    },
+    "contact": {
+      "id": "c-1",
+      "suppressed": false,
+      "consent": "given",
+      "permittedBasis": true,
+      "buyerRole": "integration_lead"
+    },
+    "hypotheses": [],
+    "offers": [
+      {
+        "id": "offer-1",
+        "key": "sender-onboarding-friction-map",
+        "number": 1,
+        "available": true,
+        "capacity": "room",
+        "effort": "30 minutes"
+      },
+      {
+        "id": "offer-5",
+        "key": "ccda-to-fhir-mapping-decision-register",
+        "number": 5,
+        "available": true,
+        "capacity": "room",
+        "effort": "30 minutes"
+      },
+      {
+        "id": "offer-6",
+        "key": "pilot-input-trace-workshop",
+        "number": 6,
+        "available": true,
+        "capacity": "room",
+        "effort": "30 minutes"
+      }
+    ],
+    "prior": {
+      "downloads": 0,
+      "sessionRequests": 0,
+      "acceptedOffers": 0
+    }
+  },
+  "cases": [
+    {
+      "id": "r1-match-onboarding",
+      "rule": "icp1-onboarding-friction",
+      "kind": "match",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-match-ig-change",
+      "rule": "icp1-onboarding-friction",
+      "kind": "match",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "ig_change_management",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-match-untested-with-signal",
+      "rule": "icp1-onboarding-friction",
+      "kind": "match",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "untested",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-match-validated",
+      "rule": "icp1-onboarding-friction",
+      "kind": "match",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "validated",
+            "band": "low",
+            "currentSupportingSignals": 0
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-near-miss-icp2",
+      "rule": "icp1-onboarding-friction",
+      "kind": "near_miss",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-near-miss-category",
+      "rule": "icp1-onboarding-friction",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "pilot_input_quality",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-near-miss-weakening",
+      "rule": "icp1-onboarding-friction",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "weakening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-near-miss-stale",
+      "rule": "icp1-onboarding-friction",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "stale",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-near-miss-rejected",
+      "rule": "icp1-onboarding-friction",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "rejected",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-near-miss-proposed",
+      "rule": "icp1-onboarding-friction",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "proposed",
+            "effectiveStatus": null,
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-near-miss-untested-no-signal",
+      "rule": "icp1-onboarding-friction",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "untested",
+            "band": "medium",
+            "currentSupportingSignals": 0
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r1-near-miss-untested-low-band",
+      "rule": "icp1-onboarding-friction",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "untested",
+            "band": "low",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r2-match",
+      "rule": "icp2-pilot-input",
+      "kind": "match",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "pilot_input_quality",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O6",
+        "matched": ["icp2-pilot-input"],
+        "chosen": "icp2-pilot-input",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r2-near-miss-icp1",
+      "rule": "icp2-pilot-input",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "pilot_input_quality",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r2-near-miss-category",
+      "rule": "icp2-pilot-input",
+      "kind": "near_miss",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "r2-near-miss-weak",
+      "rule": "icp2-pilot-input",
+      "kind": "near_miss",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "pilot_input_quality",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "weakening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "d1-match",
+      "rule": "offer5-download-icp1",
+      "kind": "match",
+      "patch": {
+        "trigger": "offer5_download"
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["offer5-download-icp1"],
+        "chosen": "offer5-download-icp1",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "d2-match",
+      "rule": "offer5-download-icp2",
+      "kind": "match",
+      "patch": {
+        "trigger": "offer5_download",
+        "account": {
+          "icp": "icp2"
+        }
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O6",
+        "matched": ["offer5-download-icp2"],
+        "chosen": "offer5-download-icp2",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "d1-near-miss-operator",
+      "rule": "offer5-download-icp1",
+      "kind": "near_miss",
+      "patch": {},
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "precedence-download-with-hypothesis",
+      "rule": "icp1-onboarding-friction",
+      "kind": "precedence",
+      "patch": {
+        "trigger": "offer5_download",
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction", "offer5-download-icp1"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "mf-match-icp1",
+      "rule": "multi-format-gap",
+      "kind": "match",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "format_a",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          },
+          {
+            "id": "h2",
+            "category": "format_b",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["multi-format-gap"],
+        "chosen": "multi-format-gap",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "mf-match-icp2",
+      "rule": "multi-format-gap",
+      "kind": "match",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "format_a",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          },
+          {
+            "id": "h2",
+            "category": "format_b",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O6",
+        "matched": ["multi-format-gap"],
+        "chosen": "multi-format-gap",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "mf-near-miss-one-category",
+      "rule": "multi-format-gap",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "format_a",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "mf-near-miss-same-category-twice",
+      "rule": "multi-format-gap",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "format_a",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          },
+          {
+            "id": "h2",
+            "category": "format_a",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "mf-near-miss-one-weak",
+      "rule": "multi-format-gap",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "format_a",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          },
+          {
+            "id": "h2",
+            "category": "format_b",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "weakening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "mf-near-miss-untagged",
+      "rule": "multi-format-gap",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "format_a",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          },
+          {
+            "id": "h2",
+            "category": "format_b",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "precedence-mf-and-onboarding",
+      "rule": "multi-format-gap",
+      "kind": "precedence",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          },
+          {
+            "id": "h2",
+            "category": "format_b",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction", "multi-format-gap"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "cc-match-icp1",
+      "rule": "ccda-fhir-decisions",
+      "kind": "match",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "mapping_decisions",
+            "capabilities": ["ccda_to_fhir_mapping"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O5",
+        "matched": ["ccda-fhir-decisions"],
+        "chosen": "ccda-fhir-decisions",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "cc-match-icp2",
+      "rule": "ccda-fhir-decisions",
+      "kind": "match",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "mapping_decisions",
+            "capabilities": ["ccda_to_fhir_mapping"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O5",
+        "matched": ["ccda-fhir-decisions"],
+        "chosen": "ccda-fhir-decisions",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "cc-near-miss-weak",
+      "rule": "ccda-fhir-decisions",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "mapping_decisions",
+            "capabilities": ["ccda_to_fhir_mapping"],
+            "acceptance": "accepted",
+            "effectiveStatus": "weakening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "cc-near-miss-untagged",
+      "rule": "ccda-fhir-decisions",
+      "kind": "near_miss",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "mapping_decisions",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "precedence-onboarding-over-ccda",
+      "rule": "ccda-fhir-decisions",
+      "kind": "precedence",
+      "patch": {
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          },
+          {
+            "id": "h2",
+            "category": "mapping_decisions",
+            "capabilities": ["ccda_to_fhir_mapping"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction", "ccda-fhir-decisions"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "precedence-download-over-ccda",
+      "rule": "ccda-fhir-decisions",
+      "kind": "precedence",
+      "patch": {
+        "trigger": "offer5_download",
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "mapping_decisions",
+            "capabilities": ["ccda_to_fhir_mapping"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["offer5-download-icp1", "ccda-fhir-decisions"],
+        "chosen": "offer5-download-icp1",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "fb-fit-possible",
+      "rule": "no-supported-hypothesis",
+      "kind": "match",
+      "patch": {
+        "account": {
+          "fit": "possible"
+        }
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "fb-fit-strong",
+      "rule": "no-supported-hypothesis",
+      "kind": "match",
+      "patch": {},
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "fit-unknown-research-blocked",
+      "rule": "no-supported-hypothesis",
+      "kind": "eligibility",
+      "patch": {
+        "account": {
+          "fit": "unknown"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:fit_not_priority"],
+        "outreach": "blocked:fit_not_priority"
+      }
+    },
+    {
+      "id": "fit-weak-no-action",
+      "rule": "no-supported-hypothesis",
+      "kind": "eligibility",
+      "patch": {
+        "account": {
+          "fit": "weak"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "no_action",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:fit_not_priority"],
+        "outreach": "blocked:fit_not_priority"
+      }
+    },
+    {
+      "id": "fit-excluded-no-action",
+      "rule": "no-supported-hypothesis",
+      "kind": "eligibility",
+      "patch": {
+        "account": {
+          "fit": "excluded"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "no_action",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:account_excluded"],
+        "outreach": "blocked:account_excluded"
+      }
+    },
+    {
+      "id": "icp-null-unknown",
+      "rule": "no-supported-hypothesis",
+      "kind": "eligibility",
+      "patch": {
+        "account": {
+          "icp": null,
+          "fit": "unknown"
+        }
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:fit_not_priority"],
+        "outreach": "blocked:fit_not_priority"
+      }
+    },
+    {
+      "id": "icp-null-strong-no-rule",
+      "rule": "no-supported-hypothesis",
+      "kind": "near_miss",
+      "patch": {
+        "account": {
+          "icp": null,
+          "fit": "strong"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "format_a",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          },
+          {
+            "id": "h2",
+            "category": "format_b",
+            "capabilities": ["multi_format_intake"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "contact-suppressed",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "contact": {
+          "suppressed": true
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "no_action",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:contact_suppressed"],
+        "outreach": "blocked:contact_suppressed"
+      }
+    },
+    {
+      "id": "contact-consent-declined",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "contact": {
+          "consent": "not_given"
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "no_action",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:no_communication_permission"],
+        "outreach": "blocked:no_communication_permission"
+      }
+    },
+    {
+      "id": "contact-withdrawn-despite-basis",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "contact": {
+          "consent": "not_given",
+          "permittedBasis": true
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "no_action",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:no_communication_permission"],
+        "outreach": "blocked:no_communication_permission"
+      }
+    },
+    {
+      "id": "contact-no-consent-record-with-basis",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "contact": {
+          "consent": "none",
+          "permittedBasis": true
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "contact-no-consent-record-no-basis",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "contact": {
+          "consent": "none",
+          "permittedBasis": false
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "no_action",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:no_communication_permission"],
+        "outreach": "blocked:no_communication_permission"
+      }
+    },
+    {
+      "id": "contact-suppressed-and-no-permission",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "contact": {
+          "suppressed": true,
+          "consent": "not_given"
+        }
+      },
+      "expected": {
+        "outcome": "no_action",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:contact_suppressed", "*:no_communication_permission"],
+        "outreach": "blocked:contact_suppressed,no_communication_permission"
+      }
+    },
+    {
+      "id": "contact-suppressed-download",
+      "rule": "offer5-download-icp1",
+      "kind": "eligibility",
+      "patch": {
+        "trigger": "offer5_download",
+        "contact": {
+          "suppressed": true
+        }
+      },
+      "expected": {
+        "outcome": "no_action",
+        "offer": null,
+        "matched": [],
+        "chosen": null,
+        "eligible": [],
+        "excluded": ["*:contact_suppressed"],
+        "outreach": "blocked:contact_suppressed"
+      }
+    },
+    {
+      "id": "no-contact-account-only",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "contact": null,
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed",
+        "limitationsInclude": ["No contact"]
+      }
+    },
+    {
+      "id": "contact-unknown-role",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "contact": {
+          "buyerRole": null
+        },
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed",
+        "limitationsInclude": ["buyer role"]
+      }
+    },
+    {
+      "id": "offer1-unavailable-falls-to-research",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "offers": [
+          {
+            "id": "offer-1",
+            "key": "sender-onboarding-friction-map",
+            "number": 1,
+            "available": false,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-5",
+            "key": "ccda-to-fhir-mapping-decision-register",
+            "number": 5,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-6",
+            "key": "pilot-input-trace-workshop",
+            "number": 6,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["icp1-onboarding-friction", "no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O5", "O6"],
+        "excluded": ["sender-onboarding-friction-map:offer_unavailable"],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "offer1-unavailable-falls-to-offer5",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "offers": [
+          {
+            "id": "offer-1",
+            "key": "sender-onboarding-friction-map",
+            "number": 1,
+            "available": false,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-5",
+            "key": "ccda-to-fhir-mapping-decision-register",
+            "number": 5,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-6",
+            "key": "pilot-input-trace-workshop",
+            "number": 6,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          },
+          {
+            "id": "h2",
+            "category": "mapping_decisions",
+            "capabilities": ["ccda_to_fhir_mapping"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O5",
+        "matched": ["icp1-onboarding-friction", "ccda-fhir-decisions"],
+        "chosen": "ccda-fhir-decisions",
+        "eligible": ["O5", "O6"],
+        "excluded": ["sender-onboarding-friction-map:offer_unavailable"],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "offer6-full-scenario-g",
+      "rule": "icp2-pilot-input",
+      "kind": "eligibility",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        },
+        "offers": [
+          {
+            "id": "offer-1",
+            "key": "sender-onboarding-friction-map",
+            "number": 1,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-5",
+            "key": "ccda-to-fhir-mapping-decision-register",
+            "number": 5,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-6",
+            "key": "pilot-input-trace-workshop",
+            "number": 6,
+            "available": true,
+            "capacity": "exhausted",
+            "effort": "30 minutes"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "pilot_input_quality",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["icp2-pilot-input", "no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5"],
+        "excluded": ["pilot-input-trace-workshop:capacity_exhausted"],
+        "outreach": "allowed",
+        "alternatives": [
+          "wait_list:pilot-input-trace-workshop",
+          "offer:ccda-to-fhir-mapping-decision-register",
+          "research:",
+          "do_nothing:"
+        ]
+      }
+    },
+    {
+      "id": "offer6-full-offer5-also-matches",
+      "rule": "icp2-pilot-input",
+      "kind": "eligibility",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        },
+        "offers": [
+          {
+            "id": "offer-1",
+            "key": "sender-onboarding-friction-map",
+            "number": 1,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-5",
+            "key": "ccda-to-fhir-mapping-decision-register",
+            "number": 5,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-6",
+            "key": "pilot-input-trace-workshop",
+            "number": 6,
+            "available": true,
+            "capacity": "exhausted",
+            "effort": "30 minutes"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "pilot_input_quality",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          },
+          {
+            "id": "h2",
+            "category": "mapping_decisions",
+            "capabilities": ["ccda_to_fhir_mapping"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O5",
+        "matched": ["icp2-pilot-input", "ccda-fhir-decisions"],
+        "chosen": "ccda-fhir-decisions",
+        "eligible": ["O1", "O5"],
+        "excluded": ["pilot-input-trace-workshop:capacity_exhausted"],
+        "outreach": "allowed",
+        "alternatives": [
+          "wait_list:pilot-input-trace-workshop",
+          "offer:ccda-to-fhir-mapping-decision-register",
+          "research:",
+          "do_nothing:"
+        ]
+      }
+    },
+    {
+      "id": "offer6-no-limit-set",
+      "rule": "icp2-pilot-input",
+      "kind": "eligibility",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        },
+        "offers": [
+          {
+            "id": "offer-1",
+            "key": "sender-onboarding-friction-map",
+            "number": 1,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-5",
+            "key": "ccda-to-fhir-mapping-decision-register",
+            "number": 5,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-6",
+            "key": "pilot-input-trace-workshop",
+            "number": 6,
+            "available": true,
+            "capacity": "no_limit_set",
+            "effort": "30 minutes"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "pilot_input_quality",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O6",
+        "matched": ["icp2-pilot-input"],
+        "chosen": "icp2-pilot-input",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed",
+        "limitationsInclude": ["capacity limit"]
+      }
+    },
+    {
+      "id": "offer-effort-not-provided",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "offers": [
+          {
+            "id": "offer-1",
+            "key": "sender-onboarding-friction-map",
+            "number": 1,
+            "available": true,
+            "capacity": "room",
+            "effort": null
+          },
+          {
+            "id": "offer-5",
+            "key": "ccda-to-fhir-mapping-decision-register",
+            "number": 5,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-6",
+            "key": "pilot-input-trace-workshop",
+            "number": 6,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "offer",
+        "offer": "O1",
+        "matched": ["icp1-onboarding-friction"],
+        "chosen": "icp1-onboarding-friction",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed",
+        "limitationsInclude": ["effort"]
+      }
+    },
+    {
+      "id": "offer5-unavailable",
+      "rule": "ccda-fhir-decisions",
+      "kind": "eligibility",
+      "patch": {
+        "offers": [
+          {
+            "id": "offer-1",
+            "key": "sender-onboarding-friction-map",
+            "number": 1,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-5",
+            "key": "ccda-to-fhir-mapping-decision-register",
+            "number": 5,
+            "available": false,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-6",
+            "key": "pilot-input-trace-workshop",
+            "number": 6,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "mapping_decisions",
+            "capabilities": ["ccda_to_fhir_mapping"],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["ccda-fhir-decisions", "no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O6"],
+        "excluded": ["ccda-to-fhir-mapping-decision-register:offer_unavailable"],
+        "outreach": "allowed"
+      }
+    },
+    {
+      "id": "d2-near-miss-operator",
+      "rule": "offer5-download-icp2",
+      "kind": "near_miss",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        }
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1", "O5", "O6"],
+        "excluded": [],
+        "outreach": "allowed"
+      }
+    }
+  ]
+}
