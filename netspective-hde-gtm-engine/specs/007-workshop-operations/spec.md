@@ -145,7 +145,7 @@ From finalised findings the system prepares a one-page output for the buyer. The
 
 1. **Given** finalised findings, **When** the operator generates the output, **Then** a one-page draft is made from the findings, never from anything outside them, and it is a draft until a person approves it.
 2. **Given** a draft, **When** the operator edits it, **Then** each edit is saved as a revision with who and when, and the findings are not changed by it.
-3. **Given** a draft, **When** it is approved by a person who holds the right to approve, **Then** it becomes approved and fixed, and a later edit makes a new draft; the approver can be the operator who edited it only if the role mapping allows it.
+3. **Given** a draft, **When** it is approved by a person who holds the output-approval right (the service lead or an administrator), **Then** it becomes approved and fixed as a one-page PDF, and a later edit makes a new draft; an operator without that right can edit and ask for approval but not approve.
 4. **Given** a draft that is not approved, **When** anyone tries to share or export it, **Then** it is refused.
 5. **Given** any output, **When** it is shown, **Then** it contains an in-scope section and an out-of-scope section, and it cannot be approved if either is missing or empty.
 6. **Given** an output that uses restricted wording (for example a guarantee, a compliance claim, a service level, or a case-study figure) or states a price, **When** it is checked, **Then** it is flagged and cannot be approved until the wording is removed or covered by an approved claim.
@@ -196,7 +196,7 @@ For each workshop the operator or delivering engineer records the delivery effor
 - **FR-002**: A workshop MUST have a state of requested, booked, held, findings recorded or closed, or cancelled or no-show. Only these moves MUST be allowed: requested to booked or cancelled; booked to held, no-show or cancelled (and booked to booked when rescheduled); held to findings recorded; findings recorded to closed. Cancelled, no-show and closed are final.
 - **FR-003**: Every move MUST be made by a person, MUST be recorded with who, when and (where the rules require it) a note or reason, and MUST be audited. A refused move MUST be audited without content. Closing MUST need finalised findings.
 - **FR-004**: A workshop MUST record its booked date and time, its length (45 minutes for Offer 1, 90 minutes for Offer 6, as hypotheses read from the offer), and the history of every earlier date when it is rescheduled.
-- **FR-005**: Booking MUST be possible by hand or through a calendar provider behind a stable interface; a failed or unavailable provider MUST leave the workshop unchanged and MUST NOT block booking by hand. The booking is recorded the same way whichever route is used.
+- **FR-005**: Booking MUST be possible by hand, and MUST go through a calendar interface that a live provider can later fill without changing any workshop rule. The first version ships a fake provider for tests and no live provider; a provider that is added later is off by default. A failed or unavailable provider MUST leave the workshop unchanged and MUST NOT block booking by hand. The booking is recorded the same way whichever route is used.
 - **FR-006**: Nothing in this feature MUST send a message, an invitation or a reminder to anyone. Automated reminders and invitations belong to a later feature.
 
 **Capacity**
@@ -242,8 +242,8 @@ For each workshop the operator or delivering engineer records the delivery effor
 
 **Buyer output**
 
-- **FR-030**: From finalised findings the system MUST be able to generate a one-page output draft, built only from those findings. Every output MUST contain an in-scope section and an out-of-scope section, and an Offer 6 output MUST carry the not-a-guarantee disclaimer.
-- **FR-031**: An output MUST be edited and approved by a person before it can be shared or exported. Each edit MUST be a revision with who and when. An output MUST NOT be approvable if its in-scope or out-of-scope section is missing or empty, or if it holds a price, a restricted claim (feature 005's checker) or an unconfirmed item shown as confirmed.
+- **FR-030**: From finalised findings the system MUST be able to generate a one-page output draft, built only from those findings. An approved output MUST be made as a fixed one-page PDF kept with the workshop; the PDF is never edited, and any change starts a new draft. Every output MUST contain an in-scope section and an out-of-scope section, and an Offer 6 output MUST carry the not-a-guarantee disclaimer.
+- **FR-031**: An output MUST be edited and approved by a person before it can be shared or exported. Each edit MUST be a revision with who and when. Approval MUST need the output-approval right, held by the service lead and administrators (people only); an operator can edit and ask for approval but cannot approve. An output MUST NOT be approvable if its in-scope or out-of-scope section is missing or empty, or if it holds a price, a restricted claim (feature 005's checker) or an unconfirmed item shown as confirmed.
 - **FR-032**: Sharing an approved output MUST be recorded (who, when, how). The system MUST NOT send it. When the findings change after approval the output MUST be shown as out of date and MUST NOT be shared until a new draft is approved.
 
 **Effort, access and records**
@@ -253,6 +253,7 @@ For each workshop the operator or delivering engineer records the delivery effor
 - **FR-035**: Access MUST be permission-controlled: viewing workshops, converting and booking them, recording artifacts, drafting and editing findings, approving outputs, releasing held artifacts and recording effort MUST each map to permissions held by roles, with refusals audited. The role mapping is a hypothesis recorded for confirmation.
 - **FR-036**: Every create, change, state move, finalisation, approval, sharing and held-artifact decision MUST be audited with who, what, when and why, and the feature MUST publish change notices carrying identifiers only for a workshop requested, booked, held and findings recorded.
 - **FR-037**: Operators MUST have a workshop workspace showing the intake, participants, brief, artifact checklist, notes, the structured findings editor for the offer, and the output preview and approval, with every control shown only to a person who holds the permission.
+- **FR-038**: Artifact files and approved output documents MUST be kept for 12 months after the workshop is closed (a configurable hypothesis) and then deleted; their metadata and the audit trail MUST stay. Held artifacts follow the existing quarantine retention. Deleting a file MUST be audited without its content.
 
 ### Key Entities
 
@@ -279,15 +280,25 @@ For each workshop the operator or delivering engineer records the delivery effor
 - **SC-009**: Recording the findings for a workshop and generating its one-page output takes an operator under 20 minutes from the held session, for each offer.
 - **SC-010**: An effort summary per offer can be read at any time with no manual matching, and shows missing effort as missing.
 
+## Clarifications
+
+### Session 2026-11-23
+
+- Q: Which calendar option does the first version support for booking a workshop? → A: Manual booking only, plus the calendar interface and a fake provider for tests; a live Google or Microsoft provider is a later change behind a switch (recommended).
+- Q: In what form is the one-page buyer output produced? → A: A fixed one-page PDF made from the approved text, kept with the workshop; the approved text itself stays editable only as a new draft, and the PDF is never edited (recommended).
+- Q: Do attendees receive automated invitations or reminders? → A: No. This feature sends nothing; invitations, reminders and sending the output belong to feature 009 or to a person's own action (recommended).
+- Q: Who may approve a buyer output? → A: A person who holds the output-approval right (the service lead or an administrator, people only); an operator can edit and request approval but cannot approve (recommended).
+- Q: How long are artifact files and output documents kept? → A: 12 months after the workshop is closed (a hypothesis, configurable), then the files are deleted while their metadata and the audit trail stay; held artifacts follow the quarantine retention (recommended).
+
 ## Assumptions
 
 - The business source sections the description cites (6, 18 and 22.4) are not in the repository. This specification is built from the description, the runbook's Feature 007 entry, the guardrails, the glossary and acceptance Scenarios A, B and D; every field, threshold and wording not stated there is a labelled hypothesis, and the gap is recorded as an open question.
 - "Approved request" means a request, from feature 006, that a person has reviewed and linked to an account and contact and that carries an Offer 1 or Offer 6 intake.
 - Session lengths (45 and 90 minutes), the effort estimates and capacity limits come from the offer catalogue (feature 005) and are hypotheses.
 - Booking records and capacity counting use feature 005's bookings; a workshop's booking is the same record.
-- A calendar provider is optional. The first version works with manual booking and a fake provider for tests; a live calendar integration is chosen in clarification and stays behind a switch that is off by default.
-- Nothing is emailed: attendee invitations, reminders and sending the output are feature 009 or a person's own action. This feature records that an output was shared but does not send it.
-- The one-page output is produced as a document the operator can preview and approve; the output format (page document, editable document or web page) is decided in clarification.
+- A calendar provider is optional. The first version works with manual booking and a fake provider for tests; a live Google or Microsoft integration is a later change behind a switch that is off by default (clarified 2026-11-23).
+- Nothing is emailed: attendee invitations, reminders and sending the output are feature 009 or a person's own action (clarified 2026-11-23). This feature records that an output was shared but does not send it.
+- The one-page output is previewed as text, edited as drafts, and made as a fixed one-page PDF when approved (clarified 2026-11-23); an editable document format is not offered.
 - The model only assists: it drafts the preparation brief from intake and evidence, and may suggest findings from the operator's pasted notes. Every state, finalisation, approval and boundary decision is made by a person or by plain rules, never by a model.
 - Qualification, the economic buyer, the funding path and any scoping recommendation belong to feature 008; this feature leaves them as unknowns and records nothing about them.
 - Held artifacts use the existing quarantine and operator-alert mechanism from feature 001; the permission to release or discard them is the existing quarantine-review right.
