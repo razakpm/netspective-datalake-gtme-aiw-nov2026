@@ -41,6 +41,17 @@ describe("feature 006 seed", () => {
     ]);
   });
 
+  it("creates the two default ICP definitions, version 1, active hypotheses", () => {
+    const db = seeded();
+    const rows = db.raw
+      .prepare("SELECT icp, version, state, status_label FROM icp_definition ORDER BY icp")
+      .all();
+    expect(rows).toEqual([
+      { icp: "icp1", version: 1, state: "active", status_label: "hypothesis" },
+      { icp: "icp2", version: 1, state: "active", status_label: "hypothesis" },
+    ]);
+  });
+
   it("does not invent a notice version (the wording comes from the business)", () => {
     const db = seeded();
     expect(one<{ c: number }>(db, "SELECT count(*) c FROM notice_version").c).toBe(0);
@@ -48,7 +59,11 @@ describe("feature 006 seed", () => {
 
   it("is idempotent", () => {
     const db = seeded();
-    const snapshot = () => JSON.stringify(db.raw.prepare("SELECT * FROM routing_rule_set").all());
+    const snapshot = () =>
+      JSON.stringify([
+        db.raw.prepare("SELECT * FROM routing_rule_set").all(),
+        db.raw.prepare("SELECT * FROM icp_definition").all(),
+      ]);
     const first = snapshot();
     db.transaction((tx) => seedReference(tx));
     expect(snapshot()).toBe(first);

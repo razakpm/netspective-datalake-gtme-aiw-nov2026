@@ -1,4 +1,4 @@
-import { RULE_SET_V1 } from "@gtm/domain";
+import { DEFAULT_ICP_DEFINITIONS, RULE_SET_V1 } from "@gtm/domain";
 import type { Tx } from "../sqlite/database.js";
 import { SEED_AT } from "./feature005.js";
 
@@ -18,4 +18,14 @@ export function seedFeature006(tx: Tx): void {
     SEED_AT,
     SEED_AT,
   );
+
+  // The two default ICP definitions (the feature 002 slice built here): hypotheses, version 1, active.
+  const definition = tx.prepare(
+    `INSERT OR IGNORE INTO icp_definition
+       (id, icp, version, state, rules, status_label, created_by, created_at, activated_by, activated_at)
+     VALUES (?, ?, 1, 'active', ?, 'hypothesis', 'seed', ?, 'seed', ?)`,
+  );
+  for (const d of [DEFAULT_ICP_DEFINITIONS.icp1, DEFAULT_ICP_DEFINITIONS.icp2]) {
+    definition.run(`icp-definition-${d.icp}-v1`, d.icp, JSON.stringify(d), SEED_AT, SEED_AT);
+  }
 }
