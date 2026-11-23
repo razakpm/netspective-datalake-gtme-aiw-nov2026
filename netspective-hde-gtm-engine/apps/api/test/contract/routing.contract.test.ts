@@ -155,3 +155,52 @@ describe("routing rule sets", () => {
     conforms("/routing-rule-sets/{version}/activate", "POST", notDraft);
   });
 });
+
+describe("wait-lists", () => {
+  it("POST add, GET list and POST close, with the refusal shapes", async () => {
+    const a = account();
+    const added = await call(t.operator, "POST", "/offers/offer-6/waitlist", {
+      accountId: a,
+      reason: "Offer 6 is full",
+    });
+    expect(added.statusCode).toBe(201);
+    conforms("/offers/{id}/waitlist", "POST", added);
+    const bad = await call(t.operator, "POST", "/offers/offer-6/waitlist", { accountId: a });
+    expect(bad.statusCode).toBe(400);
+    conforms("/offers/{id}/waitlist", "POST", bad);
+    const denied = await call(t.reader, "POST", "/offers/offer-6/waitlist", {
+      accountId: a,
+      reason: "Not allowed",
+    });
+    expect(denied.statusCode).toBe(403);
+    conforms("/offers/{id}/waitlist", "POST", denied);
+    const missing = await call(t.operator, "POST", "/offers/offer-6/waitlist", {
+      accountId: "nope",
+      reason: "Unknown one",
+    });
+    expect(missing.statusCode).toBe(404);
+    conforms("/offers/{id}/waitlist", "POST", missing);
+    const list = await call(t.reader, "GET", "/offers/offer-6/waitlist");
+    expect(list.statusCode).toBe(200);
+    conforms("/offers/{id}/waitlist", "GET", list);
+    const entry = (added.json() as { id: string }).id;
+    const closed = await call(t.operator, "POST", `/offers/offer-6/waitlist/${entry}/close`, {
+      state: "released",
+      reason: "A place opened",
+    });
+    expect(closed.statusCode).toBe(200);
+    conforms("/offers/{id}/waitlist/{entryId}/close", "POST", closed);
+    const again = await call(t.operator, "POST", `/offers/offer-6/waitlist/${entry}/close`, {
+      state: "removed",
+      reason: "Twice over",
+    });
+    expect(again.statusCode).toBe(409);
+    conforms("/offers/{id}/waitlist/{entryId}/close", "POST", again);
+    const nope = await call(t.operator, "POST", "/offers/offer-6/waitlist/nope/close", {
+      state: "removed",
+      reason: "Nothing here",
+    });
+    expect(nope.statusCode).toBe(404);
+    conforms("/offers/{id}/waitlist/{entryId}/close", "POST", nope);
+  });
+});

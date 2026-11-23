@@ -64,3 +64,9 @@ export {
   registerRecommendationRoutes,
   type RecommendationRouteDeps,
 } from "./recommendation-routes.js";
+export {
+  WaitlistService,
+  AddInputSchema,
+  CloseInputSchema,
+  type WaitlistView,
+} from "./waitlist.js";

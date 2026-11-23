@@ -547,6 +547,23 @@ DRIVERS["POST /api/v1/routing-rule-sets/:version/activate"] = async (f) => {
   };
 };
 
+DRIVERS["POST /api/v1/offers/:id/waitlist"] = async (f) => ({
+  url: "/api/v1/offers/offer-6/waitlist",
+  payload: { accountId: makeAccount(f), reason: "Offer 6 is full" },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/offers/:id/waitlist/:entryId/close"] = async (f) => {
+  const entry = f.routing.waitlist.add(seedActor(f), "offer-6", {
+    accountId: makeAccount(f),
+    reason: "Offer 6 is full",
+  });
+  return {
+    url: `/api/v1/offers/offer-6/waitlist/${entry.id}/close`,
+    payload: { state: "released", reason: "A place opened" },
+    forbiddenRole: "read_only_executive",
+  };
+};
+
 // Feature 006: the request inbox and notice versions. Operators review; marketing approvers handle notices.
 let requestSeq = 0;
 function makeRequest(f: IdentityFixture): string {

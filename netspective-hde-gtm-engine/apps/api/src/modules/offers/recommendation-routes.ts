@@ -6,6 +6,7 @@ import { parseOrThrow } from "../../http/errors.js";
 import { catalogueActor, IdParam, mutate } from "../../platform/catalogue-routes.js";
 import type { RecommendationService } from "./recommendations.js";
 import type { RuleSetService, RuleSetView } from "./rule-sets.js";
+import type { WaitlistService } from "./waitlist.js";
 
 // Recommendation and routing rule set routes (feature 006; contract routing.openapi.yaml). Permissions are
 // checked, and refusals audited, in the services.
@@ -14,6 +15,7 @@ export interface RecommendationRouteDeps {
   db: SqliteDatabase;
   recommendations: RecommendationService;
   ruleSets: RuleSetService;
+  waitlist: WaitlistService;
   authz: Authz;
   now?: () => Date;
 }
@@ -34,7 +36,7 @@ export function registerRecommendationRoutes(
   app: FastifyInstance,
   deps: RecommendationRouteDeps,
 ): void {
-  const { db, recommendations, ruleSets, authz } = deps;
+  const { db, recommendations, ruleSets, waitlist, authz } = deps;
   const auth = { preHandler: [authz.authenticate] };
   const actor = (r: Parameters<typeof catalogueActor>[0]) => catalogueActor(r, deps.now);
 
@@ -85,6 +87,42 @@ export function registerRecommendationRoutes(
         body.decision === "accept"
           ? recommendations.accept(a, id)
           : recommendations.dismiss(a, id, { reason: body.reason }),
+    );
+    return reply.status(result.status).send(result.body);
+  });
+
+  const EntryParam = z.object({
+    id: z.string().min(1).max(100),
+    entryId: z.string().min(1).max(100),
+  });
+  app.get("/api/v1/offers/:id/waitlist", auth, async (request) => ({
+    items: waitlist.list(actor(request), parseOrThrow(IdParam, request.params).id),
+  }));
+  app.post("/api/v1/offers/:id/waitlist", auth, async (request, reply) => {
+    const { id } = parseOrThrow(IdParam, request.params);
+    const a = actor(request);
+    const result = await mutate(
+      db,
+      request,
+      `POST /offers/${id}/waitlist`,
+      request.body,
+      201,
+      deps.now,
+      () => waitlist.add(a, id, request.body),
+    );
+    return reply.status(result.status).send(result.body);
+  });
+  app.post("/api/v1/offers/:id/waitlist/:entryId/close", auth, async (request, reply) => {
+    const { id, entryId } = parseOrThrow(EntryParam, request.params);
+    const a = actor(request);
+    const result = await mutate(
+      db,
+      request,
+      `POST /offers/${id}/waitlist/${entryId}/close`,
+      request.body,
+      200,
+      deps.now,
+      () => waitlist.close(a, id, entryId, request.body),
     );
     return reply.status(result.status).send(result.body);
   });

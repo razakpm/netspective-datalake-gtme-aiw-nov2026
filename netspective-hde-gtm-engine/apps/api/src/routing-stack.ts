@@ -11,6 +11,7 @@ import {
   RecommendationService,
   RoutingContextBuilder,
   RuleSetService,
+  WaitlistService,
   type ConsentReader,
   type PriorInteractions,
 } from "./modules/offers/index.js";
@@ -63,7 +64,8 @@ export function buildRoutingStack(o: RoutingStackOptions) {
     supportedMinBand: o.config.routing.supportedMinBand,
     aiCapMicros: o.config.research.interpretationCapMicros,
   });
-  return { contacts, suppression, icp, ruleSets, builder, recommendations, ports };
+  const waitlist = new WaitlistService(o.db);
+  return { contacts, suppression, icp, ruleSets, builder, recommendations, waitlist, ports };
 }
 
 export type RoutingStack = ReturnType<typeof buildRoutingStack>;

@@ -1926,6 +1926,125 @@
         "excluded": ["*:contact_suppressed"],
         "outreach": "blocked:contact_suppressed"
       }
+    },
+    {
+      "id": "offer6-full-offer5-unavailable",
+      "rule": "icp2-pilot-input",
+      "kind": "eligibility",
+      "patch": {
+        "account": {
+          "icp": "icp2"
+        },
+        "offers": [
+          {
+            "id": "offer-1",
+            "key": "sender-onboarding-friction-map",
+            "number": 1,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-5",
+            "key": "ccda-to-fhir-mapping-decision-register",
+            "number": 5,
+            "available": false,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-6",
+            "key": "pilot-input-trace-workshop",
+            "number": 6,
+            "available": true,
+            "capacity": "exhausted",
+            "effort": "30 minutes"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "pilot_input_quality",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["icp2-pilot-input", "no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O1"],
+        "excluded": [
+          "ccda-to-fhir-mapping-decision-register:offer_unavailable",
+          "pilot-input-trace-workshop:capacity_exhausted"
+        ],
+        "outreach": "allowed",
+        "alternatives": ["wait_list:pilot-input-trace-workshop", "research:", "do_nothing:"]
+      }
+    },
+    {
+      "id": "offer1-full-icp1-alternatives",
+      "rule": "icp1-onboarding-friction",
+      "kind": "eligibility",
+      "patch": {
+        "offers": [
+          {
+            "id": "offer-1",
+            "key": "sender-onboarding-friction-map",
+            "number": 1,
+            "available": true,
+            "capacity": "exhausted",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-5",
+            "key": "ccda-to-fhir-mapping-decision-register",
+            "number": 5,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          },
+          {
+            "id": "offer-6",
+            "key": "pilot-input-trace-workshop",
+            "number": 6,
+            "available": true,
+            "capacity": "room",
+            "effort": "30 minutes"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "h1",
+            "category": "onboarding_friction",
+            "capabilities": [],
+            "acceptance": "accepted",
+            "effectiveStatus": "strengthening",
+            "band": "medium",
+            "currentSupportingSignals": 1
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "research",
+        "offer": null,
+        "matched": ["icp1-onboarding-friction", "no-supported-hypothesis"],
+        "chosen": "no-supported-hypothesis",
+        "eligible": ["O5", "O6"],
+        "excluded": ["sender-onboarding-friction-map:capacity_exhausted"],
+        "outreach": "allowed",
+        "alternatives": [
+          "wait_list:sender-onboarding-friction-map",
+          "offer:ccda-to-fhir-mapping-decision-register",
+          "research:",
+          "do_nothing:"
+        ]
+      }
     }
   ]
 }

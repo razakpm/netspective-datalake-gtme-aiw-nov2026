@@ -227,6 +227,7 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
         db,
         recommendations: routing.recommendations,
         ruleSets: routing.ruleSets,
+        waitlist: routing.waitlist,
         authz,
         now: () => clock.now,
       });

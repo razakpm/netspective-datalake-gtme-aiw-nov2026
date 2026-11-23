@@ -203,6 +203,7 @@ export async function buildHttpApp(config: AppConfig, logger: Logger, services: 
         db: services.db,
         recommendations: services.routing.recommendations,
         ruleSets: services.routing.ruleSets,
+        waitlist: services.routing.waitlist,
         authz,
       });
       registerCapabilityRoutes(app, {

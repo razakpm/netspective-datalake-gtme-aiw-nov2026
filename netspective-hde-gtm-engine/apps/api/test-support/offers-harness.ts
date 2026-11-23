@@ -9,6 +9,7 @@ import {
   RecommendationService,
   RoutingContextBuilder,
   RuleSetService,
+  WaitlistService,
 } from "../src/modules/offers/index.js";
 import { LlmGateway } from "../src/modules/providers/llm-gateway.js";
 import { buildCatalogueHarness, type CatalogueHarnessOptions } from "./catalogue-harness.js";
@@ -92,6 +93,7 @@ export function buildOffersHarness(options: OffersHarnessOptions = {}) {
     supportedMinBand: options.supportedMinBand ?? "medium",
     aiCapMicros: 200_000,
   });
+  const waitlist = new WaitlistService(db);
   const files = new FakeFileStorage(SIGNING_KEY);
 
   const writeCtx = {
@@ -214,12 +216,16 @@ export function buildOffersHarness(options: OffersHarnessOptions = {}) {
   /** Fill an offer's capacity for the current month by recording bookings. */
   const fillCapacity = (offerId: string, sessions: number) => {
     const lead = base.actor("lead");
+    const made = [];
     for (let i = 0; i < sessions; i++) {
-      base.bookings.record(lead, offerId, {
-        sessionDate: now().toISOString().slice(0, 10),
-        externalRef: `fill-${offerId}-${i}`,
-      });
+      made.push(
+        base.bookings.record(lead, offerId, {
+          sessionDate: now().toISOString().slice(0, 10),
+          externalRef: `fill-${offerId}-${i}`,
+        }),
+      );
     }
+    return made;
   };
 
   /** One approved notice version (the form is unavailable until one exists). */
@@ -263,6 +269,7 @@ export function buildOffersHarness(options: OffersHarnessOptions = {}) {
     rules,
     builder,
     recommendations,
+    waitlist,
     files,
     writeCtx,
     org,
