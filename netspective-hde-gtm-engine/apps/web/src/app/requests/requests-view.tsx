@@ -73,7 +73,6 @@ export function RequestsView({
       can("requests.read")
         ? run(async () => setItems((await api.list({ state, kind })).items))
         : Promise.resolve(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [api, state, kind, run],
   );
   const loadNotices = useCallback(
@@ -81,7 +80,6 @@ export function RequestsView({
       can("notices.manage") || can("notices.approve")
         ? run(async () => setNotices((await api.notices.list()).items))
         : Promise.resolve(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [api, run],
   );
   useEffect(() => {
