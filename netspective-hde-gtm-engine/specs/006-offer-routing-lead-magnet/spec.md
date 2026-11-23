@@ -133,6 +133,7 @@ An ICP 2 prospect or an operator completes the Offer 6 intake: the named use cas
 - Evidence behind a hypothesis changes after a recommendation was made (a signal is rejected or goes stale): the recommendation shows as out of date and is recalculated when asked.
 - An offer is withdrawn, expired or still a draft: it is never recommended, and the explanation says it is unavailable.
 - The register file cannot be delivered: the person sees a plain message to try again, the download is recorded as failed delivery, and no follow-up is queued until a person reviews it.
+- A visitor returns after the 24-hour link has expired: they can ask for a fresh link, which is recorded as a new download, and the earlier record stays unchanged.
 - A form is submitted while the PHI guard is unavailable: the submission is refused rather than accepted unchecked.
 - An operator accepts a recommendation for an offer that has just become full: the acceptance is refused and the capacity answer is shown.
 - A person withdraws consent after a download: later recommendations for them recommend no outreach.
@@ -154,10 +155,10 @@ An ICP 2 prospect or an operator completes the Offer 6 intake: the named use cas
 
 **Routing rules**
 
-- **FR-009**: Routing rules MUST be held as a versioned, configurable rule set. A change MUST create a new version with its author and reason, and earlier versions MUST stay readable. Changing a rule set is a policy change that needs a person with the right to approve it.
+- **FR-009**: Routing rules MUST be held as a versioned, configurable rule set. A change MUST create a new version with its author and reason, and earlier versions MUST stay readable. A new version is activated by one person who holds the right to manage routing rules (service lead or administrator), with a recorded reason, and only when all rule tests pass (FR-013); activation is a policy change and is audited.
 - **FR-010**: The first rule set MUST contain: ICP 1 with a supported sender-onboarding-friction hypothesis leads to Offer 1; ICP 2 with a supported stalled-pilot or unclear-input-provenance hypothesis leads to Offer 6; either ICP with unresolved CCDA-to-FHIR decisions leads to Offer 5; a download of the Offer 5 register by ICP 1 leads to an Offer 1 follow-up and by ICP 2 to an Offer 6 follow-up; a multi-format gap in at least two categories leads to Offer 1 or Offer 6 by ICP; a weak or unsupported hypothesis leads to research or no action.
 - **FR-011**: When several rules match, the system MUST apply a fixed order of precedence, list every matching rule, and say why the chosen one won.
-- **FR-012**: "Supported" and "weak" for a hypothesis MUST be defined by rule from the hypothesis state and its current evidence, and the thresholds MUST be configurable and labelled hypotheses.
+- **FR-012**: A hypothesis MUST count as "supported" only when it is accepted, is not rejected, weakening or stale, and is either strengthening or validated, or untested with at least one current approved supporting signal and a confidence of medium or higher. Every other hypothesis is "weak". The definition and thresholds MUST be configurable and labelled hypotheses.
 - **FR-013**: Every routing rule MUST have table-driven tests covering its match, its near-misses and its precedence, and a rule set MUST NOT be activated unless these tests pass.
 
 **Capacity and wait-list**
@@ -167,11 +168,11 @@ An ICP 2 prospect or an operator completes the Offer 6 intake: the named use cas
 
 **Offer 5 lead magnet**
 
-- **FR-016**: The system MUST provide a gated form for the CCDA-to-FHIR Mapping Decision Register that collects work email, role, organisation type, shows a privacy notice and captures an optional consent to be contacted. Consent MUST NOT be a condition of receiving the register.
-- **FR-017**: A download MUST record the notice version shown, the wording of the consent given, the time, and the person's choice, and MUST be kept as a consent record.
+- **FR-016**: The system MUST provide a gated form for the CCDA-to-FHIR Mapping Decision Register that collects work email, role, organisation type, shows a privacy notice and captures an optional consent to be contacted. Consent MUST NOT be a condition of receiving the register. Each form MUST be available as a minimal hosted page and as a submission endpoint that Netspective's existing site can call from an allowed list of sites.
+- **FR-017**: A download MUST record the notice version shown, the wording of the consent given, the time, and the person's choice, and MUST be kept as a consent record. Notice and consent wording is versioned, and a version MUST be approved by the marketing approver before any form shows it; a form MUST NOT show an unapproved version.
 - **FR-018**: A download MUST find or create the account and contact (with the source recorded as the first-party form), record a download as first-party engagement, run the ICP fit check and routing, and queue a follow-up recommendation for human review. A download MUST NOT be treated as buying intent, a qualified lead or evidence of a problem.
 - **FR-019**: A personal (free consumer) email address MUST be accepted for the download and flagged. No business account or contact MUST be created from it until a person reviews it. The list of personal email domains MUST be the configurable list already used for contacts.
-- **FR-020**: The register MUST be delivered through a link that expires, and a failed delivery MUST be recorded and shown to the person in plain words.
+- **FR-020**: The register MUST be delivered as a download link shown on the confirmation page, valid for 24 hours (a hypothesis, configurable); no email is sent. A visitor whose link has expired MUST be able to ask for a fresh one, which is a new download record. A failed delivery MUST be recorded and shown to the person in plain words.
 - **FR-021**: Follow-up MUST respect communication permission: with no consent, or for a suppressed or unsubscribed contact or account, the download is recorded and the register delivered but no outreach is recommended.
 - **FR-022**: A repeated submission by the same person MUST reuse the same account and contact and MUST NOT create duplicate recommendations.
 - **FR-023**: The download record and the session request record MUST be distinct, so that download-to-session conversion can be measured separately from any other measure.
@@ -202,6 +203,7 @@ An ICP 2 prospect or an operator completes the Offer 6 intake: the named use cas
 - **OfferRequest**: A prospect's request: a register download, a working session, or an Offer 1 or Offer 6 session, with its review state and flags (for example personal email).
 - **IntakeSubmission**: A typed Offer 1 or Offer 6 intake, labelled non-PHI, linked to an account and contact.
 - **ConsentRecord**: The notice version shown, the consent wording and choice, the time and the person.
+- **NoticeVersion**: A version of the privacy notice and consent wording, with its approver and approval time; only an approved version can be shown.
 - **LeadMagnetDownload**: A recorded download of the register, as first-party engagement, with delivery result.
 - **WaitListEntry**: An account and contact waiting for an offer, with the reason, who added it and when.
 
@@ -219,12 +221,22 @@ An ICP 2 prospect or an operator completes the Offer 6 intake: the named use cas
 - **SC-008**: Every rule in the first rule set has tests for its match, near-miss and precedence, and a rule set with a failing test cannot be activated.
 - **SC-009**: Download-to-session conversion can be read from the records without any manual matching, because the two steps are separate records.
 
+## Clarifications
+
+### Session 2026-11-23
+
+- Q: Where are the public forms hosted? → A: Each form is a minimal hosted page and also a submission endpoint the existing site can call from an allowed list of sites (open question 18 default); the website itself is not built here.
+- Q: How does the register reach the visitor, given email sending is out of scope? → A: As a download link on the confirmation page, valid for 24 hours (a hypothesis); a visitor can ask for a fresh link; no email.
+- Q: When is a hypothesis "supported" enough to route on? → A: Accepted, not rejected, weakening or stale, and either strengthening or validated, or untested with at least one current approved supporting signal and confidence of medium or higher; every other hypothesis is weak.
+- Q: Who may activate a new routing rule set? → A: One person who holds the routing-rules right (service lead or administrator), with a recorded reason, and only when every rule test passes.
+- Q: Who owns the notice and consent wording? → A: The marketing approver approves each wording version before any form shows it; each download records the version shown.
+
 ## Assumptions
 
 - The business source sections the description cites (6, 13, 18.1, 18.2, 23.3 and 36 Example C) are not in the repository. This specification is built from the description, the runbook's Feature 006 entry, the guardrails, the glossary and acceptance scenarios C and G; every rule, threshold and form field not stated there is a labelled hypothesis, and the gap is recorded as an open question.
 - The two ICPs, the five ICP fit statuses, suppression, the personal email domain list and contact sources come from feature 002; hypotheses, their states and evidence strength from feature 004; offers, their status, capacity and the capacity answer from feature 005. Offers 1, 5 and 6 are in force (approved) but still have attributes to be provided; an offer is recommendable when it is in force and not withdrawn or expired.
 - Consent belongs to the person's own choice at the form and is recorded here as a consent record. Wider email permission rules (jurisdictions, unsubscribe handling) belong to feature 009; this feature only honours suppression and recorded consent.
-- Where the public forms are hosted (a minimal hosted page plus an embeddable submission endpoint for the existing site) follows the default of open question 18 and is confirmed in clarify. The notice wording and consent wording are supplied by the marketing approver; the register file itself and its delivery link lifetime are confirmed in clarify.
+- The register file itself (its content and format) is supplied by the business and is not in the repository; this feature stores a reference to it and delivers it, and the file content is an open input.
 - A personal email address is a flagged submission, not a business contact: contacts remain business contacts, as in feature 002.
 - The wait-list is a simple recorded list for review; contacting people on it, and booking sessions, belong to features 009 and 007.
 - Intake submissions are reviewed by a person; workshop scheduling, findings and qualification are separate features.
