@@ -7,7 +7,7 @@ A run-and-validate guide. It contains no implementation code. Details live in [c
 - Features 001 to 006 running locally (interim SQLite, ADR-015), branch `007-workshop-operations`, migrations `0023` and `0024` applied.
 - Seeded users: a GTM operator (`gtm_operator`), a service lead (`sales_service_lead`), a reader (`read_only_executive`), a quarantine reviewer (an administrator) and the existing roles.
 - Synthetic organisations from `tests/fixtures/synthetic-orgs/` imported with their evidence; one linked Offer 1 intake request for `northvale-hie` and one linked Offer 6 intake request for `riverbend-health` (ten field names, no values), created through the feature 006 forms and reviewed.
-- Fake providers: the fake model, the fake calendar (`CALENDAR_PROVIDER=fake`) and the fake PDF renderer (`PDF_RENDERER=fake`).
+- Fake providers: the fake model, the fake calendar (`CALENDAR_PROVIDER=fake`) and the fake PDF renderer (`PDF_RENDERER=fake`). The Google Calendar adapter is exercised only with an injected `fetch` (no network); switching it on for real needs `CALENDAR_PROVIDER=google`, `CALENDAR_GOOGLE_ENABLED=true` and its four credentials.
 
 ## Validation scenarios
 
@@ -17,6 +17,7 @@ A run-and-validate guide. It contains no implementation code. Details live in [c
 | V2 | Refused conversions | Convert an unlinked request, a request for Offer 5, and a request that already has an open workshop | Each refused with its reason | FR-001 |
 | V3 | Book by hand and by calendar | Book one workshop by hand and one with `via: calendar` | Both `booked` with the length (45 and 90 minutes) and a booking row with source `workshop` | FR-004, FR-005 |
 | V4 | Calendar failure | Script the fake calendar to fail, then book | The workshop stays `requested`; booking by hand still works | FR-005 |
+| V4a | Google adapter | Run the shared provider contract test against the fake and the Google adapter (injected `fetch`: token exchange, insert, delete, busy, 401, 429, timeout) | Same results from both; a busy slot is a `conflict`; no request carries an `attendees` field or an email and `sendUpdates` is `none`; with the flag off or credentials missing the configuration refuses to start | FR-005 |
 | V5 | Lifecycle | Hold, record findings (V15), close; mark another no-show; cancel another; reschedule one | Only permitted moves succeed, each audited with who, when and why; no-show cannot be held; cancelled is final | FR-002, FR-003 |
 | V6 | Refused moves | Close a booked workshop; hold a requested one; book a closed one | Each refused with `invalid_transition` and the refusal audited | FR-002, SC-002 |
 | V7 | Capacity use and release | Fill Offer 6 for the month, then try to book; cancel one booked workshop and try again | Refused `capacity_exhausted` with the wait-list alternative; the booking succeeds after the cancellation | FR-007 to FR-009, SC-003 |

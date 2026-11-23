@@ -47,15 +47,22 @@ A workshop that is held or a no-show keeps its booking counted; a cancelled one 
 
 **Alternatives**: a second capacity count in `workshops` (rejected: it would drift); calling the wrapped public methods in sequence (rejected: not atomic).
 
-## R-04 The calendar interface
+## R-04 The calendar interface and the optional Google adapter
 
-**Decision**: `CalendarProvider` in `packages/providers`: `createEvent({ title, start, durationMinutes, attendeeLabels })` returning a provider reference and the confirmed start, and `cancelEvent(ref)`; both return the standard `ProviderResult`. Attendees are passed as **labels only** (a role or a name), never an email, so no personal contact detail leaves the system. A `FakeCalendar` (in memory, scriptable failures and conflicts) ships; **no live adapter** is built (clarified 2026-11-23). Configuration `CALENDAR_PROVIDER` accepts `none` (default) and `fake` (development and tests); a value naming a live provider is refused until one exists.
+**Decision**: `CalendarProvider` in `packages/providers`: `createEvent({ title, start, durationMinutes, attendeeLabels })` returning a provider reference and the confirmed start, and `cancelEvent(ref)`; both return the standard `ProviderResult`. Attendees are passed as **labels only** (a role or a name), never an email, so no personal contact detail leaves the system. Two implementations ship:
+
+- `FakeCalendar` (in memory, scriptable failures and conflicts), used by every test.
+- `GoogleCalendarProvider` (`adapters/google-calendar.ts`), behind a flag, **off by default**. It calls the Google Calendar REST API v3 over `fetch` (no new SDK): it exchanges a refresh token for a short-lived access token at Google's token endpoint, then inserts, patches or deletes an event on one configured calendar. Only two fixed hosts are called (`oauth2.googleapis.com` and `www.googleapis.com`). The event carries a **title, a start, an end and a description of attendee labels**; it carries **no attendee list and `sendUpdates=none`**, so Google cannot email anyone. Every call goes through the existing provider wrapper (PHI pre-flight on the payload, timeout, no body in logs); a 4xx or 5xx or a timeout is a failed result, and a conflict (the calendar reports the slot busy) is a distinct `conflict` code.
+
+Selection is by configuration: `CALENDAR_PROVIDER` is `none` (default), `fake` (development and tests) or `google`, and `google` needs **both** `CALENDAR_GOOGLE_ENABLED=true` (the flag) and its credentials, otherwise configuration refuses to start. The credentials (`GOOGLE_CALENDAR_ID`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`) are secrets read from the environment, required only for `google`, scrubbed from logs, and never stored in the database. `fake` is refused in production, as the other fakes are.
 
 Booking "via the calendar" first creates the event, then (in one transaction) records the booking and the state move; if the provider fails or conflicts, nothing is recorded and the workshop stays `requested`. A cancel or reschedule asks the provider first and treats a provider failure as a warning that the person must clear by hand (the booking change still happens, with a note that the calendar event needs attention), because capacity must not be held by an event the person cannot remove.
 
-**Rationale**: spec FR-005, constitution XV (provider independence), minimal first version.
+The adapter is tested **without a network**: the same provider contract test runs against the fake and against the Google adapter with an injected `fetch` that replays recorded request and response shapes (token exchange, insert, delete, busy, 401, 429, timeout); a test asserts that no request body ever contains an `attendees` field or an email address and that `sendUpdates` is `none`. A live call against a real calendar is a manual check, not a gate.
 
-**Alternatives**: building the Google adapter now (rejected by the clarification); no interface at all (rejected: the spec requires the seam).
+**Rationale**: spec FR-005, constitution XV (provider independence), human approval (nothing is invited or sent), and the plan input asks for the adapter behind a flag.
+
+**Alternatives**: no Google adapter (set aside: the plan input asks for it); the official Google SDK (rejected: a large dependency for three calls); inviting attendees through Google (rejected: it would send email, which belongs to feature 009 and a person's approval); Microsoft Graph (not built; the interface allows it later).
 
 ## R-05 Data model in outline
 
@@ -157,7 +164,7 @@ Sharing records who, when and how (`handed_over`, `copied_link`, `other`) in the
 
 ## R-18 Configuration
 
-**Decision** (all hypotheses): `CALENDAR_PROVIDER` (`none`), `WORKSHOP_AI` (`off`), `WORKSHOP_AI_CAP` (the interpretation cap, 0.20), `PDF_RENDERER` (`fake`), `WORKSHOP_ARTIFACT_MAX_BYTES` (1,048,576), `WORKSHOP_ARTIFACT_KINDS` (the list in R-10), `WORKSHOP_UPLOAD_QUARANTINE` (`true`), `WORKSHOP_RETENTION_MONTHS` (12), `WORKSHOP_RETENTION_JOB_ENABLED` (`false`), `OUTPUT_MAX_CHARS` (3500) and the session lengths (45 and 90 minutes, read from the offer snapshot's `format` when it states them, else these defaults).
+**Decision** (all hypotheses): `CALENDAR_PROVIDER` (`none`, `fake` or `google`), `CALENDAR_GOOGLE_ENABLED` (`false`), `GOOGLE_CALENDAR_ID`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_REFRESH_TOKEN` (secrets, only with `google`), `WORKSHOP_AI` (`off`), `WORKSHOP_AI_CAP` (the interpretation cap, 0.20), `PDF_RENDERER` (`fake`), `WORKSHOP_ARTIFACT_MAX_BYTES` (1,048,576), `WORKSHOP_ARTIFACT_KINDS` (the list in R-10), `WORKSHOP_UPLOAD_QUARANTINE` (`true`), `WORKSHOP_RETENTION_MONTHS` (12), `WORKSHOP_RETENTION_JOB_ENABLED` (`false`), `OUTPUT_MAX_CHARS` (3500) and the session lengths (45 and 90 minutes, read from the offer snapshot's `format` when it states them, else these defaults).
 
 ## R-19 Screens
 

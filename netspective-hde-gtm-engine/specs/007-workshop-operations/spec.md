@@ -196,7 +196,7 @@ For each workshop the operator or delivering engineer records the delivery effor
 - **FR-002**: A workshop MUST have a state of requested, booked, held, findings recorded or closed, or cancelled or no-show. Only these moves MUST be allowed: requested to booked or cancelled; booked to held, no-show or cancelled (and booked to booked when rescheduled); held to findings recorded; findings recorded to closed. Cancelled, no-show and closed are final.
 - **FR-003**: Every move MUST be made by a person, MUST be recorded with who, when and (where the rules require it) a note or reason, and MUST be audited. A refused move MUST be audited without content. Closing MUST need finalised findings.
 - **FR-004**: A workshop MUST record its booked date and time, its length (45 minutes for Offer 1, 90 minutes for Offer 6, as hypotheses read from the offer), and the history of every earlier date when it is rescheduled.
-- **FR-005**: Booking MUST be possible by hand, and MUST go through a calendar interface that a live provider can later fill without changing any workshop rule. The first version ships a fake provider for tests and no live provider; a provider that is added later is off by default. A failed or unavailable provider MUST leave the workshop unchanged and MUST NOT block booking by hand. The booking is recorded the same way whichever route is used.
+- **FR-005**: Booking MUST be possible by hand, and MUST go through a calendar interface. The first version ships a fake provider for tests and an **optional live Google Calendar provider that is off unless an administrator switches it on and supplies its credentials**; a live provider is never used by default. A failed or unavailable provider MUST leave the workshop unchanged and MUST NOT block booking by hand. The booking is recorded the same way whichever route is used. A live provider MUST be given only a title, a time and a length (attendees as labels, never email addresses), so it can send no invitation to anyone.
 - **FR-006**: Nothing in this feature MUST send a message, an invitation or a reminder to anyone. Automated reminders and invitations belong to a later feature.
 
 **Capacity**
@@ -284,7 +284,7 @@ For each workshop the operator or delivering engineer records the delivery effor
 
 ### Session 2026-11-23
 
-- Q: Which calendar option does the first version support for booking a workshop? → A: Manual booking only, plus the calendar interface and a fake provider for tests; a live Google or Microsoft provider is a later change behind a switch (recommended).
+- Q: Which calendar option does the first version support for booking a workshop? → A: Manual booking, the calendar interface and a fake provider (recommended on 2026-11-23); **superseded the same day by the plan input, which asks for an optional Google Calendar adapter behind a flag**: the Google adapter is built, off by default, and Microsoft is not built.
 - Q: In what form is the one-page buyer output produced? → A: A fixed one-page PDF made from the approved text, kept with the workshop; the approved text itself stays editable only as a new draft, and the PDF is never edited (recommended).
 - Q: Do attendees receive automated invitations or reminders? → A: No. This feature sends nothing; invitations, reminders and sending the output belong to feature 009 or to a person's own action (recommended).
 - Q: Who may approve a buyer output? → A: A person who holds the output-approval right (the service lead or an administrator, people only); an operator can edit and request approval but cannot approve (recommended).
@@ -296,7 +296,7 @@ For each workshop the operator or delivering engineer records the delivery effor
 - "Approved request" means a request, from feature 006, that a person has reviewed and linked to an account and contact and that carries an Offer 1 or Offer 6 intake.
 - Session lengths (45 and 90 minutes), the effort estimates and capacity limits come from the offer catalogue (feature 005) and are hypotheses.
 - Booking records and capacity counting use feature 005's bookings; a workshop's booking is the same record.
-- A calendar provider is optional. The first version works with manual booking and a fake provider for tests; a live Google or Microsoft integration is a later change behind a switch that is off by default (clarified 2026-11-23).
+- A calendar provider is optional. Booking by hand always works. The interface has a fake provider for tests and a Google Calendar provider that is built but off by default; it is used only when an administrator turns it on and supplies its credentials (a Microsoft provider is not built). A live provider receives no attendee email addresses and cannot send invitations or reminders.
 - Nothing is emailed: attendee invitations, reminders and sending the output are feature 009 or a person's own action (clarified 2026-11-23). This feature records that an output was shared but does not send it.
 - The one-page output is previewed as text, edited as drafts, and made as a fixed one-page PDF when approved (clarified 2026-11-23); an editable document format is not offered.
 - The model only assists: it drafts the preparation brief from intake and evidence, and may suggest findings from the operator's pasted notes. Every state, finalisation, approval and boundary decision is made by a person or by plain rules, never by a model.

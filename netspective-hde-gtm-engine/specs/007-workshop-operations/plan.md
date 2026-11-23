@@ -10,13 +10,13 @@ Turn a linked Offer 1 or Offer 6 request into a workshop and follow it to a revi
 
 Technical approach (details in [research.md](research.md)): follow the feature 001 to 006 architecture. All behaviour lands in the `workshops` module, with pure rules in `packages/domain/src/workshops`, persistence on the interim SQLite adapter behind `Tx` (ADR-015) with forward-only migrations `0023` and `0024`, audit in the same transaction as every change, events through the outbox, and the PHI guard on every text.
 
-**Important decisions and departures**: (1) feature 005's `BookingService` gains transaction-level methods so a workshop's state change and its capacity change commit together, and a latent bug (the capacity refusal lost its status and `capacity_exhausted` code) is fixed with a test (R-03); (2) the preparation brief has a no-model baseline that is also the fallback, and the model can never turn an unsupported statement into a confirmed fact (R-08); (3) the notes-assist is returned as a suggestion and **not stored**, and each item must quote the notes (R-09); (4) uploads accept **text only**, because binary content cannot be checked, and a hit is **held** through the existing quarantine, not rejected (R-10); (5) `FileStorageProvider` gains `put` and `delete` (R-11); (6) the PDF is made from structured sections by a `PdfRenderer` interface with a fake and a Playwright adapter, which adds `playwright-core` and needs the Chromium binary in the deployed image (R-12); (7) there is a calendar interface and a fake, and no live adapter (R-04); (8) three permissions are added, one of them restricted (R-15); (9) the business source sections, every threshold, the retention period and the role mapping are hypotheses (open question #53).
+**Important decisions and departures**: (1) feature 005's `BookingService` gains transaction-level methods so a workshop's state change and its capacity change commit together, and a latent bug (the capacity refusal lost its status and `capacity_exhausted` code) is fixed with a test (R-03); (2) the preparation brief has a no-model baseline that is also the fallback, and the model can never turn an unsupported statement into a confirmed fact (R-08); (3) the notes-assist is returned as a suggestion and **not stored**, and each item must quote the notes (R-09); (4) uploads accept **text only**, because binary content cannot be checked, and a hit is **held** through the existing quarantine, not rejected (R-10); (5) `FileStorageProvider` gains `put` and `delete` (R-11); (6) the PDF is made from structured sections by a `PdfRenderer` interface with a fake and a Playwright adapter, which adds `playwright-core` and needs the Chromium binary in the deployed image (R-12); (7) there is a calendar interface, a fake, and an optional Google Calendar adapter that is off by default, sends no invitation and is tested without a network (R-04); (8) three permissions are added, one of them restricted (R-15); (9) the business source sections, every threshold, the retention period and the role mapping are hypotheses (open question #53).
 
 ## Technical Context
 
 **Language/Version**: TypeScript (strict) on Node.js 22 LTS; pnpm workspaces (unchanged)
 
-**Primary Dependencies**: Fastify 5 + zod-to-openapi, Zod 4, `node:sqlite` via `@gtm/db`, uuid v7, Next.js / React for the screens. **New**: `playwright-core` (providers package, the PDF adapter only). `@playwright/test` from feature 006 is reused for the browser test.
+**Primary Dependencies**: Fastify 5 + zod-to-openapi, Zod 4, `node:sqlite` via `@gtm/db`, uuid v7, Next.js / React for the screens. **New**: `playwright-core` (providers package, the PDF adapter only). The Google Calendar adapter uses `fetch` and adds no dependency. `@playwright/test` from feature 006 is reused for the browser test.
 
 **Storage**: interim SQLite (ADR-015); migrations `0023_workshops.sql`, `0024_workshop_findings.sql`; triggers refuse UPDATE and DELETE on the append-only tables in [data-model.md](data-model.md); every new column registered in `COLUMN_CLASSIFICATION`. Artifact files and output PDFs live in the file provider; held content lives in the encrypted quarantine store.
 
@@ -30,7 +30,7 @@ Technical approach (details in [research.md](research.md)): follow the feature 0
 
 **Constraints**: non-PHI business data only (the guard on every text, uploads checked at the upload entry point, a refusal stores nothing); no model call in any state, finalisation, approval, capacity, PHI or eligibility decision; the model only drafts (brief, suggestion) and nothing it returns is stored as a finding; no message of any kind is sent; findings, outputs and briefs carry no price, budget or guarantee; unknown is never shown as a gap; events carry identifiers only.
 
-**Scale/Scope**: a few workshops a week; 2 offers; 9 new tables; 25 operations over 18 paths; 4 events; 3 permissions; 1 workspace and 1 list page; 2 AI contracts; 2 provider interfaces (calendar, PDF) and a write side on file storage.
+**Scale/Scope**: a few workshops a week; 2 offers; 9 new tables; 25 operations over 18 paths; 4 events; 3 permissions; 1 workspace and 1 list page; 2 AI contracts; 2 provider interfaces (calendar with a fake and a Google adapter, PDF) and a write side on file storage.
 
 Numeric defaults (session lengths 45 and 90 minutes, the 1 MiB artifact limit, the 3,500-character one-page budget, 12-month retention, the model cap) are hypotheses, configurable, listed in research R-18 and open question #53.
 
@@ -94,7 +94,7 @@ packages/ai-contracts/src/
 packages/providers/src/
 ├── interfaces/{calendar,pdf-renderer}.ts   (+ put and delete added to interfaces/file-storage.ts)
 ├── fakes/{calendar,pdf-renderer}.ts        (+ fakes/file-storage.ts)
-└── adapters/playwright-pdf.ts              (+ adapters/local-file-storage.ts)
+└── adapters/{google-calendar,playwright-pdf}.ts   (+ adapters/local-file-storage.ts)
 packages/db/
 ├── migrations-sqlite/0023_workshops.sql  0024_workshop_findings.sql
 └── src/classification.ts
@@ -129,4 +129,5 @@ docs/adr/ADR-021-workshop-findings-and-output.md
 | Transaction-level booking methods in feature 005 | A workshop's state and its capacity must commit together | Calling the public methods in sequence is not atomic; a second capacity count would drift |
 | A Playwright PDF adapter (`playwright-core`) and a Chromium binary in the image | The runbook asks for a print-quality one-page PDF and a real renderer proves the one-page rule | A pure-JavaScript writer is the fallback behind the same interface if the browser proves too heavy; the fake renderer keeps tests fast |
 | `put` and `delete` on the file provider | Artifacts and PDFs must be stored and then expire | A second storage provider would duplicate the interface |
+| A Google Calendar adapter, off by default | The plan input asks for it behind a flag; booking by hand and the fake never need it | No adapter would leave the interface untested against a real provider shape; the adapter uses `fetch` so no SDK is added |
 | A held-upload path through the existing quarantine | The spec asks for quarantine and an alert, not rejection | Rejecting would lose the reviewer's chance to release a false positive |

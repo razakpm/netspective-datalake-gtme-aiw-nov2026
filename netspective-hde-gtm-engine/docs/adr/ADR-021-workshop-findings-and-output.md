@@ -15,7 +15,8 @@ Workshops are where the free diagnosis happens and where a buyer is most likely 
 5. **A model may only draft.** The preparation brief has a no-model baseline that is also its fallback, and a model answer is verified: an unsupported confirmed fact becomes an inference. The notes-assist returns suggestions that quote the notes, stores nothing, and cannot set a state.
 6. **Uploads are text only and checked before they are kept.** A hit is held through the existing quarantine and alerts the operator; binary files are references only because their content cannot be checked.
 7. **The buyer output is structured, gated and fixed as a one-page PDF.** It always has in-scope and out-of-scope sections, carries the Offer 6 disclaimer, passes the claims checker and a price check, and is approved by a person with a restricted right. Sharing is recorded and nothing is sent.
-8. **Files expire** 12 months after a workshop closes; metadata and the audit trail stay.
+8. **A calendar is an interface with an optional Google adapter, off by default.** The adapter is given a title, a time and a length, never an attendee email, and cannot invite anyone; booking by hand always works.
+9. **Files expire** 12 months after a workshop closes; metadata and the audit trail stay.
 
 ## Consequences
 
