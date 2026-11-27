@@ -171,6 +171,18 @@ describe("capacity and bookings", () => {
     expect(full.statusCode).toBe(409);
     conforms("/offers/{id}/bookings", "POST", full);
   });
+
+  it("refuses to change a booking that belongs to a workshop (feature 007)", async () => {
+    const made = fx.db.transaction((tx) =>
+      fx.catalogue.bookings.recordIn(tx, leadActor(), "offer-6", { sessionDate: today() }),
+    );
+    const res = await call(t.lead, "PATCH", `/offers/offer-6/bookings/${made.id}`, {
+      state: "cancelled",
+    });
+    expect(res.statusCode).toBe(409);
+    conforms("/offers/{id}/bookings/{bookingId}", "PATCH", res);
+    expect(res.json().codes).toEqual(["booking_owned_by_workshop"]);
+  });
 });
 
 describe("scores and paid engagement types", () => {

@@ -4,8 +4,8 @@ import { buildIdentityFixture } from "../../../api/test-support/identity-fixture
 
 // The API for the browser test (feature 006, task T071): the same in-memory API the integration tests use,
 // with the fake providers, a synthetic register file, one approved notice version and the synthetic
-// organisation northvale-hie with its recorded evidence. It listens on a port and writes an operator token to
-// e2e/.runtime so the test can read the follow-up recommendation the way an operator's screen would.
+// organisation northvale-hie with its recorded evidence. It listens on a port and writes operator and service
+// lead tokens to e2e/.runtime so the tests can take the steps an operator's screens would.
 // Synthetic data only.
 
 const PORT = Number(process.env["E2E_API_PORT"] ?? 3999);
@@ -53,6 +53,9 @@ const operator = await fx.makeUser("operator@example.org", ["gtm_operator"]);
 const dir = join(import.meta.dirname, "..", ".runtime");
 mkdirSync(dir, { recursive: true });
 writeFileSync(join(dir, "operator-token.txt"), operator.token);
+// Feature 007: the service lead approves a workshop's buyer output. The calendar and PDF are the fakes.
+const lead = await fx.makeUser("lead@example.org", ["sales_service_lead"]);
+writeFileSync(join(dir, "lead-token.txt"), lead.token);
 
 await fx.app.listen({ port: PORT, host: "127.0.0.1" });
 console.log(`e2e API listening on ${PORT}`);

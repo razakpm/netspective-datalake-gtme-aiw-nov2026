@@ -1,10 +1,14 @@
+import { randomBytes } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { lstat } from "node:fs/promises";
+import { link, lstat, mkdir, rename, rm, unlink, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import {
+  isSafeFileKey,
   signToken,
   verifyToken,
   type FileStorageProvider,
+  type PutOptions,
+  type PutResult,
   type StoredFile,
   type VerifiedToken,
 } from "../interfaces/file-storage.js";
@@ -13,7 +17,7 @@ import {
 // no path separators, no leading dot, no traversal, and a symbolic link is never followed. The directory
 // and the signing key come from configuration; the register file is supplied by the business.
 
-const SAFE_KEY = /^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/;
+const errorCode = (error: unknown): string | undefined => (error as NodeJS.ErrnoException).code;
 const TYPES: Record<string, string> = {
   ".pdf": "application/pdf",
   ".txt": "text/plain",
@@ -32,7 +36,7 @@ export class LocalFileStorage implements FileStorageProvider {
   ) {}
 
   async get(key: string): Promise<StoredFile | null> {
-    if (!SAFE_KEY.test(key) || key.includes("..")) return null;
+    if (!isSafeFileKey(key)) return null;
     const path = join(this.dir, key);
     try {
       const info = await lstat(path);
@@ -44,6 +48,44 @@ export class LocalFileStorage implements FileStorageProvider {
       };
     } catch {
       return null;
+    }
+  }
+  /**
+   * Writes to a temporary file first (its leading dot makes it unreadable through `get`), then puts it in
+   * place in one step. Without `overwrite` the step is a hard link, which refuses an existing name.
+   */
+  async put(
+    key: string,
+    bytes: Buffer,
+    _contentType: string,
+    options: PutOptions = {},
+  ): Promise<PutResult> {
+    if (!isSafeFileKey(key)) return { ok: false, reason: "unsafe_key" };
+    const path = join(this.dir, key);
+    const temporary = join(this.dir, `.tmp-${randomBytes(12).toString("hex")}`);
+    try {
+      await mkdir(this.dir, { recursive: true });
+      await writeFile(temporary, bytes, { flag: "wx", mode: 0o600 });
+      if (options.overwrite) await rename(temporary, path);
+      else await link(temporary, path);
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, reason: errorCode(error) === "EEXIST" ? "exists" : "write_failed" };
+    } finally {
+      await rm(temporary, { force: true }).catch(() => undefined);
+    }
+  }
+
+  async delete(key: string): Promise<boolean> {
+    if (!isSafeFileKey(key)) return false;
+    const path = join(this.dir, key);
+    try {
+      const info = await lstat(path);
+      if (!info.isFile()) return false;
+      await unlink(path);
+      return true;
+    } catch (error) {
+      return errorCode(error) === "ENOENT";
     }
   }
   sign(key: string, expiresAt: Date): string {

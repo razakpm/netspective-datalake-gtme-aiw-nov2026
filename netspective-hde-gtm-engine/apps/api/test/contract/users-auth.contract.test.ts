@@ -188,6 +188,8 @@ describe("authentication", () => {
         "stakeholders.edit",
         "waitlist.edit",
         "webhooks.read",
+        "workshops.edit",
+        "workshops.read",
       ].sort(),
     );
     const post = await fx.app.inject({

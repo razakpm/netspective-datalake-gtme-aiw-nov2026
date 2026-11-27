@@ -24,3 +24,4 @@ export * from "./routing/index.js";
 export * from "./workshops/index.js";
 export * from "./contacts/index.js";
 export * from "./events/feature006.js";
+export * from "./events/feature007.js";

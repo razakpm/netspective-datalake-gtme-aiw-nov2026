@@ -116,6 +116,7 @@ export function buildResearchStack(o: ResearchStackOptions) {
   return {
     settings,
     gateway,
+    accountRemaining,
     research,
     runner,
     schedules,

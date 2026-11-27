@@ -1,0 +1,2462 @@
+{
+  "offer1": [
+    {
+      "id": "offer1-complete",
+      "content": {
+        "flowSummary": "A new sender registers, exchanges the implementation guide, submits test messages, has rejections reviewed and is promoted to production.",
+        "delaySources": [
+          {
+            "description": "Test messages wait for a manual review of rejections.",
+            "ownerClass": "operator",
+            "delay": {
+              "kind": "quantified",
+              "amount": 2,
+              "unit": "weeks"
+            },
+            "confirmation": "unknown"
+          },
+          {
+            "description": "The sender rebuilds its interface after each implementation guide change.",
+            "ownerClass": "sender",
+            "delay": {
+              "kind": "quantified",
+              "amount": 3,
+              "unit": "weeks"
+            },
+            "confirmation": "unknown"
+          },
+          {
+            "description": "Rule changes are agreed in a meeting that is held rarely.",
+            "ownerClass": "rule_owner",
+            "delay": {
+              "kind": "not_quantified"
+            },
+            "confirmation": "unknown"
+          }
+        ],
+        "unknowns": ["How many rejections repeat after a fix."],
+        "suggestedNextStep": "Collect one month of scrubbed rejection logs and group them by rule.",
+        "boundaryNote": "This free diagnosis covers where the delay is and who can act on it; remediation, scoping and delivery are paid work outside it."
+      },
+      "expectedShortfalls": []
+    },
+    {
+      "id": "offer1-two-delay-sources",
+      "content": {
+        "flowSummary": "A new sender registers, exchanges the implementation guide, submits test messages, has rejections reviewed and is promoted to production.",
+        "delaySources": [
+          {
+            "description": "Test messages wait for a manual review of rejections.",
+            "ownerClass": "operator",
+            "delay": {
+              "kind": "quantified",
+              "amount": 2,
+              "unit": "weeks"
+            },
+            "confirmation": "unknown"
+          },
+          {
+            "description": "The sender rebuilds its interface after each implementation guide change.",
+            "ownerClass": "sender",
+            "delay": {
+              "kind": "quantified",
+              "amount": 3,
+              "unit": "weeks"
+            },
+            "confirmation": "unknown"
+          }
+        ],
+        "unknowns": ["How many rejections repeat after a fix."],
+        "suggestedNextStep": "Collect one month of scrubbed rejection logs and group them by rule.",
+        "boundaryNote": "This free diagnosis covers where the delay is and who can act on it; remediation, scoping and delivery are paid work outside it."
+      },
+      "expectedShortfalls": [
+        {
+          "code": "too_few_delay_sources",
+          "waivable": true
+        }
+      ]
+    },
+    {
+      "id": "offer1-four-delay-sources",
+      "content": {
+        "flowSummary": "A new sender registers, exchanges the implementation guide, submits test messages, has rejections reviewed and is promoted to production.",
+        "delaySources": [
+          {
+            "description": "Test messages wait for a manual review of rejections.",
+            "ownerClass": "operator",
+            "delay": {
+              "kind": "quantified",
+              "amount": 2,
+              "unit": "weeks"
+            },
+            "confirmation": "unknown"
+          },
+          {
+            "description": "The sender rebuilds its interface after each implementation guide change.",
+            "ownerClass": "sender",
+            "delay": {
+              "kind": "quantified",
+              "amount": 3,
+              "unit": "weeks"
+            },
+            "confirmation": "unknown"
+          },
+          {
+            "description": "Rule changes are agreed in a meeting that is held rarely.",
+            "ownerClass": "rule_owner",
+            "delay": {
+              "kind": "not_quantified"
+            },
+            "confirmation": "unknown"
+          },
+          {
+            "description": "Certificates are exchanged by hand.",
+            "ownerClass": "operator",
+            "delay": {
+              "kind": "not_quantified"
+            },
+            "confirmation": "unknown"
+          }
+        ],
+        "unknowns": ["How many rejections repeat after a fix."],
+        "suggestedNextStep": "Collect one month of scrubbed rejection logs and group them by rule.",
+        "boundaryNote": "This free diagnosis covers where the delay is and who can act on it; remediation, scoping and delivery are paid work outside it."
+      },
+      "expectedShortfalls": [
+        {
+          "code": "too_many_delay_sources",
+          "waivable": false
+        }
+      ]
+    },
+    {
+      "id": "offer1-missing-owner-class",
+      "content": {
+        "flowSummary": "A new sender registers, exchanges the implementation guide, submits test messages, has rejections reviewed and is promoted to production.",
+        "delaySources": [
+          {
+            "description": "Test messages wait for a manual review of rejections.",
+            "ownerClass": "operator",
+            "delay": {
+              "kind": "quantified",
+              "amount": 2,
+              "unit": "weeks"
+            },
+            "confirmation": "unknown"
+          },
+          {
+            "description": "The sender rebuilds its interface after each implementation guide change.",
+            "ownerClass": null,
+            "delay": {
+              "kind": "quantified",
+              "amount": 3,
+              "unit": "weeks"
+            },
+            "confirmation": "unknown"
+          },
+          {
+            "description": "Rule changes are agreed in a meeting that is held rarely.",
+            "ownerClass": "rule_owner",
+            "delay": {
+              "kind": "not_quantified"
+            },
+            "confirmation": "unknown"
+          }
+        ],
+        "unknowns": ["How many rejections repeat after a fix."],
+        "suggestedNextStep": "Collect one month of scrubbed rejection logs and group them by rule.",
+        "boundaryNote": "This free diagnosis covers where the delay is and who can act on it; remediation, scoping and delivery are paid work outside it."
+      },
+      "expectedShortfalls": [
+        {
+          "code": "owner_class_missing",
+          "waivable": false
+        }
+      ]
+    },
+    {
+      "id": "offer1-no-boundary-note",
+      "content": {
+        "flowSummary": "A new sender registers, exchanges the implementation guide, submits test messages, has rejections reviewed and is promoted to production.",
+        "delaySources": [
+          {
+            "description": "Test messages wait for a manual review of rejections.",
+            "ownerClass": "operator",
+            "delay": {
+              "kind": "quantified",
+              "amount": 2,
+              "unit": "weeks"
+            },
+            "confirmation": "unknown"
+          },
+          {
+            "description": "The sender rebuilds its interface after each implementation guide change.",
+            "ownerClass": "sender",
+            "delay": {
+              "kind": "quantified",
+              "amount": 3,
+              "unit": "weeks"
+            },
+            "confirmation": "unknown"
+          },
+          {
+            "description": "Rule changes are agreed in a meeting that is held rarely.",
+            "ownerClass": "rule_owner",
+            "delay": {
+              "kind": "not_quantified"
+            },
+            "confirmation": "unknown"
+          }
+        ],
+        "unknowns": ["How many rejections repeat after a fix."],
+        "suggestedNextStep": "Collect one month of scrubbed rejection logs and group them by rule.",
+        "boundaryNote": ""
+      },
+      "expectedShortfalls": [
+        {
+          "code": "boundary_note_missing",
+          "waivable": false
+        }
+      ]
+    }
+  ],
+  "intakeFieldNames": [
+    "encounter_start_time",
+    "discharge_disposition",
+    "primary_payer_type",
+    "lab_result_code",
+    "lab_result_unit",
+    "medication_code",
+    "problem_list_status",
+    "provider_specialty",
+    "facility_identifier_type",
+    "referral_reason_text"
+  ],
+  "offer6": [
+    {
+      "id": "offer6-complete",
+      "content": {
+        "fields": [
+          {
+            "intakeName": "encounter_start_time",
+            "name": "encounter_start_time",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "discharge_disposition",
+            "name": "discharge_disposition",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "primary_payer_type",
+            "name": "primary_payer_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_code",
+            "name": "lab_result_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_unit",
+            "name": "lab_result_unit",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "medication_code",
+            "name": "medication_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "problem_list_status",
+            "name": "problem_list_status",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "provider_specialty",
+            "name": "provider_specialty",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "facility_identifier_type",
+            "name": "facility_identifier_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "referral_reason_text",
+            "name": "referral_reason_text",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          }
+        ],
+        "overall": {
+          "view": "conditional",
+          "dependsOnUnknowns": [],
+          "reason": "Depends on closing the listed gaps."
+        },
+        "disclaimer": "This view reflects the inputs as described today. It is not a guarantee of model performance.",
+        "inputAuditScope": {
+          "useCase": "Readmission risk pilot",
+          "sources": ["Synthetic clinical system"]
+        }
+      },
+      "expectedShortfalls": []
+    },
+    {
+      "id": "offer6-nine-fields-recorded",
+      "content": {
+        "fields": [
+          {
+            "intakeName": "encounter_start_time",
+            "name": "encounter_start_time",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "discharge_disposition",
+            "name": "discharge_disposition",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "primary_payer_type",
+            "name": "primary_payer_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_code",
+            "name": "lab_result_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_unit",
+            "name": "lab_result_unit",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "medication_code",
+            "name": "medication_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "problem_list_status",
+            "name": "problem_list_status",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "provider_specialty",
+            "name": "provider_specialty",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "facility_identifier_type",
+            "name": "facility_identifier_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "referral_reason_text",
+            "name": "referral_reason_text",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": null,
+                "note": ""
+              },
+              "completeness": {
+                "status": null,
+                "note": ""
+              },
+              "freshness": {
+                "status": null,
+                "note": ""
+              },
+              "provenance": {
+                "status": null,
+                "note": ""
+              },
+              "access": {
+                "status": null,
+                "note": ""
+              }
+            }
+          }
+        ],
+        "overall": {
+          "view": "conditional",
+          "dependsOnUnknowns": [],
+          "reason": "Depends on closing the listed gaps."
+        },
+        "disclaimer": "This view reflects the inputs as described today. It is not a guarantee of model performance.",
+        "inputAuditScope": {
+          "useCase": "Readmission risk pilot",
+          "sources": ["Synthetic clinical system"]
+        }
+      },
+      "expectedShortfalls": [
+        {
+          "code": "too_few_fields",
+          "waivable": true
+        }
+      ]
+    },
+    {
+      "id": "offer6-eleven-fields",
+      "content": {
+        "fields": [
+          {
+            "intakeName": "encounter_start_time",
+            "name": "encounter_start_time",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "discharge_disposition",
+            "name": "discharge_disposition",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "primary_payer_type",
+            "name": "primary_payer_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_code",
+            "name": "lab_result_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_unit",
+            "name": "lab_result_unit",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "medication_code",
+            "name": "medication_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "problem_list_status",
+            "name": "problem_list_status",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "provider_specialty",
+            "name": "provider_specialty",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "facility_identifier_type",
+            "name": "facility_identifier_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "referral_reason_text",
+            "name": "referral_reason_text",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "eleventh_field",
+            "name": "eleventh_field",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          }
+        ],
+        "overall": {
+          "view": "conditional",
+          "dependsOnUnknowns": [],
+          "reason": "Depends on closing the listed gaps."
+        },
+        "disclaimer": "This view reflects the inputs as described today. It is not a guarantee of model performance.",
+        "inputAuditScope": {
+          "useCase": "Readmission risk pilot",
+          "sources": ["Synthetic clinical system"]
+        }
+      },
+      "expectedShortfalls": [
+        {
+          "code": "field_list_fixed",
+          "waivable": false
+        }
+      ]
+    },
+    {
+      "id": "offer6-unset-observation",
+      "content": {
+        "fields": [
+          {
+            "intakeName": "encounter_start_time",
+            "name": "encounter_start_time",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "discharge_disposition",
+            "name": "discharge_disposition",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "primary_payer_type",
+            "name": "primary_payer_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_code",
+            "name": "lab_result_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": null,
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_unit",
+            "name": "lab_result_unit",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "medication_code",
+            "name": "medication_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "problem_list_status",
+            "name": "problem_list_status",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "provider_specialty",
+            "name": "provider_specialty",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "facility_identifier_type",
+            "name": "facility_identifier_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "referral_reason_text",
+            "name": "referral_reason_text",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          }
+        ],
+        "overall": {
+          "view": "conditional",
+          "dependsOnUnknowns": [],
+          "reason": "Depends on closing the listed gaps."
+        },
+        "disclaimer": "This view reflects the inputs as described today. It is not a guarantee of model performance.",
+        "inputAuditScope": {
+          "useCase": "Readmission risk pilot",
+          "sources": ["Synthetic clinical system"]
+        }
+      },
+      "expectedShortfalls": [
+        {
+          "code": "too_few_fields",
+          "waivable": true
+        }
+      ]
+    },
+    {
+      "id": "offer6-go-with-unknown-no-reason",
+      "content": {
+        "fields": [
+          {
+            "intakeName": "encounter_start_time",
+            "name": "encounter_start_time",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "discharge_disposition",
+            "name": "discharge_disposition",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "primary_payer_type",
+            "name": "primary_payer_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "unknown",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_code",
+            "name": "lab_result_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_unit",
+            "name": "lab_result_unit",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "medication_code",
+            "name": "medication_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "problem_list_status",
+            "name": "problem_list_status",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "provider_specialty",
+            "name": "provider_specialty",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "facility_identifier_type",
+            "name": "facility_identifier_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "referral_reason_text",
+            "name": "referral_reason_text",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          }
+        ],
+        "overall": {
+          "view": "go",
+          "dependsOnUnknowns": [
+            {
+              "field": "primary_payer_type",
+              "dimension": "provenance"
+            }
+          ],
+          "reason": ""
+        },
+        "disclaimer": "This view reflects the inputs as described today. It is not a guarantee of model performance.",
+        "inputAuditScope": {
+          "useCase": "Readmission risk pilot",
+          "sources": ["Synthetic clinical system"]
+        }
+      },
+      "expectedShortfalls": [
+        {
+          "code": "go_reason_missing",
+          "waivable": false
+        }
+      ]
+    },
+    {
+      "id": "offer6-no-scope",
+      "content": {
+        "fields": [
+          {
+            "intakeName": "encounter_start_time",
+            "name": "encounter_start_time",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "discharge_disposition",
+            "name": "discharge_disposition",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "primary_payer_type",
+            "name": "primary_payer_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_code",
+            "name": "lab_result_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_unit",
+            "name": "lab_result_unit",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "medication_code",
+            "name": "medication_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "problem_list_status",
+            "name": "problem_list_status",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "provider_specialty",
+            "name": "provider_specialty",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "facility_identifier_type",
+            "name": "facility_identifier_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "referral_reason_text",
+            "name": "referral_reason_text",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          }
+        ],
+        "overall": {
+          "view": "conditional",
+          "dependsOnUnknowns": [],
+          "reason": "Depends on closing the listed gaps."
+        },
+        "disclaimer": "This view reflects the inputs as described today. It is not a guarantee of model performance.",
+        "inputAuditScope": {
+          "useCase": "",
+          "sources": []
+        }
+      },
+      "expectedShortfalls": [
+        {
+          "code": "scope_missing",
+          "waivable": false
+        }
+      ]
+    },
+    {
+      "id": "offer6-three-sources",
+      "content": {
+        "fields": [
+          {
+            "intakeName": "encounter_start_time",
+            "name": "encounter_start_time",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "discharge_disposition",
+            "name": "discharge_disposition",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "primary_payer_type",
+            "name": "primary_payer_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_code",
+            "name": "lab_result_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "lab_result_unit",
+            "name": "lab_result_unit",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "medication_code",
+            "name": "medication_code",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "gap",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "problem_list_status",
+            "name": "problem_list_status",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "gap",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "provider_specialty",
+            "name": "provider_specialty",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "gap",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "facility_identifier_type",
+            "name": "facility_identifier_type",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "provenance": {
+                "status": "gap",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          },
+          {
+            "intakeName": "referral_reason_text",
+            "name": "referral_reason_text",
+            "renameReason": "",
+            "sourceSystem": "Synthetic clinical system",
+            "sourceInterface": "HL7 v2 feed",
+            "observations": {
+              "quality": {
+                "status": "known_good",
+                "note": ""
+              },
+              "completeness": {
+                "status": "known_good",
+                "note": ""
+              },
+              "freshness": {
+                "status": "gap",
+                "note": ""
+              },
+              "provenance": {
+                "status": "known_good",
+                "note": ""
+              },
+              "access": {
+                "status": "known_good",
+                "note": ""
+              }
+            }
+          }
+        ],
+        "overall": {
+          "view": "conditional",
+          "dependsOnUnknowns": [],
+          "reason": "Depends on closing the listed gaps."
+        },
+        "disclaimer": "This view reflects the inputs as described today. It is not a guarantee of model performance.",
+        "inputAuditScope": {
+          "useCase": "Readmission risk pilot",
+          "sources": [
+            "Synthetic clinical system",
+            "Synthetic laboratory system",
+            "Synthetic claims system"
+          ]
+        }
+      },
+      "expectedShortfalls": [
+        {
+          "code": "scope_too_many_sources",
+          "waivable": false
+        }
+      ]
+    }
+  ]
+}

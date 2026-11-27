@@ -31,8 +31,11 @@ import { registerOfferRoutes, registerRecommendationRoutes } from "../src/module
 import { buildRoutingStack, type RoutingStack } from "../src/routing-stack.js";
 import { buildEngagementStack, type EngagementStack } from "../src/engagement-stack.js";
 import { registerEngagementRoutes, registerPublicRoutes } from "../src/modules/engagement/index.js";
-import { FakeFileStorage } from "@gtm/providers";
+import { FakeCalendar, FakeFileStorage, type FakeRule } from "@gtm/providers";
+import { LlmGateway } from "../src/modules/providers/index.js";
 import { buildResearchStack, type ResearchStack } from "../src/research-stack.js";
+import { registerWorkshopRoutes } from "../src/modules/workshops/index.js";
+import { buildWorkshopsStack, type WorkshopsStack } from "../src/workshops-stack.js";
 import { loadPages, loadScenario } from "./research-harness.js";
 import { FakeIssuer } from "./fake-oidc/issuer.js";
 
@@ -70,6 +73,10 @@ export interface IdentityFixture extends TestServer {
   catalogue: CatalogueStack;
   routing: RoutingStack;
   engagement: EngagementStack;
+  workshops: WorkshopsStack;
+  calendar: FakeCalendar;
+  /** Push scripted answers for the workshop model calls here. */
+  workshopRules: FakeRule[];
   /** The fake file store holding the synthetic register under the configured key. */
   files: FakeFileStorage;
   fakeLlm: FakeLLM;
@@ -148,8 +155,34 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
     DATABASE_URL: "postgres://gtm:x@localhost:5432/gtm",
   });
   const files = new FakeFileStorage(config.routing.downloadSigningKey);
-  files.put(config.routing.registerFileKey, Buffer.from("synthetic register"), "application/pdf");
+  await files.put(
+    config.routing.registerFileKey,
+    Buffer.from("synthetic register"),
+    "application/pdf",
+  );
   const engagement = buildEngagementStack({ db, config, routing, files });
+  const calendar = new FakeCalendar();
+  const workshopRules: FakeRule[] = [];
+  const workshops = buildWorkshopsStack({
+    db,
+    config,
+    catalogue,
+    calendar,
+    files,
+    quarantine,
+    notifier,
+    gateway: new LlmGateway({
+      db,
+      provider: new FakeLLM(workshopRules),
+      models: config.llm.models,
+      rates: config.llm.rates,
+      maxRetries: 0,
+      now: () => clock.now,
+    }),
+    accountRemaining: research.accountRemaining,
+    hypotheses: research.hypotheses,
+    ai: true,
+  });
   const server = await buildTestServer({
     phiGuardSink: createPhiGuardSink(db, notifier),
     ...(options.quarantineEntryPoints
@@ -223,6 +256,20 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
         authz,
         now: () => clock.now,
       });
+      registerWorkshopRoutes(app, {
+        db,
+        workshops: workshops.workshops,
+        participants: workshops.participants,
+        artifacts: workshops.artifacts,
+        findings: workshops.findings,
+        suggest: workshops.suggest,
+        briefs: workshops.briefs,
+        outputs: workshops.outputs,
+        effort: workshops.effort,
+        artifactMaxBytes: workshops.artifactMaxBytes,
+        authz,
+        now: () => clock.now,
+      });
       registerRecommendationRoutes(app, {
         db,
         recommendations: routing.recommendations,
@@ -264,6 +311,9 @@ export async function buildIdentityFixture(options: FixtureOptions = {}): Promis
     catalogue,
     routing,
     engagement,
+    workshops,
+    calendar,
+    workshopRules,
     files,
     fakeLlm,
     fakeSource,

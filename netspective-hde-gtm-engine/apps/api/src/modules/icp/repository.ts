@@ -18,7 +18,7 @@ export function activeDefinitions(tx: Tx): ActiveDefinition[] {
     .all() as unknown as ActiveDefinition[];
 }
 
-export function evidenceFor(tx: Tx, accountId: string): FitEvidence[] {
+export function fitEvidenceFor(tx: Tx, accountId: string): FitEvidence[] {
   return tx
     .prepare("SELECT topic, status FROM evidence_reference WHERE account_id = ? ORDER BY rowid")
     .all(accountId) as unknown as FitEvidence[];

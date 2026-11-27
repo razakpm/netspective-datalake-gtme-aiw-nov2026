@@ -14,3 +14,4 @@ export { registerAuditRoutes } from "./routes.js";
 export { registerQuarantineRoutes } from "./quarantine-routes.js";
 export { QuarantineService, type Decider, type QuarantineMeta } from "./quarantine-service.js";
 export { createPhiGuardSink } from "./phi-sink.js";
+export { recordPhiBlock, type PhiBlockRecord } from "./phi-record.js";

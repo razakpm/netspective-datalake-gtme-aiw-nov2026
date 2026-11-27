@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://www.googleapis.com/calendar/v3/calendars/workshops%40calendar.example/events?sendUpdates=none"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "syntheticevent0001",
+      "status": "confirmed",
+      "start": {
+        "dateTime": "2026-12-01T10:00:00Z"
+      },
+      "end": {
+        "dateTime": "2026-12-01T10:45:00Z"
+      }
+    }
+  }
+}

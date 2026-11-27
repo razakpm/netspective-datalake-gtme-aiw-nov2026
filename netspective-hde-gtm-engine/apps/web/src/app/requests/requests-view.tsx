@@ -11,6 +11,7 @@ import {
   type RequestsApi,
   type RequestSummary,
 } from "../../lib/requests-api.js";
+import { browserWorkshopsApi, type WorkshopsApi } from "../../lib/workshops-api.js";
 
 // Request inbox (feature 006, tasks T067 and T069; spec FR-030, FR-017): register downloads, working session
 // requests and intake submissions with their review state and flags, and the versions of the privacy notice
@@ -42,10 +43,12 @@ export function RequestsView({
   permissions,
   userId,
   api = browserRequestsApi,
+  workshops = browserWorkshopsApi,
 }: {
   permissions: readonly string[];
   userId: string;
   api?: RequestsApi;
+  workshops?: Pick<WorkshopsApi, "convert">;
 }) {
   const can = (p: string) => permissions.includes(p);
   const [items, setItems] = useState<RequestSummary[] | null>(null);
@@ -59,6 +62,7 @@ export function RequestsView({
   const [businessEmail, setBusinessEmail] = useState("");
   const [noticeText, setNoticeText] = useState("");
   const [consentText, setConsentText] = useState("");
+  const [workshopId, setWorkshopId] = useState<string | null>(null);
 
   const run = useCallback(async (work: () => Promise<void>) => {
     setError(null);
@@ -89,7 +93,11 @@ export function RequestsView({
     void loadNotices();
   }, [loadNotices]);
 
-  const open = (id: string) => run(async () => setDetail(await api.get(id)));
+  const open = (id: string) =>
+    run(async () => {
+      setWorkshopId(null);
+      setDetail(await api.get(id));
+    });
   const review = (body: Parameters<RequestsApi["review"]>[1]) =>
     run(async () => {
       if (!detail) return;
@@ -182,6 +190,23 @@ export function RequestsView({
               {detail.intake ? <IntakeSummary intake={detail.intake} /> : null}
               {detail.recommendationId ? (
                 <p>A follow-up recommendation is waiting for review on the account workspace.</p>
+              ) : null}
+
+              {can("workshops.edit") && detail.kind === "intake" && detail.state === "linked" ? (
+                workshopId ? (
+                  <p>
+                    <a href={`/workshops/${encodeURIComponent(workshopId)}`}>Open the workshop</a>
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void run(async () => setWorkshopId((await workshops.convert(detail.id)).id))
+                    }
+                  >
+                    Convert to workshop
+                  </button>
+                )
               ) : null}
 
               {can("requests.review") && !settled ? (

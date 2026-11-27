@@ -264,3 +264,49 @@ describe("notice versions", () => {
     expect(screen.queryByRole("form", { name: "Draft a notice version" })).toBeNull();
   });
 });
+
+describe("converting a request to a workshop (feature 007)", () => {
+  const intake = detail({ kind: "intake", state: "linked", download: null, intake: {} });
+  const openIt = async (permissions: string[], d = intake) => {
+    const api = apiWith([summary({ kind: "intake", state: "linked" })], d);
+    const workshops = { convert: vi.fn().mockResolvedValue({ id: "w1" }) };
+    render(<RequestsView permissions={permissions} userId="u1" api={api} workshops={workshops} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Newco HIE/ }));
+    await screen.findByRole("article", { name: "Request detail" });
+    return workshops;
+  };
+  const convert = () => screen.queryByRole("button", { name: "Convert to workshop" });
+
+  it("makes the workshop from a linked intake and links to it", async () => {
+    const workshops = await openIt(["requests.read", "workshops.edit"]);
+    fireEvent.click(convert()!);
+    expect(
+      (await screen.findByRole("link", { name: "Open the workshop" })).getAttribute("href"),
+    ).toBe("/workshops/w1");
+    expect(workshops.convert).toHaveBeenCalledWith("q1");
+  });
+  it("offers nothing without the permission or for an unlinked request", async () => {
+    await openIt(["requests.read"]);
+    expect(convert()).toBeNull();
+    cleanup();
+    await openIt(["requests.read", "workshops.edit"], { ...intake, state: "reviewed" });
+    expect(convert()).toBeNull();
+  });
+  it("shows a plain message when it is refused", async () => {
+    const api = apiWith([summary({ kind: "intake", state: "linked" })], intake);
+    const workshops = {
+      convert: vi.fn().mockRejectedValue(new CatalogueApiError(409, ["workshop_open"])),
+    };
+    render(
+      <RequestsView
+        permissions={["requests.read", "workshops.edit"]}
+        userId="u1"
+        api={api}
+        workshops={workshops}
+      />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /Newco HIE/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Convert to workshop" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("already has an open");
+  });
+});

@@ -7,7 +7,7 @@ import { recordAudit } from "../audit/index.js";
 import type { WriteContext } from "../contacts/index.js";
 import {
   activeDefinitions,
-  evidenceFor,
+  fitEvidenceFor,
   insertAssessment,
   latestAssessments,
 } from "./repository.js";
@@ -28,7 +28,7 @@ export class IcpService {
   /** Assess inside the caller's transaction. */
   assess(tx: Tx, accountId: string, ctx: WriteContext): FitSummary {
     const { orgType, staffedBedCount } = currentClassification(tx, accountId);
-    const evidence = evidenceFor(tx, accountId);
+    const evidence = fitEvidenceFor(tx, accountId);
     const at = (ctx.now ?? (() => new Date()))().toISOString();
     const byIcp: Partial<Record<IcpKey, FitStatus>> = {};
     for (const row of activeDefinitions(tx)) {

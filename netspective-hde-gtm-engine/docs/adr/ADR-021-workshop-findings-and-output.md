@@ -22,5 +22,5 @@ Workshops are where the free diagnosis happens and where a buyer is most likely 
 
 - One place for workshop policy; qualification (008) reads finalised findings and confirmations instead of re-deriving them.
 - The boundary between free diagnosis and paid work is visible in the findings and on the page the buyer receives.
-- A PDF renderer (a browser) becomes a deployment dependency, behind an interface with a fallback.
+- A PDF renderer (a browser) becomes a deployment dependency, behind an interface with a fallback: the `playwright-core` package, plus a Chromium binary that must be installed in the deployed image (`PDF_RENDERER=playwright`).
 - Feature 005's booking service changes shape (compatibly), so its tests are the safety net.

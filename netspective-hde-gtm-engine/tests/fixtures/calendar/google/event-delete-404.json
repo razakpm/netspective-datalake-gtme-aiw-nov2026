@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "DELETE",
+    "url": "https://www.googleapis.com/calendar/v3/calendars/workshops%40calendar.example/events/syntheticevent0001?sendUpdates=none"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": 404,
+        "message": "Synthetic: not found."
+      }
+    }
+  }
+}

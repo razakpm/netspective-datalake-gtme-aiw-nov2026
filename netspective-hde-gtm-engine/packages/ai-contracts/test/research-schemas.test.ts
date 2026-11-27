@@ -177,6 +177,8 @@ describe("registry and JSON Schema export", () => {
       "offer-recommendation-explain",
       "problem-interpretation",
       "signal-extraction",
+      "workshop-findings-draft",
+      "workshop-preparation-brief",
     ]);
     for (const entry of Object.values(SCHEMA_REGISTRY))
       expect(entry.version).toMatch(/^\d+\.\d+\.\d+$/);

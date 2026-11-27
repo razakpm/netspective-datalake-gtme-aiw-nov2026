@@ -1,8 +1,9 @@
 // Public entry point of the engagement module (feature 006). Other modules import only this file or react
 // to its domain events.
 export { NoticeService, NoticeInputSchema, type NoticeView } from "./notice.js";
-export { ConsentLookup, recordConsent } from "./consent.js";
+export { ConsentLookup, consentWithdrawn, recordConsent } from "./consent.js";
 export { PriorLookup } from "./prior.js";
+export { loadRequestForWorkshop, type WorkshopRequestSource } from "./workshop-source.js";
 export { DeliveryService, DOWNLOAD_PATH, type DeliverySettings } from "./delivery.js";
 export {
   RequestService,

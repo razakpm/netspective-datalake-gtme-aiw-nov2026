@@ -31,9 +31,19 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
       cache: "no-store",
     },
   );
-  return new Response(await upstream.text(), {
+  // Bytes are passed through unchanged (a PDF is not text), with the headers that make a download safe.
+  const passed = ["content-disposition", "cache-control", "x-content-type-options"].flatMap(
+    (name) => {
+      const value = upstream.headers.get(name);
+      return value === null ? [] : [[name, value] as const];
+    },
+  );
+  return new Response(upstream.status === 204 ? null : await upstream.arrayBuffer(), {
     status: upstream.status,
-    headers: { "content-type": upstream.headers.get("content-type") ?? "application/json" },
+    headers: {
+      "content-type": upstream.headers.get("content-type") ?? "application/json",
+      ...Object.fromEntries(passed),
+    },
   });
 }
 
