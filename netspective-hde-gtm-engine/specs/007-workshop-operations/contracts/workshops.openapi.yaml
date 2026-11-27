@@ -115,7 +115,7 @@ paths:
     parameters: [ { in: path, name: artifactId, required: true, schema: { type: string } } ]
     post:
       operationId: decideHeldArtifact
-      summary: "Release or discard a held artifact, with a reason. Needs quarantine.review. A released artifact is rechecked before use."
+      summary: "Release or discard a held artifact, with a reason. Needs quarantine.review. On release the content is taken once and rechecked: a rule other than those released keeps it held. Decisions made through the quarantine routes reach the artifact too; purged content cannot be released."
       parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
       requestBody:
         required: true
@@ -154,6 +154,17 @@ paths:
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
+  /workshops/{id}/brief/{briefId}/review:
+    parameters: [ { $ref: '#/components/parameters/Id' }, { in: path, name: briefId, required: true, schema: { type: string } } ]
+    post:
+      operationId: markBriefReviewed
+      summary: "A person marks a brief reviewed. Needs workshops.edit. Once only."
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses:
+        '200': { description: "Reviewed.", content: { application/json: { schema: { $ref: '#/components/schemas/Brief' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
   /workshops/{id}/findings:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
     get:
@@ -181,7 +192,7 @@ paths:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
     post:
       operationId: finaliseFindings
-      summary: "Finalise the draft. Refused with the list of shortfalls; fewer than three delay sources (Offer 1) or ten fields (Offer 6) is allowed only with a waiverReason. The first finalisation moves the workshop to findings recorded."
+      summary: "Finalise the draft. Refused with the list of shortfalls; fewer than three delay sources (Offer 1) or ten recorded fields (Offer 6) is allowed only with a waiverReason. The first finalisation moves the workshop to findings recorded."
       parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
       requestBody:
         required: true
@@ -229,11 +240,11 @@ paths:
         '409': { $ref: '#/components/responses/Problem' }
     put:
       operationId: editOutput
-      summary: "Edit the section texts; each edit is a new revision. In scope and out of scope cannot be removed."
+      summary: "Edit the title, summary, next step and scope lists; each edit is a new revision of the one it names (a stale base is refused). The findings, unknowns, boundary and disclaimer sections are generated and cannot be edited."
       parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, additionalProperties: false, required: [sections], properties: { sections: { type: object } } } } }
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [baseRevisionNo, sections], properties: { baseRevisionNo: { type: integer, minimum: 1 }, sections: { $ref: '#/components/schemas/EditableSections' } } } } }
       responses:
         '201': { description: "New revision.", content: { application/json: { schema: { $ref: '#/components/schemas/Output' } } } }
         '400': { $ref: '#/components/responses/Problem' }
@@ -314,9 +325,19 @@ components:
     Id: { in: path, name: id, required: true, schema: { type: string } }
   responses:
     Problem:
-      description: "Problem details with stable codes (request_not_linked, offer_not_supported, workshop_open, invalid_transition, capacity_exhausted, offer_unavailable, calendar_failed, artifact_kind_not_allowed, binary_not_accepted, held_for_review, findings_incomplete, too_many_delay_sources, field_list_fixed, stale_version, output_not_ready, scope_section_missing, restricted_wording, price_stated, over_one_page, output_out_of_date, ai_unavailable, forbidden, phi_guard)."
+      description: "Problem details with stable codes (request_not_linked, offer_not_supported, workshop_open, invalid_transition, capacity_exhausted, booking_owned_by_workshop, offer_unavailable, calendar_failed, artifact_kind_not_allowed, binary_not_accepted, held_for_review, findings_incomplete, too_many_delay_sources, field_list_fixed, stale_version, output_not_ready, scope_section_missing, restricted_wording, price_stated, over_one_page, output_out_of_date, ai_unavailable, forbidden, phi_guard)."
       content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
   schemas:
+    EditableSections:
+      type: object
+      additionalProperties: false
+      required: [title, summary, nextStep, inScope, outOfScope]
+      properties:
+        title: { type: string, minLength: 2, maxLength: 200 }
+        summary: { type: string, maxLength: 1200 }
+        nextStep: { type: string, maxLength: 500 }
+        inScope: { type: array, minItems: 1, maxItems: 8, items: { type: string, minLength: 2, maxLength: 150 } }
+        outOfScope: { type: array, minItems: 1, maxItems: 8, items: { type: string, minLength: 2, maxLength: 150 } }
     Problem:
       type: object
       required: [type, title, status]
@@ -340,6 +361,7 @@ components:
             intake: { type: object, description: "The typed intake payload, labelled non-PHI." }
             history: { type: array, items: { type: object, required: [toState, changedBy, changedAt], properties: { fromState: { type: [string, 'null'] }, toState: { type: string }, note: { type: [string, 'null'] }, scheduledFrom: { type: [string, 'null'] }, scheduledTo: { type: [string, 'null'] }, changedBy: { type: string }, changedAt: { type: string, format: date-time } } } }
             participants: { type: array, items: { $ref: '#/components/schemas/Participant' } }
+            notices: { type: array, items: { type: string, enum: [account_suppressed, contact_suppressed, consent_withdrawn, calendar_needs_attention] } }
             capacity: { type: object, description: "The offer's capacity answer for the booked date, or for today when not booked." }
     TransitionRequest:
       type: object
@@ -378,7 +400,7 @@ components:
         items: { type: array, items: { $ref: '#/components/schemas/Artifact' } }
     Brief:
       type: object
-      required: [id, versionNo, source, content, createdAt]
+      required: [id, versionNo, source, reviewStatus, content, createdAt]
       properties:
         id: { type: string }
         versionNo: { type: integer }
@@ -387,12 +409,20 @@ components:
         promptVersion: { type: [string, 'null'] }
         superseded: { type: boolean }
         notice: { type: [string, 'null'], description: "Why the baseline was used (model off, unavailable, over cap or refused)." }
+        schemaVersion: { type: [string, 'null'] }
+        confidence: { type: [string, 'null'], enum: [low, medium, high, null] }
+        rationale: { type: [string, 'null'], maxLength: 300 }
+        reviewStatus: { type: string, enum: [unreviewed, reviewed] }
+        reviewedBy: { type: [string, 'null'] }
+        reviewedAt: { type: [string, 'null'], format: date-time }
         content:
           type: object
-          required: [confirmedFacts, inferences, unknowns, suggestedQuestions, artifactChecklist]
+          required: [entityIds, confirmedFacts, inferences, contradictions, unknowns, suggestedQuestions, artifactChecklist]
           properties:
-            confirmedFacts: { type: array, items: { type: object, required: [statement, evidenceIds], properties: { statement: { type: string }, evidenceIds: { type: array, minItems: 1, items: { type: string } } } } }
-            inferences: { type: array, items: { type: object, required: [statement], properties: { statement: { type: string }, basis: { type: string } } } }
+            entityIds: { type: object, required: [workshopId, accountId], properties: { workshopId: { type: string }, accountId: { type: string } } }
+            confirmedFacts: { type: array, items: { type: object, required: [evidenceId, text], properties: { evidenceId: { type: string }, text: { type: string, description: "The evidence record's own text, never model wording." } } } }
+            inferences: { type: array, items: { type: object, required: [statement, evidenceIds], properties: { statement: { type: string }, evidenceIds: { type: array, minItems: 1, items: { type: string } }, contradictingEvidenceIds: { type: array, items: { type: string } }, basis: { type: string } } } }
+            contradictions: { type: array, items: { type: object, required: [evidenceId, text], properties: { evidenceId: { type: string }, text: { type: string } } } }
             unknowns: { type: array, items: { type: string } }
             suggestedQuestions: { type: array, maxItems: 12, items: { type: string } }
             artifactChecklist: { type: array, items: { type: object, required: [kind], properties: { kind: { type: string }, why: { type: string } } } }
@@ -408,12 +438,19 @@ components:
         current: { oneOf: [ { $ref: '#/components/schemas/Finding' }, { type: 'null' } ] }
         versions: { type: array, items: { $ref: '#/components/schemas/Finding' } }
         shortfalls: { type: array, items: { type: object, required: [code, waivable, message], properties: { code: { type: string }, waivable: { type: boolean }, message: { type: string } } } }
-        summary: { type: object, description: "Offer 6: counts of known good, gap and unknown; unknown is never merged into gap.", properties: { knownGood: { type: integer }, gap: { type: integer }, unknown: { type: integer } } }
+        summary: { type: object, description: "Offer 6: counts of known good, gap, unknown and not recorded; unknown is never merged into gap.", properties: { knownGood: { type: integer }, gap: { type: integer }, unknown: { type: integer }, notRecorded: { type: integer } } }
     Suggestion:
       type: object
-      required: [items, dropped]
+      required: [entityIds, items, dropped, confidence, rationale, reviewStatus]
       properties:
-        items: { type: array, items: { type: object, required: [path, value, supportingText], properties: { path: { type: string }, value: {}, supportingText: { type: string } } } }
+        entityIds: { type: object, required: [workshopId, accountId], properties: { workshopId: { type: string }, accountId: { type: string } } }
+        confidence: { type: string, enum: [low, medium, high] }
+        rationale: { type: string, maxLength: 300 }
+        reviewStatus: { type: string, enum: [unreviewed] }
+        model: { type: [string, 'null'] }
+        promptVersion: { type: [string, 'null'] }
+        schemaVersion: { type: [string, 'null'] }
+        items: { type: array, items: { type: object, required: [path, value, supportingText, interpretation], properties: { path: { type: string, description: "From a fixed list; never a confirmation, a state or a finalisation." }, value: {}, supportingText: { type: string }, interpretation: { type: boolean, description: "True for an owner class or a status; a person accepts each one." } } } }
         dropped: { type: integer, description: "Items dropped because the notes do not support them." }
         notice: { type: [string, 'null'] }
     Output:
