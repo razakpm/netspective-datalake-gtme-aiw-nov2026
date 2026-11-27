@@ -9,6 +9,7 @@ import {
   ProblemInterpretationSchema,
   SignalExtractionSchema,
 } from "./research.js";
+import { WorkshopBriefSchema, WorkshopFindingsDraftSchema } from "./workshop.js";
 
 // Schema registry (feature 004, research R-04): schemas by id and version, JSON Schema export, and the
 // versioned prompt files. A prompt change is a new version; only identity and hash go in the database.
@@ -45,6 +46,16 @@ export const SCHEMA_REGISTRY: Readonly<Record<string, SchemaEntry>> = {
     version: "1.0.0",
     schema: OfferRecommendationExplainSchema,
   },
+  "workshop-preparation-brief": {
+    id: "workshop-preparation-brief",
+    version: "1.0.0",
+    schema: WorkshopBriefSchema,
+  },
+  "workshop-findings-draft": {
+    id: "workshop-findings-draft",
+    version: "1.0.0",
+    schema: WorkshopFindingsDraftSchema,
+  },
 };
 
 export function exportJsonSchemas(): Record<string, unknown> {
@@ -57,7 +68,13 @@ export function exportJsonSchemas(): Record<string, unknown> {
 }
 
 export interface PromptDefinition {
-  name: "research-extract" | "hypothesis-propose" | "problem-interpret" | "offer-explain";
+  name:
+    | "research-extract"
+    | "hypothesis-propose"
+    | "problem-interpret"
+    | "offer-explain"
+    | "workshop-brief"
+    | "workshop-findings";
   version: string;
   task: "extraction" | "synthesis" | "interpretation";
   outputSchemaId: string;
@@ -87,6 +104,18 @@ export const PROMPTS: readonly PromptDefinition[] = [
     version: "1.0.0",
     task: "synthesis",
     outputSchemaId: "offer-recommendation-explain",
+  },
+  {
+    name: "workshop-brief",
+    version: "1.0.0",
+    task: "synthesis",
+    outputSchemaId: "workshop-preparation-brief",
+  },
+  {
+    name: "workshop-findings",
+    version: "1.0.0",
+    task: "synthesis",
+    outputSchemaId: "workshop-findings-draft",
   },
 ];
 

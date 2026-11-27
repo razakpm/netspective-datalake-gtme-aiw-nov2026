@@ -326,4 +326,49 @@ export const COLUMN_CLASSIFICATION: ClassificationRegistry = {
       "id, request_id, offer_id, kind, schema_version, account_id, contact_id, classification, submitted_at, review_state",
     ),
   ),
+
+  // Feature 007 (workshop operations). Participant and supplier names are business contact data; notes,
+  // findings, briefs, output text and artifact titles and references are confidential.
+  workshop: som(
+    "id, request_id, offer_id, intake_id, account_id, contact_id, state, duration_minutes, scheduled_at, session_date, booking_id, booking_route, calendar_ref, lock_no, created_by, created_at, updated_at, closed_at",
+  ),
+  workshop_state_history: mergeFields(
+    cc("note"),
+    som(
+      "id, workshop_id, from_state, to_state, scheduled_from, scheduled_to, changed_by, changed_at",
+    ),
+  ),
+  workshop_participant: mergeFields(
+    bc("display_name, role_title"),
+    som("id, workshop_id, side, contact_id, user_id, added_by, added_at, removed_at, removed_by"),
+  ),
+  delivery_effort: som(
+    "id, workshop_id, prep_hours, session_hours, people, recorded_by, recorded_at",
+  ),
+  workshop_artifact: mergeFields(
+    cc("title, reference"),
+    bc("supplied_by_label"),
+    som(
+      "id, workshop_id, kind, storage_key, size_bytes, content_sha256, recorded_by, recorded_at, classification, state, quarantine_item_id, hold_rule_ids_json, decided_by, decided_at, file_deleted_at",
+    ),
+  ),
+  workshop_brief: mergeFields(
+    cc("content_json, rationale"),
+    som(
+      "id, workshop_id, version_no, source, ai_invocation_id, model, prompt_version, schema_version, confidence, review_status, reviewed_by, reviewed_at, created_by, created_at",
+    ),
+  ),
+  workshop_finding: mergeFields(
+    cc("content_json, waiver_reason, correction_reason"),
+    som(
+      "id, workshop_id, version_no, kind, schema_version, state, lock_no, created_by, created_at, updated_at, finalised_by, finalised_at, classification",
+    ),
+  ),
+  workshop_output_document: mergeFields(
+    cc("sections_json"),
+    som(
+      "id, workshop_id, finding_id, revision_no, state, edited_by, edited_at, approved_by, approved_at, pdf_storage_key, pdf_sha256, pdf_pages, file_deleted_at",
+    ),
+  ),
+  workshop_output_share: mergeFields(cc("note"), som("id, output_id, how, shared_by, shared_at")),
 };

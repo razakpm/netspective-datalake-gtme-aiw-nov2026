@@ -3,8 +3,10 @@ import {
   PROMPTS,
   SCHEMA_REGISTRY,
   type OfferRecommendationInput,
+  type WorkshopModelInput,
   promptText,
   exportJsonSchemas,
+  WorkshopModelInputSchema,
   type PromptDefinition,
 } from "@gtm/ai-contracts";
 import type { SqliteDatabase } from "@gtm/db";
@@ -43,8 +45,17 @@ export interface ModelInput {
   statement?: string | undefined;
   /** Feature 006: a typed allow-list of identifiers and codes for the offer explanation; no external text. */
   recommendation?: OfferRecommendationInput | undefined;
+  /** Feature 007: workshop identifiers, intake answers and evidence records (untrusted text). */
+  workshop?: WorkshopModelInput | undefined;
+  /** Feature 007: the operator's pasted session notes (untrusted), for the notes-assist only. */
+  notes?: string | undefined;
   /** Our own configuration values: allowed keys. Placed in the instruction channel, never in data. */
-  reference: { signalTypeKeys: string[]; categoryKeys: string[]; capabilityKeys: string[] };
+  reference: {
+    signalTypeKeys: string[];
+    categoryKeys: string[];
+    capabilityKeys: string[];
+    artifactKinds?: string[] | undefined;
+  };
 }
 
 const ALLOWED_KEYS = new Set([
@@ -54,13 +65,17 @@ const ALLOWED_KEYS = new Set([
   "statement",
   "reference",
   "recommendation",
+  "workshop",
+  "notes",
 ]);
 
 /** Build the model input; a field outside the allow-list is refused (research R-06, spec FR-020). */
 export function buildModelInput(
-  input: Omit<ModelInput, "statement" | "recommendation"> & {
+  input: Omit<ModelInput, "statement" | "recommendation" | "workshop" | "notes"> & {
     statement?: string;
     recommendation?: OfferRecommendationInput;
+    workshop?: WorkshopModelInput;
+    notes?: string;
   },
 ): ModelInput {
   for (const key of Object.keys(input)) {
@@ -70,12 +85,18 @@ export function buildModelInput(
     if (!["name", "type", "domain"].includes(key))
       throw new Error(`model input field "account.${key}" is not allowed`);
   }
+  // The workshop block is itself a strict allow-list: a contact, a participant or an upload is refused.
+  const workshop =
+    input.workshop === undefined ? undefined : WorkshopModelInputSchema.safeParse(input.workshop);
+  if (workshop && !workshop.success) throw new Error('model input field "workshop" is not allowed');
   return {
     account: input.account,
     sources: input.sources,
     signalObservations: input.signalObservations,
     statement: input.statement,
     recommendation: input.recommendation,
+    workshop: workshop?.data,
+    notes: input.notes,
     reference: input.reference,
   };
 }
@@ -178,6 +199,27 @@ export class LlmGateway {
     }
     if (input.statement)
       out.push({ id: "statement", label: "buyer statement", text: NEUTRALISE(input.statement) });
+    if (input.workshop) {
+      const { intake, evidence, ...ids } = input.workshop;
+      out.push({ id: "workshop", label: "workshop", text: NEUTRALISE(JSON.stringify(ids)) });
+      intake.forEach((answer, i) =>
+        out.push({
+          id: `intake-${i + 1}`,
+          label: NEUTRALISE(`intake: ${answer.label}`),
+          text: NEUTRALISE(answer.text),
+        }),
+      );
+      // The block id is the evidence id, so the model can cite it.
+      for (const e of evidence) {
+        out.push({
+          id: e.id,
+          label: `evidence (${e.status}, ${e.topic})`,
+          text: NEUTRALISE(e.text),
+        });
+      }
+    }
+    if (input.notes)
+      out.push({ id: "notes", label: "operator notes", text: NEUTRALISE(input.notes) });
     return out;
   }
 
@@ -189,6 +231,7 @@ export class LlmGateway {
         ? `Allowed hypothesis category keys: ${r.categoryKeys.join(", ")}.`
         : "",
       r.capabilityKeys.length ? `Allowed capability keys: ${r.capabilityKeys.join(", ")}.` : "",
+      r.artifactKinds?.length ? `Allowed artifact kinds: ${r.artifactKinds.join(", ")}.` : "",
     ].filter(Boolean);
     return [
       promptText(prompt.name),

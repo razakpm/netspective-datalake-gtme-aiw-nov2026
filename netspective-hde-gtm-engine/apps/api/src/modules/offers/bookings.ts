@@ -23,8 +23,10 @@ import {
 } from "./repository.js";
 import { localDateOf } from "@gtm/domain";
 
-// Session bookings, the usage source for capacity (feature 005, task T041). Until the workshop feature
-// exists they are entered by hand and labelled manual. Booking changes are audit-only (spec FR-029).
+// Session bookings, the usage source for capacity (feature 005, task T041). A booking is either entered
+// by hand (manual) or belongs to a workshop (feature 007, research R-03). The `...In` methods run inside
+// the workshop's own transaction, so capacity and workshop state change together; the public methods
+// refuse to change a workshop's booking, so the two cannot drift. Booking changes are audit-only.
 
 const LocalDate = z
   .string()
@@ -46,6 +48,7 @@ export const BookingInputSchema = z
 export const RescheduleInputSchema = z.object({ sessionDate: LocalDate }).strict();
 
 export type BookingView = BookingRow;
+type Change = (tx: Tx, booking: BookingRow, now: Date) => Record<string, unknown>;
 
 export class BookingService {
   constructor(
@@ -89,6 +92,78 @@ export class BookingService {
     return period.start;
   }
 
+  /** Insert a booking inside the caller's transaction, under the capacity rule, and audit it. */
+  private insert(
+    tx: Tx,
+    actor: CatalogueActor,
+    offerId: string,
+    input: { sessionDate: string; externalRef?: string | undefined },
+    source: BookingRow["source"],
+    now: Date,
+  ): BookingRow {
+    if (!getHead(tx, offerId)) throw new HttpError(404, "Offer not found");
+    const periodStart = this.assertRoom(tx, offerId, input.sessionDate, now);
+    const row: BookingRow = {
+      id: uuidv7(),
+      offerId,
+      externalRef: input.externalRef ?? null,
+      state: "booked",
+      sessionDate: input.sessionDate,
+      periodStart,
+      source,
+      recordedBy: actor.userId as string,
+      recordedAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    };
+    try {
+      insertBooking(tx, row);
+    } catch {
+      throw new CatalogueRefusal(
+        409,
+        "Booking exists",
+        ["duplicate_booking"],
+        [],
+        "A booking with this reference already exists for this offer.",
+      );
+    }
+    this.audit(tx, actor, "offer.booking.record", row, {
+      session_date: row.sessionDate,
+      source: row.source,
+    });
+    return row;
+  }
+
+  // ---- for the workshops module: no booking permission, the caller checks its own and audits refusals
+
+  recordIn(
+    tx: Tx,
+    actor: CatalogueActor,
+    offerId: string,
+    input: { sessionDate: string },
+  ): BookingView {
+    const { sessionDate } = parseOrThrow(RescheduleInputSchema, input);
+    return this.insert(tx, actor, offerId, { sessionDate }, "workshop", nowOf(actor));
+  }
+
+  rescheduleIn(tx: Tx, actor: CatalogueActor, bookingId: string, rawDate: string): BookingView {
+    const { sessionDate } = parseOrThrow(RescheduleInputSchema, { sessionDate: rawDate });
+    return this.changeIn(tx, actor, bookingId, "reschedule", this.moveTo(sessionDate));
+  }
+
+  cancelIn(tx: Tx, actor: CatalogueActor, bookingId: string): BookingView {
+    return this.changeIn(tx, actor, bookingId, "cancel", this.setState("cancelled"));
+  }
+
+  holdIn(tx: Tx, actor: CatalogueActor, bookingId: string): BookingView {
+    return this.changeIn(tx, actor, bookingId, "hold", this.setState("held"));
+  }
+
+  noShowIn(tx: Tx, actor: CatalogueActor, bookingId: string): BookingView {
+    return this.changeIn(tx, actor, bookingId, "no_show", this.setState("no_show"));
+  }
+
+  // ---- by hand -----------------------------------------------------------------------------------
+
   record(actor: CatalogueActor, offerId: string, raw: unknown): BookingView {
     const input = parseOrThrow(BookingInputSchema, raw);
     return audited(
@@ -100,74 +175,26 @@ export class BookingService {
       () => {
         requirePermission(actor, "offers.bookings.edit");
         const now = nowOf(actor);
-        return this.db.transaction((tx) => {
-          if (!getHead(tx, offerId)) throw new HttpError(404, "Offer not found");
-          const periodStart = this.assertRoom(tx, offerId, input.sessionDate, now);
-          const row: BookingRow = {
-            id: uuidv7(),
-            offerId,
-            externalRef: input.externalRef ?? null,
-            state: "booked",
-            sessionDate: input.sessionDate,
-            periodStart,
-            source: "manual",
-            recordedBy: actor.userId as string,
-            recordedAt: now.toISOString(),
-            updatedAt: now.toISOString(),
-          };
-          try {
-            insertBooking(tx, row);
-          } catch {
-            throw new CatalogueRefusal(
-              409,
-              "Booking exists",
-              ["duplicate_booking"],
-              [],
-              "A booking with this reference already exists for this offer.",
-            );
-          }
-          this.audit(tx, actor, "offer.booking.record", row, {
-            session_date: row.sessionDate,
-            source: row.source,
-          });
-          return row;
-        });
+        return this.db.transaction((tx) => this.insert(tx, actor, offerId, input, "manual", now));
       },
     );
   }
 
   reschedule(actor: CatalogueActor, bookingId: string, rawDate: string): BookingView {
     const { sessionDate } = parseOrThrow(RescheduleInputSchema, { sessionDate: rawDate });
-    return this.change(actor, bookingId, "reschedule", (tx, b, now) => {
-      if (b.state !== "booked") this.cannot(b);
-      const periodStart = this.assertRoom(tx, b.offerId, sessionDate, now, b.id);
-      updateBooking(tx, b.id, { sessionDate, periodStart }, now.toISOString());
-      return { session_date: sessionDate };
-    });
+    return this.change(actor, bookingId, "reschedule", this.moveTo(sessionDate));
   }
 
   cancel(actor: CatalogueActor, bookingId: string): BookingView {
-    return this.change(actor, bookingId, "cancel", (tx, b, now) => {
-      if (b.state !== "booked") this.cannot(b);
-      updateBooking(tx, b.id, { state: "cancelled" }, now.toISOString());
-      return { state: "cancelled" };
-    });
+    return this.change(actor, bookingId, "cancel", this.setState("cancelled"));
   }
 
   markHeld(actor: CatalogueActor, bookingId: string): BookingView {
-    return this.change(actor, bookingId, "hold", (tx, b, now) => {
-      if (b.state !== "booked") this.cannot(b);
-      updateBooking(tx, b.id, { state: "held" }, now.toISOString());
-      return { state: "held" };
-    });
+    return this.change(actor, bookingId, "hold", this.setState("held"));
   }
 
   markNoShow(actor: CatalogueActor, bookingId: string): BookingView {
-    return this.change(actor, bookingId, "no_show", (tx, b, now) => {
-      if (b.state !== "booked") this.cannot(b);
-      updateBooking(tx, b.id, { state: "no_show" }, now.toISOString());
-      return { state: "no_show" };
-    });
+    return this.change(actor, bookingId, "no_show", this.setState("no_show"));
   }
 
   list(actor: CatalogueActor, offerId: string): BookingView[] {
@@ -213,12 +240,38 @@ export class BookingService {
     );
   }
 
-  private change(
+  private moveTo(sessionDate: string): Change {
+    return (tx, b, now) => {
+      const periodStart = this.assertRoom(tx, b.offerId, sessionDate, now, b.id);
+      updateBooking(tx, b.id, { sessionDate, periodStart }, now.toISOString());
+      return { session_date: sessionDate };
+    };
+  }
+
+  private setState(state: "cancelled" | "held" | "no_show"): Change {
+    return (tx, b, now) => {
+      updateBooking(tx, b.id, { state }, now.toISOString());
+      return { state };
+    };
+  }
+
+  /** Apply a change to a booked session inside the caller's transaction, and audit it. */
+  private changeIn(
+    tx: Tx,
     actor: CatalogueActor,
     bookingId: string,
     op: string,
-    apply: (tx: Tx, b: BookingRow, now: Date) => Record<string, unknown>,
+    apply: Change,
   ): BookingView {
+    const b = getBooking(tx, bookingId);
+    if (!b) throw new HttpError(404, "Booking not found");
+    if (b.state !== "booked") this.cannot(b);
+    const after = apply(tx, b, nowOf(actor));
+    this.audit(tx, actor, `offer.booking.${op}`, b, after);
+    return getBooking(tx, bookingId) as BookingRow;
+  }
+
+  private change(actor: CatalogueActor, bookingId: string, op: string, apply: Change): BookingView {
     return audited(
       this.db,
       actor,
@@ -227,13 +280,17 @@ export class BookingService {
       bookingId,
       () => {
         requirePermission(actor, "offers.bookings.edit");
-        const now = nowOf(actor);
         return this.db.transaction((tx) => {
-          const b = getBooking(tx, bookingId);
-          if (!b) throw new HttpError(404, "Booking not found");
-          const after = apply(tx, b, now);
-          this.audit(tx, actor, `offer.booking.${op}`, b, after);
-          return getBooking(tx, bookingId) as BookingRow;
+          if (getBooking(tx, bookingId)?.source === "workshop") {
+            throw new CatalogueRefusal(
+              409,
+              "Booking belongs to a workshop",
+              ["booking_owned_by_workshop"],
+              [],
+              "This booking belongs to a workshop. Change it from the workshop.",
+            );
+          }
+          return this.changeIn(tx, actor, bookingId, op, apply);
         });
       },
     );

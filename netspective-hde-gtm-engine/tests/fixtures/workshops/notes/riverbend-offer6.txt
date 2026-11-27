@@ -1,0 +1,6 @@
+Riverbend Health session notes (synthetic).
+encounter_start_time comes from the Synthetic clinical system over the HL7 v2 feed.
+Its completeness is known good according to the integration lead.
+lab_result_unit comes from the Synthetic laboratory system; the team reported a gap in quality because units are missing for some tests.
+The freshness of lab_result_unit is not known by anyone in the room.
+The other fields were not discussed.

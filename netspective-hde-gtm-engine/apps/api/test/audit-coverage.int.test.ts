@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_PHRASE_RULES, FOUNDATION_ROLE_PERMISSIONS, RULE_SET_V1 } from "@gtm/domain";
 import { buildIdentityFixture, type IdentityFixture } from "../test-support/identity-fixture.js";
+import { seedLinkedIntake } from "../test-support/workshop-seed.js";
+import { offer1Findings } from "../test-support/workshop-findings.js";
 
 // SC-002 and FR-010/011 across ALL routes (task T055). The route list comes from Fastify's registry, so
 // a state-changing route added without an entry in DRIVERS fails this test.
@@ -506,6 +508,172 @@ DRIVERS["PUT /api/v1/service-capabilities/:id/public-claim-status"] = async (f) 
     ...reader,
   };
 };
+
+// Feature 007 routes (workshops). Operators may change workshops, so the forbidden attempt uses a read-only
+// role. A booking also writes the feature 005 booking record.
+const workshopActor = (f: IdentityFixture) => ({
+  userId: "seed-lead",
+  actorType: "human" as const,
+  correlationId: null,
+  permissions: FOUNDATION_ROLE_PERMISSIONS.administrator,
+  now: () => f.clock.now,
+});
+const makeWorkshop = (f: IdentityFixture) =>
+  f.workshops.workshops.convert(workshopActor(f), seedLinkedIntake(f.db).requestId);
+DRIVERS["POST /api/v1/workshops"] = async (f) => ({
+  url: "/api/v1/workshops",
+  payload: { requestId: seedLinkedIntake(f.db).requestId },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/workshops/:id/transition"] = async (f) => ({
+  url: `/api/v1/workshops/${makeWorkshop(f).id}/transition`,
+  payload: { action: "book", lockNo: 1, scheduledAt: f.clock.now.toISOString() },
+  forbiddenRole: "read_only_executive",
+  successEvents: 2,
+});
+DRIVERS["POST /api/v1/workshops/:id/participants"] = async (f) => ({
+  url: `/api/v1/workshops/${makeWorkshop(f).id}/participants`,
+  payload: { side: "delivery", displayName: "Delivery Engineer" },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["DELETE /api/v1/workshops/:id/participants/:participantId"] = async (f) => {
+  const id = makeWorkshop(f).id;
+  const participant = f.workshops.participants.add(workshopActor(f), id, {
+    side: "buyer",
+    displayName: "Integration Lead",
+  });
+  return {
+    url: `/api/v1/workshops/${id}/participants/${participant.id}`,
+    forbiddenRole: "read_only_executive",
+  };
+};
+
+DRIVERS["POST /api/v1/workshops/:id/artifacts"] = async (f) => ({
+  url: `/api/v1/workshops/${makeWorkshop(f).id}/artifacts`,
+  payload: { kind: "specification", title: "Interface specification", reference: "Shared drive" },
+  forbiddenRole: "read_only_executive",
+});
+// Only a quarantine reviewer may decide, so the operator's attempt is the forbidden one. The decision is
+// recorded on the quarantine item and on the artifact.
+DRIVERS["POST /api/v1/workshop-artifacts/:artifactId/decision"] = async (f) => {
+  const held = await f.workshops.artifacts.record(workshopActor(f), makeWorkshop(f).id, {
+    kind: "scrubbed_rejection_log",
+    title: "Rejection log",
+    content: "Applicant SSN 000-12-3456 was submitted with the request.",
+  });
+  return {
+    url: `/api/v1/workshop-artifacts/${held.id}/decision`,
+    payload: { decision: "discard", reason: "Coverage check" },
+    successEvents: 2,
+  };
+};
+
+// Offer 1 takes three sessions a week, so each coverage workshop gets a week of its own.
+let workshopWeek = 0;
+async function heldWorkshop(f: IdentityFixture) {
+  const made = makeWorkshop(f);
+  const actor = workshopActor(f);
+  await f.workshops.workshops.transition(actor, made.id, {
+    action: "book",
+    lockNo: 1,
+    scheduledAt: new Date(f.clock.now.getTime() + ++workshopWeek * 7 * 86_400_000).toISOString(),
+  });
+  return f.workshops.workshops.transition(actor, made.id, { action: "hold", lockNo: 2 });
+}
+DRIVERS["PUT /api/v1/workshops/:id/findings"] = async (f) => ({
+  url: `/api/v1/workshops/${(await heldWorkshop(f)).id}/findings`,
+  payload: { content: offer1Findings() },
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/workshops/:id/findings/finalise"] = async (f) => {
+  const { id } = await heldWorkshop(f);
+  f.workshops.findings.save(workshopActor(f), id, { content: offer1Findings() });
+  return {
+    url: `/api/v1/workshops/${id}/findings/finalise`,
+    payload: {},
+    forbiddenRole: "read_only_executive",
+  };
+};
+DRIVERS["POST /api/v1/workshops/:id/findings/suggest"] = async (f) => {
+  const held = await heldWorkshop(f);
+  f.workshopRules.push({
+    task: "synthesis",
+    whenTextIncludes: [held.id],
+    respond: {
+      entityIds: { workshopId: held.id, accountId: held.accountId },
+      items: [],
+      confidence: "low",
+      rationale: "Nothing was found.",
+      reviewStatus: "unreviewed",
+    },
+    repeat: true,
+  });
+  return {
+    url: `/api/v1/workshops/${held.id}/findings/suggest`,
+    payload: { notes: "Synthetic session notes with nothing to suggest." },
+    forbiddenRole: "read_only_executive",
+  };
+};
+
+DRIVERS["POST /api/v1/workshops/:id/brief"] = async (f) => ({
+  url: `/api/v1/workshops/${makeWorkshop(f).id}/brief`,
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["POST /api/v1/workshops/:id/brief/:briefId/review"] = async (f) => {
+  const { id } = makeWorkshop(f);
+  const brief = await f.workshops.briefs.generate(workshopActor(f), id);
+  return {
+    url: `/api/v1/workshops/${id}/brief/${brief.id}/review`,
+    forbiddenRole: "read_only_executive",
+  };
+};
+
+async function finalisedWorkshop(f: IdentityFixture) {
+  const { id } = await heldWorkshop(f);
+  f.workshops.findings.save(workshopActor(f), id, { content: offer1Findings() });
+  f.workshops.findings.finalise(workshopActor(f), id);
+  return id;
+}
+async function draftedWorkshop(f: IdentityFixture) {
+  const id = await finalisedWorkshop(f);
+  const draft = f.workshops.outputs.generate(workshopActor(f), id);
+  return { id, draft };
+}
+DRIVERS["POST /api/v1/workshops/:id/output"] = async (f) => ({
+  url: `/api/v1/workshops/${await finalisedWorkshop(f)}/output`,
+  forbiddenRole: "read_only_executive",
+});
+DRIVERS["PUT /api/v1/workshops/:id/output"] = async (f) => {
+  const { id, draft } = await draftedWorkshop(f);
+  const { title, summary, nextStep, inScope, outOfScope } = draft.sections;
+  return {
+    url: `/api/v1/workshops/${id}/output`,
+    payload: {
+      baseRevisionNo: draft.revisionNo,
+      sections: { title, summary, nextStep, inScope, outOfScope },
+    },
+    forbiddenRole: "read_only_executive",
+  };
+};
+// An operator may edit a page but not approve it, so the operator's attempt is the forbidden one.
+DRIVERS["POST /api/v1/workshops/:id/output/approve"] = async (f) => ({
+  url: `/api/v1/workshops/${(await draftedWorkshop(f)).id}/output/approve`,
+});
+DRIVERS["POST /api/v1/workshops/:id/output/share"] = async (f) => {
+  const { id } = await draftedWorkshop(f);
+  await f.workshops.outputs.approve(workshopActor(f), id);
+  return {
+    url: `/api/v1/workshops/${id}/output/share`,
+    payload: { how: "handed_over" },
+    forbiddenRole: "read_only_executive",
+  };
+};
+
+DRIVERS["POST /api/v1/workshops/:id/effort"] = async (f) => ({
+  url: `/api/v1/workshops/${makeWorkshop(f).id}/effort`,
+  payload: { prepHours: 2, sessionHours: 1, people: 1 },
+  forbiddenRole: "read_only_executive",
+});
 
 /** Routes that cannot be driven through the fake issuer (none yet; webhook ingress arrives with US5). */
 // Feature 006 routes (recommendations and routing rule sets). Operators may recommend, so the forbidden

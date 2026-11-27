@@ -40,7 +40,7 @@ paths:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
     get:
       operationId: getWorkshop
-      summary: "One workshop with its intake, participants, history, checklist and latest brief, findings and output."
+      summary: "One workshop with its intake, participants, history, notices and capacity answer. Its artifacts, brief, findings, output and effort have their own operations."
       responses:
         '200': { description: "Workshop.", content: { application/json: { schema: { $ref: '#/components/schemas/Workshop' } } } }
         '403': { $ref: '#/components/responses/Problem' }
@@ -60,6 +60,7 @@ paths:
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
         '502': { $ref: '#/components/responses/Problem' }
   /workshops/{id}/participants:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
@@ -111,6 +112,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '413': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/Problem' }
   /workshop-artifacts/{artifactId}/decision:
     parameters: [ { in: path, name: artifactId, required: true, schema: { type: string } } ]
     post:
@@ -135,6 +137,7 @@ paths:
         '200': { description: "The text.", content: { text/plain: { schema: { type: string } } } }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
         '410': { $ref: '#/components/responses/Problem' }
   /workshops/{id}/brief:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
@@ -325,7 +328,7 @@ components:
     Id: { in: path, name: id, required: true, schema: { type: string } }
   responses:
     Problem:
-      description: "Problem details with stable codes (request_not_linked, offer_not_supported, workshop_open, invalid_transition, capacity_exhausted, booking_owned_by_workshop, offer_unavailable, calendar_failed, artifact_kind_not_allowed, binary_not_accepted, held_for_review, findings_incomplete, too_many_delay_sources, field_list_fixed, stale_version, output_not_ready, scope_section_missing, restricted_wording, price_stated, over_one_page, output_out_of_date, ai_unavailable, forbidden, phi_guard)."
+      description: "Problem details with stable codes (request_not_linked, offer_not_supported, workshop_open, unknown_workshop, unknown_request, invalid_transition, note_required, time_required, capacity_exhausted, booking_owned_by_workshop, contact_detail_not_accepted, contact_not_at_account, already_removed, already_approved, render_failed, generated_section_changed, unknown_brief, brief_already_reviewed, findings_not_draft, findings_not_open, correction_reason_required, disclaimer_changed, duration_stated, guarantee_stated, sample_record_not_accepted, reference_or_content_required, content_too_large, guard_unavailable, storage_failed, unknown_artifact, artifact_already_decided, content_purged, artifact_discarded, file_deleted, no_content, offer_unavailable, calendar_failed, artifact_kind_not_allowed, binary_not_accepted, held_for_review, findings_incomplete, too_many_delay_sources, field_list_fixed, stale_version, output_not_ready, scope_section_missing, restricted_wording, price_stated, over_one_page, output_out_of_date, ai_unavailable, forbidden, phi_guard)."
       content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
   schemas:
     EditableSections:
@@ -391,7 +394,7 @@ components:
     Artifact:
       type: object
       required: [id, kind, title, state, classification, recordedAt]
-      properties: { id: { type: string }, kind: { type: string }, title: { type: string }, reference: { type: [string, 'null'] }, hasContent: { type: boolean }, sizeBytes: { type: [integer, 'null'] }, state: { type: string, enum: [received, held, released, discarded] }, classification: { type: string, enum: [non_phi] }, holdRuleIds: { type: array, items: { type: string } }, recordedBy: { type: string }, recordedAt: { type: string, format: date-time }, fileDeletedAt: { type: [string, 'null'], format: date-time } }
+      properties: { id: { type: string }, kind: { type: string }, title: { type: string }, reference: { type: [string, 'null'] }, suppliedBy: { type: [string, 'null'] }, hasContent: { type: boolean }, sizeBytes: { type: [integer, 'null'] }, state: { type: string, enum: [received, held, released, discarded] }, classification: { type: string, enum: [non_phi] }, holdRuleIds: { type: array, items: { type: string } }, recordedBy: { type: string }, recordedAt: { type: string, format: date-time }, fileDeletedAt: { type: [string, 'null'], format: date-time } }
     ArtifactList:
       type: object
       required: [checklist, items]
@@ -438,6 +441,7 @@ components:
         current: { oneOf: [ { $ref: '#/components/schemas/Finding' }, { type: 'null' } ] }
         versions: { type: array, items: { $ref: '#/components/schemas/Finding' } }
         shortfalls: { type: array, items: { type: object, required: [code, waivable, message], properties: { code: { type: string }, waivable: { type: boolean }, message: { type: string } } } }
+        template: { type: object, description: "What a first draft starts from, present while nothing is saved." }
         summary: { type: object, description: "Offer 6: counts of known good, gap, unknown and not recorded; unknown is never merged into gap.", properties: { knownGood: { type: integer }, gap: { type: integer }, unknown: { type: integer }, notRecorded: { type: integer } } }
     Suggestion:
       type: object

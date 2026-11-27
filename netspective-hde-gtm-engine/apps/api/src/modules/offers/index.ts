@@ -1,6 +1,7 @@
 // Public entry point of the offers module (feature 005). Other modules import only this file or react to
 // its domain events.
 export { OfferService, VersionInputSchema, type OfferDetail } from "./service.js";
+export { offerFacts, type OfferFacts } from "./workshop-facts.js";
 export { OfferStatusService, MoveInputSchema } from "./status.js";
 export { OfferLimitations, LimitationInputSchema } from "./limitations.js";
 export {

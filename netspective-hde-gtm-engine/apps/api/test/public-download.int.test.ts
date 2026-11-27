@@ -133,7 +133,9 @@ describe("protection against automated submissions (V18)", () => {
   };
   it("refuses a missing, tampered or foreign token with one plain message and creates nothing", async () => {
     const form = await openForm();
-    for (const token of ["", "garbage", `${form.formToken}x`, form.formToken.replace(/.$/, "A")]) {
+    // The altered token must really differ: a signature can already end in "A".
+    const altered = form.formToken.replace(/.$/, (c) => (c === "A" ? "E" : "A"));
+    for (const token of ["", "garbage", `${form.formToken}x`, altered]) {
       const res = await post(bodyFor(form, { formToken: token || "short" }));
       expect(res.statusCode).toBe(400);
       expect(res.json().codes).toEqual(["form_rejected"]);
@@ -521,7 +523,7 @@ describe("Scenario C: the register download", () => {
       "northvale-hie.example",
       NORTHVALE,
     );
-    fx.files.remove("ccda-to-fhir-mapping-decision-register.pdf");
+    await fx.files.delete("ccda-to-fhir-mapping-decision-register.pdf");
     const form = await openForm();
     const res = await post(bodyFor(form));
     expect(res.statusCode).toBe(201);

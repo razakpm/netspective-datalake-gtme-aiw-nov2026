@@ -42,6 +42,12 @@ describe("permission-gated navigation", () => {
     expect(screen.getByRole("link", { name: "Notices" }).getAttribute("href")).toBe("/requests");
   });
 
+  it("shows Workshops with workshops.read (feature 007)", () => {
+    expect(visibleNavItems(["workshops.read"]).map((i) => i.label)).toEqual(["Workshops"]);
+    render(<Nav permissions={["workshops.read"]} />);
+    expect(screen.getByRole("link", { name: "Workshops" }).getAttribute("href")).toBe("/workshops");
+  });
+
   it("shows user administration only with users.manage", () => {
     render(<Nav permissions={["users.manage"]} />);
     expect(screen.getByRole("link", { name: "Users" }).getAttribute("href")).toBe("/admin/users");

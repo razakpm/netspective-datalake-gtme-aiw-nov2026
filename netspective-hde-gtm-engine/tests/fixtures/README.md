@@ -14,3 +14,5 @@ All data here is synthetic: organisations, people, pages, hosts (`.example`) and
   appear in the data blocks; `"$BLOCK:n"` stands for the id of the n-th data block. `respondRaw` returns text that
   is not valid JSON, `sequence` returns responses in order, `error` returns a provider error, `repeat` keeps the
   last response, `obeyInjection` makes the fake follow injected instructions.
+- `workshops/`: findings acceptance cases and synthetic session notes (feature 007).
+- `calendar/google/`: request and response shapes for the Google Calendar adapter; no live call is made.

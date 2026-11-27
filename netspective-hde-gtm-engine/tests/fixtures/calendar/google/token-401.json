@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://oauth2.googleapis.com/token"
+  },
+  "response": {
+    "status": 401,
+    "body": {
+      "error": "invalid_client",
+      "error_description": "Synthetic: the client was not recognised."
+    }
+  }
+}

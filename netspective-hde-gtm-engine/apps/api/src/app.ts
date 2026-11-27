@@ -34,6 +34,8 @@ import { buildRoutingStack, type RoutingStack } from "./routing-stack.js";
 import { buildEngagementStack, type EngagementStack } from "./engagement-stack.js";
 import { registerEngagementRoutes, registerPublicRoutes } from "./modules/engagement/index.js";
 import { buildResearchStack, type ResearchStack } from "./research-stack.js";
+import { registerWorkshopRoutes } from "./modules/workshops/index.js";
+import { buildWorkshopsStack, type WorkshopsStack } from "./workshops-stack.js";
 
 // Composition root: builds the database, services and routes from configuration. The persistence is
 // SQLite for the first version (ADR-015); the Postgres adapter replaces `SqliteDatabase` here.
@@ -51,6 +53,9 @@ export interface Services {
   catalogue: CatalogueStack;
   routing: RoutingStack;
   engagement: EngagementStack;
+  workshops: WorkshopsStack;
+  /** One per process, so operator alerts are rate limited across every path. */
+  phiNotifier: PhiNotifier;
 }
 
 export function openDatabase(path: string): SqliteDatabase {
@@ -86,23 +91,38 @@ export function buildServices(config: AppConfig, db: SqliteDatabase): Services {
     hypotheses: research.hypotheses,
     gateway: research.gateway,
   });
+  const quarantine = new QuarantineService(
+    db,
+    config.quarantineEncryptionKey ?? "dev-only-quarantine-key-not-for-production-use",
+    config.retention.quarantineDays,
+  );
+  const engagement = buildEngagementStack({ db, config, routing });
+  const phiNotifier = new PhiNotifier();
   return {
     db,
+    phiNotifier,
     identity: new IdentityService(db),
     accounts: new AccountService(db),
     signals,
     signalReviews: new ReviewService(db),
     signalSources: new SourceService(db, config.signals.excerptMaxChars),
-    quarantine: new QuarantineService(
-      db,
-      config.quarantineEncryptionKey ?? "dev-only-quarantine-key-not-for-production-use",
-      config.retention.quarantineDays,
-    ),
+    quarantine,
     jobs,
     research,
     catalogue,
     routing,
-    engagement: buildEngagementStack({ db, config, routing }),
+    engagement,
+    workshops: buildWorkshopsStack({
+      db,
+      config,
+      catalogue,
+      files: engagement.files,
+      quarantine,
+      notifier: phiNotifier,
+      gateway: research.gateway,
+      accountRemaining: research.accountRemaining,
+      hypotheses: research.hypotheses,
+    }),
   };
 }
 
@@ -138,11 +158,10 @@ export async function buildHttpApp(config: AppConfig, logger: Logger, services: 
       services.identity.resolvePrincipal(identity, correlationId),
     auditDenied: (event) => services.identity.recordDenied(event),
   });
-  const notifier = new PhiNotifier();
   return buildServer({
     config,
     logger,
-    phiGuardSink: createPhiGuardSink(services.db, notifier),
+    phiGuardSink: createPhiGuardSink(services.db, services.phiNotifier),
     routes: async (app) => {
       registerIdentityRoutes(app, { db: services.db, service: services.identity, authz });
       registerAuditRoutes(app, { db: services.db, authz });
@@ -197,6 +216,19 @@ export async function buildHttpApp(config: AppConfig, logger: Logger, services: 
         db: services.db,
         requests: services.engagement.requests,
         notices: services.engagement.notices,
+        authz,
+      });
+      registerWorkshopRoutes(app, {
+        db: services.db,
+        workshops: services.workshops.workshops,
+        participants: services.workshops.participants,
+        artifacts: services.workshops.artifacts,
+        findings: services.workshops.findings,
+        suggest: services.workshops.suggest,
+        briefs: services.workshops.briefs,
+        outputs: services.workshops.outputs,
+        effort: services.workshops.effort,
+        artifactMaxBytes: services.workshops.artifactMaxBytes,
         authz,
       });
       registerRecommendationRoutes(app, {

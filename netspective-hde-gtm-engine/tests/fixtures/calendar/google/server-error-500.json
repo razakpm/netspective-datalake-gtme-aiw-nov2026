@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://www.googleapis.com/calendar/v3/calendars/workshops%40calendar.example/events?sendUpdates=none"
+  },
+  "response": {
+    "status": 500,
+    "body": {
+      "error": {
+        "code": 500,
+        "message": "Synthetic: backend error."
+      }
+    }
+  }
+}

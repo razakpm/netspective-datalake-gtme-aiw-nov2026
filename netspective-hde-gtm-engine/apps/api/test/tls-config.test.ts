@@ -15,6 +15,7 @@ const compliant = {
   FORM_TOKEN_KEY: "f".repeat(32),
   LLM_PROVIDER: "anthropic",
   ANTHROPIC_API_KEY: "k".repeat(16),
+  PDF_RENDERER: "playwright",
 };
 
 function problemsFor(

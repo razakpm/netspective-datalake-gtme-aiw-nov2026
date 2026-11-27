@@ -82,6 +82,11 @@ const PERMISSION_DESCRIPTIONS: Readonly<Record<Permission, string>> = {
     "Create and activate routing rule set versions (service lead or administrator only)",
   "notices.manage": "Draft privacy notice and consent wording versions",
   "notices.approve": "Approve notice and consent wording before a form shows it (approvers only)",
+  "workshops.read": "View workshops, artifacts, briefs, findings, outputs and effort",
+  "workshops.edit":
+    "Convert, book and run workshops, record artifacts, findings, outputs and effort",
+  "workshops.output.approve":
+    "Approve a workshop's buyer output (service lead or administrator only)",
 };
 
 export function seedReference(tx: Tx): void {

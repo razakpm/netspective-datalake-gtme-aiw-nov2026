@@ -1,0 +1,6 @@
+Northvale HIE session notes (synthetic).
+A new sender registers, receives the implementation guide and submits test messages.
+Test messages wait about 2 weeks for a manual review of rejections, which the exchange team does.
+The sender said it rebuilds its interface after each implementation guide change.
+Nobody could say how many rejections repeat after a fix.
+Next step agreed: collect one month of scrubbed rejection logs.

@@ -162,7 +162,7 @@ Sharing records who, when and how (`handed_over`, `copied_link`, `other`) in the
 
 ## R-17 Retention
 
-**Decision**: a daily worker job `workshops.retention` (registered with the others, off until `WORKSHOP_RETENTION_JOB_ENABLED=true`) deletes artifact and output files for workshops whose end state (`closed_at`, set on closed, cancelled and no-show) is more than `WORKSHOP_RETENTION_MONTHS` (default 12) in the past, and for workshops with no end state whose `updated_at` is that old, sets `file_deleted_at` on their rows, and audits each deletion without content. Metadata, findings and the audit trail stay. Held artifacts follow the quarantine hold period.
+**Decision**: a daily worker job `workshops.retention` (registered with the others, off until `WORKSHOP_RETENTION_JOB_ENABLED=true`) deletes artifact and output files for workshops whose end state (`closed_at`, set on closed, cancelled and no-show) is more than `WORKSHOP_RETENTION_MONTHS` (default 12) in the past, and for workshops with no end state whose last change (the workshop, or its newest artifact, findings or page) is that old, sets `file_deleted_at` on their rows, and audits each deletion without content. Metadata, findings and the audit trail stay. Held artifacts follow the quarantine hold period.
 
 ## R-18 Configuration
 

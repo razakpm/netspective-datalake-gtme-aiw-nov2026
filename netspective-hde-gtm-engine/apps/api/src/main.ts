@@ -6,6 +6,7 @@ import { tickSchedules } from "./modules/jobs/index.js";
 import { HandlerRegistry } from "./worker/registry.js";
 import { registerCatalogueHandlers } from "./worker/catalogue-handlers.js";
 import { registerResearchHandlers } from "./worker/research-handlers.js";
+import { registerWorkshopHandlers } from "./worker/workshop-handlers.js";
 
 // Entry point. One codebase runs the HTTP role, the worker role, or both: `--role http|worker|both`
 // overrides APP_ROLE (spec FR-023, task T078). Persistence is SQLite for the first version (ADR-015);
@@ -53,6 +54,7 @@ async function main(): Promise<void> {
         }).staled,
     });
     registerCatalogueHandlers(registry, { staleness: services.catalogue.claimStaleness });
+    registerWorkshopHandlers(registry, { retention: services.workshops.retention });
     worker = new Worker({ service: services.jobs, registry, logger });
     worker.start();
     // Recurring jobs: the research schedule tick (hourly) and the hypothesis staleness check (daily).
@@ -62,6 +64,15 @@ async function main(): Promise<void> {
           { name: "research.schedule", queue: "research.schedule", everySeconds: 3600 },
           { name: "hypotheses.staleness", queue: "hypotheses.staleness", everySeconds: 86_400 },
           { name: "claims.staleness", queue: "claims.staleness", everySeconds: 86_400 },
+          ...(config.workshops.retentionJobEnabled
+            ? [
+                {
+                  name: "workshops.retention",
+                  queue: "workshops.retention",
+                  everySeconds: 86_400,
+                },
+              ]
+            : []),
         ]);
       } catch (error) {
         logger.warn({ err: error }, "could not enqueue recurring jobs");

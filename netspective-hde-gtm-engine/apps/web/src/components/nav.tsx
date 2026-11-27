@@ -15,6 +15,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Offers", href: "/offers", permission: "offers.read" },
   { label: "Requests", href: "/requests", permission: "requests.read" },
   { label: "Notices", href: "/requests", permission: "notices.manage" },
+  { label: "Workshops", href: "/workshops", permission: "workshops.read" },
   { label: "Capabilities", href: "/capabilities", permission: "capabilities.read" },
   { label: "Claims", href: "/claims", permission: "claims.read" },
   { label: "Webhooks", href: "/webhooks", permission: "webhooks.read" },

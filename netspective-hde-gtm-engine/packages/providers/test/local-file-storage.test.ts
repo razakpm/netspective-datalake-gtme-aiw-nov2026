@@ -1,4 +1,11 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -45,7 +52,6 @@ describe("LocalFileStorage", () => {
   });
   it("does not follow a symbolic link out of the directory", async () => {
     const { dir, files } = store();
-    const { symlinkSync } = await import("node:fs");
     symlinkSync("/etc/hostname", join(dir, "link.txt"));
     expect(await files.get("link.txt")).toBeNull();
   });
@@ -61,5 +67,76 @@ describe("LocalFileStorage", () => {
       ok: false,
       reason: "invalid",
     });
+  });
+});
+
+describe("LocalFileStorage write side (feature 007)", () => {
+  const bytes = Buffer.from("synthetic upload");
+
+  it("stores a file and reads it back, creating the directory if it is absent", async () => {
+    const dir = join(mkdtempSync(join(tmpdir(), "gtm-files-")), "not-yet-there");
+    const files = new LocalFileStorage(dir, KEY);
+    expect(await files.put("workshop-w1-specification-a1.txt", bytes, "text/plain")).toEqual({
+      ok: true,
+    });
+    const got = await files.get("workshop-w1-specification-a1.txt");
+    expect(got?.size).toBe(bytes.length);
+    expect(await read(got)).toBe("synthetic upload");
+    expect(readdirSync(dir)).toEqual(["workshop-w1-specification-a1.txt"]);
+  });
+  it("refuses to overwrite unless asked", async () => {
+    const { files } = store();
+    expect(await files.put("notes.txt", bytes, "text/plain")).toEqual({
+      ok: false,
+      reason: "exists",
+    });
+    expect(await read(await files.get("notes.txt"))).toBe("plain");
+    expect(await files.put("notes.txt", bytes, "text/plain", { overwrite: true })).toEqual({
+      ok: true,
+    });
+    expect(await read(await files.get("notes.txt"))).toBe("synthetic upload");
+  });
+  it.each(["../secret", "..", "/etc/passwd", "sub/dir.pdf", "a\\b", "", ".hidden", "x\0y"])(
+    "refuses to write or delete the unsafe key %j",
+    async (key) => {
+      const { files } = store();
+      expect(await files.put(key, bytes, "text/plain")).toEqual({
+        ok: false,
+        reason: "unsafe_key",
+      });
+      expect(await files.delete(key)).toBe(false);
+    },
+  );
+  it("does not write through or delete a symbolic link", async () => {
+    const { dir, files } = store();
+    const target = join(mkdtempSync(join(tmpdir(), "gtm-outside-")), "outside.txt");
+    writeFileSync(target, "outside");
+    symlinkSync(target, join(dir, "link.txt"));
+    expect(await files.put("link.txt", bytes, "text/plain")).toEqual({
+      ok: false,
+      reason: "exists",
+    });
+    expect(await files.delete("link.txt")).toBe(false);
+    expect(await files.put("link.txt", bytes, "text/plain", { overwrite: true })).toEqual({
+      ok: true,
+    });
+    expect(readFileSync(target, "utf8")).toBe("outside");
+  });
+  it("leaves no readable or temporary file when a write fails", async () => {
+    const { dir, files } = store();
+    mkdirSync(join(dir, "taken.txt"));
+    const before = readdirSync(dir).sort();
+    expect(await files.put("taken.txt", bytes, "text/plain", { overwrite: true })).toEqual({
+      ok: false,
+      reason: "write_failed",
+    });
+    expect(await files.get("taken.txt")).toBeNull();
+    expect(readdirSync(dir).sort()).toEqual(before);
+  });
+  it("deletes a file and treats deleting a missing one as done", async () => {
+    const { files } = store();
+    expect(await files.delete("notes.txt")).toBe(true);
+    expect(await files.get("notes.txt")).toBeNull();
+    expect(await files.delete("notes.txt")).toBe(true);
   });
 });

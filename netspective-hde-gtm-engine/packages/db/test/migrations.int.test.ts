@@ -48,6 +48,8 @@ describe("migrations", () => {
       "0020_routing.sql",
       "0021_engagement.sql",
       "0022_intake.sql",
+      "0023_workshops.sql",
+      "0024_workshop_findings.sql",
     ]);
     expect(migrate(db)).toEqual([]);
     const tables = (
@@ -145,6 +147,8 @@ describe("reference seed", () => {
         "requests.read",
         "requests.review",
         "waitlist.edit",
+        "workshops.edit",
+        "workshops.read",
       ].sort(),
     );
     expect(byRole["read_only_executive"]).toEqual(
@@ -161,9 +165,10 @@ describe("reference seed", () => {
         "capabilities.read",
         "offers.read",
         "claims.read",
+        "workshops.read",
       ].sort(),
     );
-    expect(byRole["administrator"]).toHaveLength(54);
+    expect(byRole["administrator"]).toHaveLength(57);
     expect(byRole["campaign_approver"]).toEqual(
       [
         "claims.approve",

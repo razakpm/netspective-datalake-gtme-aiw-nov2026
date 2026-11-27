@@ -58,6 +58,8 @@ pnpm test:e2e             # Playwright, workspace steps (run on request; needs C
 pnpm lint && pnpm typecheck && pnpm format
 ```
 
-The real PDF adapter is exercised on request with `PDF_RENDERER=playwright` and Chromium installed (`pnpm --filter @gtm/web exec playwright install chromium`); the fake renderer is used everywhere else.
+The real PDF adapter is exercised on request with `PDF_RENDERER=playwright` and Chromium installed (`pnpm --filter @gtm/web exec playwright install chromium`); the fake renderer is used everywhere else. A production image must install that Chromium binary itself; the current API image does not (open question #53).
+
+The provider test of the real renderer runs with `PDF_RENDERER_REAL=1 pnpm test packages/providers/test/pdf-renderer.test.ts`.
 
 All numeric defaults, the retention period, the one-page budget, the question lists, the role mapping and the text-only upload rule are hypotheses (open question #53).

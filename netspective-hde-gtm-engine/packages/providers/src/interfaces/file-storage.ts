@@ -1,15 +1,28 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Readable } from "node:stream";
 
-// File storage provider interface (feature 006, research R-10): the minimal slice of feature 001's storage
-// provider needed to deliver the register. Links are signed with an HMAC and carry their own expiry, so no
-// table or email is needed. A key is a plain file name; nothing outside the store's directory is readable.
+// File storage provider interface (feature 006, research R-10; write side feature 007, research R-11): the
+// minimal slice of feature 001's storage provider. Links are signed with an HMAC and carry their own expiry,
+// so no table or email is needed. A key is a plain file name; nothing outside the store's directory is
+// readable or writable, and a symbolic link is never followed.
 
 export interface StoredFile {
   stream: Readable;
   size: number;
   contentType: string;
 }
+
+export type PutResult =
+  { ok: true } | { ok: false; reason: "unsafe_key" | "exists" | "write_failed" };
+
+export interface PutOptions {
+  /** Without this an existing key is never replaced. */
+  overwrite?: boolean;
+}
+
+const SAFE_KEY = /^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/;
+/** A plain file name: no path separators, no leading dot, no traversal. */
+export const isSafeFileKey = (key: string): boolean => SAFE_KEY.test(key) && !key.includes("..");
 
 export type VerifiedToken =
   { ok: true; key: string; expiresAt: Date } | { ok: false; reason: "expired" | "invalid" };
@@ -18,6 +31,10 @@ export interface FileStorageProvider {
   readonly name: string;
   /** A readable stream for the key, or null when it does not exist or the key is unsafe. */
   get(key: string): Promise<StoredFile | null>;
+  /** Stores the whole file or nothing: a failed write never leaves a readable file. */
+  put(key: string, bytes: Buffer, contentType: string, options?: PutOptions): Promise<PutResult>;
+  /** True when the file is gone afterwards (also when it was never there). */
+  delete(key: string): Promise<boolean>;
   /** An opaque token that proves the holder may fetch `key` until `expiresAt`. */
   sign(key: string, expiresAt: Date): string;
   verify(token: string, now: Date): VerifiedToken;

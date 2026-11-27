@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://www.googleapis.com/calendar/v3/calendars/workshops%40calendar.example/events?sendUpdates=none"
+  },
+  "response": {
+    "status": 429,
+    "body": {
+      "error": {
+        "code": 429,
+        "message": "Synthetic: rate limit exceeded."
+      }
+    }
+  }
+}

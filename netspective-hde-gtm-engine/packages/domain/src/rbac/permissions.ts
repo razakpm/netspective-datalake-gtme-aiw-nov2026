@@ -61,6 +61,10 @@ export const PERMISSIONS = [
   "routing.rules.manage",
   "notices.manage",
   "notices.approve",
+  // Feature 007 (workshop operations). Role mapping is a hypothesis (open question #53).
+  "workshops.read",
+  "workshops.edit",
+  "workshops.output.approve",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -85,6 +89,7 @@ const READERS = [
   "capabilities.read",
   "offers.read",
   "claims.read",
+  "workshops.read",
 ] as const;
 
 // Feature 005: the service lead also covers delivery-lead duties (no separate role exists yet).
@@ -127,6 +132,7 @@ export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Perm
     "hypotheses.edit",
     "claims.draft",
     ...OPERATOR_OFFER_ROUTING,
+    "workshops.edit",
   ],
   research_analyst: [
     ...READERS,
@@ -145,6 +151,8 @@ export const FOUNDATION_ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Perm
     ...SERVICE_LEAD_CATALOGUE,
     ...OPERATOR_OFFER_ROUTING,
     "routing.rules.manage",
+    "workshops.edit",
+    "workshops.output.approve",
   ],
   campaign_approver: [
     "claims.read",

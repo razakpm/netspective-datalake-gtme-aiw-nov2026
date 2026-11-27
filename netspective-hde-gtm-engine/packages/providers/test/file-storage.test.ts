@@ -58,3 +58,42 @@ describe("FakeFileStorage", () => {
     expect(files.verify(token, later(30))).toEqual({ ok: false, reason: "expired" });
   });
 });
+
+describe("FakeFileStorage write side (feature 007)", () => {
+  const bytes = Buffer.from("synthetic upload");
+
+  it("refuses to overwrite unless asked, and refuses an unsafe key", async () => {
+    const files = new FakeFileStorage(KEY);
+    expect(await files.put("a.txt", bytes, "text/plain")).toEqual({ ok: true });
+    expect(await files.put("a.txt", bytes, "text/plain")).toEqual({ ok: false, reason: "exists" });
+    expect(await files.put("a.txt", bytes, "text/plain", { overwrite: true })).toEqual({
+      ok: true,
+    });
+    expect(await files.put("../a.txt", bytes, "text/plain")).toEqual({
+      ok: false,
+      reason: "unsafe_key",
+    });
+  });
+  it("deletes and is idempotent", async () => {
+    const files = new FakeFileStorage(KEY);
+    await files.put("a.txt", bytes, "text/plain");
+    expect(await files.delete("a.txt")).toBe(true);
+    expect(await files.get("a.txt")).toBeNull();
+    expect(await files.delete("a.txt")).toBe(true);
+    expect(await files.delete("../a.txt")).toBe(false);
+  });
+  it("can be told to fail a write or a delete", async () => {
+    const files = new FakeFileStorage(KEY);
+    files.failNext("put");
+    expect(await files.put("a.txt", bytes, "text/plain")).toEqual({
+      ok: false,
+      reason: "write_failed",
+    });
+    expect(await files.get("a.txt")).toBeNull();
+    await files.put("a.txt", bytes, "text/plain");
+    files.failNext("delete");
+    expect(await files.delete("a.txt")).toBe(false);
+    expect(await files.get("a.txt")).not.toBeNull();
+    expect(await files.delete("a.txt")).toBe(true);
+  });
+});

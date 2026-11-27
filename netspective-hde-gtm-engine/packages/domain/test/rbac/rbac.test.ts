@@ -53,6 +53,8 @@ describe("effective permissions", () => {
         "stakeholders.edit",
         "waitlist.edit",
         "webhooks.read",
+        "workshops.edit",
+        "workshops.read",
       ].sort(),
     );
   });
@@ -108,6 +110,27 @@ describe("effective permissions", () => {
     ]);
     expect(holders("paid_types.approve")).toEqual(["sales_service_lead", "administrator"]);
     expect(holders("capabilities.examples.read")).toEqual(["sales_service_lead", "administrator"]);
+  });
+
+  it("keeps workshop permissions with the right roles (feature 007)", () => {
+    expect(isRestrictedPermission("workshops.output.approve")).toBe(true);
+    expect(isRestrictedPermission("workshops.edit")).toBe(false);
+    const holders = (p: string) =>
+      ROLE_KEYS.filter((r) => (FOUNDATION_ROLE_PERMISSIONS[r] as readonly string[]).includes(p));
+    expect(holders("workshops.read")).toEqual([
+      "gtm_operator",
+      "research_analyst",
+      "technical_sme_reviewer",
+      "sales_service_lead",
+      "administrator",
+      "read_only_executive",
+    ]);
+    expect(holders("workshops.edit")).toEqual([
+      "gtm_operator",
+      "sales_service_lead",
+      "administrator",
+    ]);
+    expect(holders("workshops.output.approve")).toEqual(["sales_service_lead", "administrator"]);
   });
 
   it("has no deny rules: adding a role never removes a permission", () => {

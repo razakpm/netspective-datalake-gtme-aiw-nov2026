@@ -111,6 +111,7 @@ describe("typed config", () => {
       FORM_TOKEN_KEY: "f".repeat(32),
       LLM_PROVIDER: "anthropic",
       ANTHROPIC_API_KEY: "k".repeat(16),
+      PDF_RENDERER: "playwright",
     };
     expect(() => loadConfig({ ...production })).not.toThrow();
     const withoutKey: Record<string, string> = { ...production };
@@ -208,7 +209,12 @@ describe("feature 004 configuration", () => {
     };
     expect(() => loadConfig(production)).toThrow(/LLM_PROVIDER/);
     expect(() =>
-      loadConfig({ ...production, LLM_PROVIDER: "anthropic", ANTHROPIC_API_KEY: "k".repeat(16) }),
+      loadConfig({
+        ...production,
+        LLM_PROVIDER: "anthropic",
+        ANTHROPIC_API_KEY: "k".repeat(16),
+        PDF_RENDERER: "playwright",
+      }),
     ).not.toThrow();
   });
   it("scrubs the API key from logs and never echoes it in an error", () => {
@@ -330,5 +336,153 @@ describe("feature 006 configuration (hypotheses)", () => {
       FORM_TOKEN_KEY: "f".repeat(32),
     });
     expect(c.secretValues).toEqual(expect.arrayContaining(["d".repeat(32), "f".repeat(32)]));
+  });
+});
+
+describe("feature 007 configuration (hypotheses)", () => {
+  const google = {
+    CALENDAR_PROVIDER: "google",
+    CALENDAR_GOOGLE_ENABLED: "true",
+    GOOGLE_CALENDAR_ID: "workshops-calendar.example",
+    GOOGLE_CLIENT_ID: "client-id.example",
+    GOOGLE_CLIENT_SECRET: "synthetic-client-secret",
+    GOOGLE_REFRESH_TOKEN: "synthetic-refresh-token",
+  };
+  const production = {
+    ...baseEnv,
+    DATABASE_URL: "postgres://gtm:x@db.example.org:5432/gtm?sslmode=verify-full",
+    NODE_ENV: "production",
+    OIDC_ISSUER_URL: "https://login.example.org",
+    OIDC_AUDIENCE: "gtm-engine",
+    QUARANTINE_ENCRYPTION_KEY: "x".repeat(32),
+    SUPPRESSION_HASH_KEY: "y".repeat(32),
+    DOWNLOAD_SIGNING_KEY: "d".repeat(32),
+    FORM_TOKEN_KEY: "f".repeat(32),
+    LLM_PROVIDER: "anthropic",
+    ANTHROPIC_API_KEY: "k".repeat(16),
+    PDF_RENDERER: "playwright",
+  };
+  const variables = (env: Record<string, string>): string[] => {
+    try {
+      loadConfig(env);
+      return [];
+    } catch (error) {
+      return (error as ConfigError).problems.map((p) => p.variable);
+    }
+  };
+
+  it("has the documented defaults: everything external is off", () => {
+    const c = loadConfig({ ...baseEnv });
+    expect(c.calendar).toEqual({ provider: "none", google: undefined });
+    expect(c.workshops).toEqual({
+      ai: false,
+      aiCapMicros: 200_000,
+      pdfRenderer: "fake",
+      minutes: { offer1: 45, offer6: 90 },
+      artifactMaxBytes: 1_048_576,
+      artifactKinds: [
+        "specification",
+        "timeline",
+        "scrubbed_rejection_log",
+        "interface_description",
+        "field_list",
+        "other_non_phi",
+      ],
+      uploadQuarantine: true,
+      retentionMonths: 12,
+      retentionJobEnabled: false,
+      outputMaxChars: 3500,
+    });
+  });
+  it("lets the environment override each value", () => {
+    const c = loadConfig({
+      ...baseEnv,
+      CALENDAR_PROVIDER: "fake",
+      WORKSHOP_AI: "on",
+      WORKSHOP_AI_CAP: "0.05",
+      PDF_RENDERER: "playwright",
+      WORKSHOP_MINUTES_OFFER_1: "30",
+      WORKSHOP_MINUTES_OFFER_6: "120",
+      WORKSHOP_ARTIFACT_MAX_BYTES: "2048",
+      WORKSHOP_ARTIFACT_KINDS: " specification , timeline ,",
+      WORKSHOP_UPLOAD_QUARANTINE: "false",
+      WORKSHOP_RETENTION_MONTHS: "6",
+      WORKSHOP_RETENTION_JOB_ENABLED: "true",
+      OUTPUT_MAX_CHARS: "2000",
+    });
+    expect(c.calendar.provider).toBe("fake");
+    expect(c.workshops).toEqual({
+      ai: true,
+      aiCapMicros: 50_000,
+      pdfRenderer: "playwright",
+      minutes: { offer1: 30, offer6: 120 },
+      artifactMaxBytes: 2048,
+      artifactKinds: ["specification", "timeline"],
+      uploadQuarantine: false,
+      retentionMonths: 6,
+      retentionJobEnabled: true,
+      outputMaxChars: 2000,
+    });
+  });
+  it("takes the model cap from the interpretation cap when it has none of its own", () => {
+    const c = loadConfig({ ...baseEnv, INTERPRETATION_COST_CAP: "0.10" });
+    expect(c.workshops.aiCapMicros).toBe(100_000);
+  });
+  it("rejects out-of-range and malformed values", () => {
+    for (const [name, bad] of [
+      ["CALENDAR_PROVIDER", "outlook"],
+      ["WORKSHOP_AI", "yes"],
+      ["WORKSHOP_AI_CAP", "free"],
+      ["PDF_RENDERER", "wkhtml"],
+      ["WORKSHOP_MINUTES_OFFER_1", "14"],
+      ["WORKSHOP_MINUTES_OFFER_6", "241"],
+      ["WORKSHOP_ARTIFACT_MAX_BYTES", "0"],
+      ["WORKSHOP_ARTIFACT_KINDS", " , "],
+      ["WORKSHOP_ARTIFACT_KINDS", "Patient Extract"],
+      ["WORKSHOP_RETENTION_MONTHS", "121"],
+      ["OUTPUT_MAX_CHARS", "10"],
+    ] as const) {
+      expect(() => loadConfig({ ...baseEnv, [name]: bad })).toThrow(new RegExp(name));
+    }
+  });
+  it("uses Google only with the switch and all four credentials", () => {
+    expect(loadConfig({ ...baseEnv, ...google }).calendar.google).toEqual({
+      calendarId: "workshops-calendar.example",
+      clientId: "client-id.example",
+      clientSecret: "synthetic-client-secret",
+      refreshToken: "synthetic-refresh-token",
+    });
+    expect(variables({ ...baseEnv, ...google, CALENDAR_GOOGLE_ENABLED: "false" })).toContain(
+      "CALENDAR_GOOGLE_ENABLED",
+    );
+    expect(variables({ ...baseEnv, CALENDAR_PROVIDER: "google" })).toEqual([
+      "CALENDAR_GOOGLE_ENABLED",
+      "GOOGLE_CALENDAR_ID",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "GOOGLE_REFRESH_TOKEN",
+    ]);
+    // Credentials left in the environment do nothing while the provider is not google.
+    const off = loadConfig({ ...baseEnv, ...google, CALENDAR_PROVIDER: "none" });
+    expect(off.calendar.google).toBeUndefined();
+  });
+  it("scrubs the four Google values from logs", () => {
+    const c = loadConfig({ ...baseEnv, ...google });
+    expect(c.secretValues).toEqual(
+      expect.arrayContaining([
+        google.GOOGLE_CALENDAR_ID,
+        google.GOOGLE_CLIENT_ID,
+        google.GOOGLE_CLIENT_SECRET,
+        google.GOOGLE_REFRESH_TOKEN,
+      ]),
+    );
+  });
+  it("refuses the fake calendar and the fake PDF renderer in production", () => {
+    expect(variables(production)).toEqual([]);
+    expect(variables({ ...production, CALENDAR_PROVIDER: "fake" })).toEqual(["CALENDAR_PROVIDER"]);
+    expect(variables({ ...production, PDF_RENDERER: "fake" })).toEqual(["PDF_RENDERER"]);
+    const unset: Record<string, string> = { ...production };
+    delete unset["PDF_RENDERER"];
+    expect(variables(unset)).toEqual(["PDF_RENDERER"]);
   });
 });

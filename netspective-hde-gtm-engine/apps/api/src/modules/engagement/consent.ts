@@ -25,6 +25,23 @@ export function recordConsent(
   return id;
 }
 
+/** Consent was given at some point and the latest record says no (feature 007 notices). */
+export function consentWithdrawn(
+  tx: Tx,
+  who: { contactId: string | null; emailHash: string | null },
+): boolean {
+  const rows = tx
+    .prepare(
+      `SELECT consent_given FROM consent_record
+       WHERE (? IS NOT NULL AND contact_id = ?) OR (? IS NOT NULL AND email_hash = ?)
+       ORDER BY recorded_at DESC, rowid DESC`,
+    )
+    .all(who.contactId, who.contactId, who.emailHash, who.emailHash) as {
+    consent_given: number;
+  }[];
+  return rows[0]?.consent_given === 0 && rows.some((r) => r.consent_given === 1);
+}
+
 /** The routing context's consent port, read from the consent records. */
 export class ConsentLookup implements ConsentReader {
   constructor(private readonly db: SqliteDatabase) {}

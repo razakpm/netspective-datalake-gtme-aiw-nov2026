@@ -19,17 +19,22 @@ const int = (fallback: number, min = 1, max = Number.MAX_SAFE_INTEGER) =>
 const flag = z.enum(["true", "false"]).optional();
 
 /** A decimal amount such as "2.00" (at most 6 decimals), kept as text until converted to micro-units. */
-const money = (fallback: string) =>
-  z
-    .string()
-    .regex(/^[0-9]{1,6}(\.[0-9]{1,6})?$/, "must be a decimal amount such as 2.00")
-    .default(fallback);
+const amount = z
+  .string()
+  .regex(/^[0-9]{1,6}(\.[0-9]{1,6})?$/, "must be a decimal amount such as 2.00");
+const money = (fallback: string) => amount.default(fallback);
 
 /** Decimal text to integer micro-units, without floating point. */
 export function toMicros(amount: string): number {
   const [whole = "0", frac = ""] = amount.split(".");
   return Number(whole) * 1_000_000 + Number(frac.padEnd(6, "0").slice(0, 6));
 }
+
+const commaList = (value: string): string[] =>
+  value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
 
 const postgresUrl = z.string({ error: "is required" }).refine(
   (value) => {
@@ -165,6 +170,37 @@ const EnvSchema = z.object({
   FORM_TOKEN_KEY: z.string().min(32).optional(),
   RECOMMENDATION_AI: z.enum(["on", "off"]).default("off"),
   SUPPORTED_MIN_BAND: z.enum(["low", "medium", "high"]).default("medium"),
+
+  // Feature 007 (hypotheses, open question #53): workshops, calendar, artifacts, outputs, retention.
+  CALENDAR_PROVIDER: z.enum(["none", "fake", "google"]).default("none"),
+  CALENDAR_GOOGLE_ENABLED: flag,
+  GOOGLE_CALENDAR_ID: z.string().min(1).optional(),
+  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(8).optional(),
+  GOOGLE_REFRESH_TOKEN: z.string().min(8).optional(),
+  WORKSHOP_AI: z.enum(["on", "off"]).default("off"),
+  // Falls back to INTERPRETATION_COST_CAP when unset.
+  WORKSHOP_AI_CAP: amount.optional(),
+  PDF_RENDERER: z.enum(["fake", "playwright"]).optional(),
+  WORKSHOP_MINUTES_OFFER_1: int(45, 15, 240),
+  WORKSHOP_MINUTES_OFFER_6: int(90, 15, 240),
+  WORKSHOP_ARTIFACT_MAX_BYTES: int(1_048_576, 1, 10_485_760),
+  WORKSHOP_ARTIFACT_KINDS: z
+    .string()
+    .default(
+      "specification,timeline,scrubbed_rejection_log,interface_description,field_list,other_non_phi",
+    )
+    .refine(
+      (value) => {
+        const kinds = commaList(value);
+        return kinds.length > 0 && kinds.every((kind) => /^[a-z][a-z0-9_]{1,59}$/.test(kind));
+      },
+      { message: "must be a comma separated list of lower_case kind names" },
+    ),
+  WORKSHOP_UPLOAD_QUARANTINE: flag,
+  WORKSHOP_RETENTION_MONTHS: int(12, 1, 120),
+  WORKSHOP_RETENTION_JOB_ENABLED: flag,
+  OUTPUT_MAX_CHARS: int(3500, 500, 20_000),
 });
 
 type Env = z.infer<typeof EnvSchema>;
@@ -254,6 +290,26 @@ export interface AppConfig {
     recommendationAi: boolean;
     supportedMinBand: "low" | "medium" | "high";
   };
+  /** Feature 007 workshops; every value is a hypothesis. */
+  workshops: {
+    ai: boolean;
+    aiCapMicros: number;
+    pdfRenderer: "fake" | "playwright";
+    minutes: { offer1: number; offer6: number };
+    artifactMaxBytes: number;
+    artifactKinds: string[];
+    uploadQuarantine: boolean;
+    retentionMonths: number;
+    retentionJobEnabled: boolean;
+    outputMaxChars: number;
+  };
+  /** Feature 007 calendar. The Google credentials are present only with the google provider. */
+  calendar: {
+    provider: "none" | "fake" | "google";
+    google:
+      | { calendarId: string; clientId: string; clientSecret: string; refreshToken: string }
+      | undefined;
+  };
   /** Values the logger must scrub wherever they appear (see logging/logger.ts). */
   secretValues: string[];
 }
@@ -271,6 +327,10 @@ function secretsFrom(env: Env): string[] {
   if (env.ANTHROPIC_API_KEY) values.push(env.ANTHROPIC_API_KEY);
   if (env.DOWNLOAD_SIGNING_KEY) values.push(env.DOWNLOAD_SIGNING_KEY);
   if (env.FORM_TOKEN_KEY) values.push(env.FORM_TOKEN_KEY);
+  if (env.GOOGLE_CALENDAR_ID) values.push(env.GOOGLE_CALENDAR_ID);
+  if (env.GOOGLE_CLIENT_ID) values.push(env.GOOGLE_CLIENT_ID);
+  if (env.GOOGLE_CLIENT_SECRET) values.push(env.GOOGLE_CLIENT_SECRET);
+  if (env.GOOGLE_REFRESH_TOKEN) values.push(env.GOOGLE_REFRESH_TOKEN);
   return values;
 }
 
@@ -338,6 +398,18 @@ export function loadConfig(source: Record<string, string | undefined> = process.
         message: "the fake language model is not allowed in production",
       });
     }
+    if (env.CALENDAR_PROVIDER === "fake") {
+      problems.push({
+        variable: "CALENDAR_PROVIDER",
+        message: "the fake calendar is not allowed in production",
+      });
+    }
+    if (env.PDF_RENDERER !== "playwright") {
+      problems.push({
+        variable: "PDF_RENDERER",
+        message: "must be playwright in production",
+      });
+    }
     problems.push(
       ...checkEncryptedTransport({
         databaseUrl: env.DATABASE_URL,
@@ -351,6 +423,31 @@ export function loadConfig(source: Record<string, string | undefined> = process.
       variable: "ANTHROPIC_API_KEY",
       message: "is required with LLM_PROVIDER=anthropic",
     });
+  }
+
+  const google = {
+    calendarId: env.GOOGLE_CALENDAR_ID,
+    clientId: env.GOOGLE_CLIENT_ID,
+    clientSecret: env.GOOGLE_CLIENT_SECRET,
+    refreshToken: env.GOOGLE_REFRESH_TOKEN,
+  };
+  if (env.CALENDAR_PROVIDER === "google") {
+    if (env.CALENDAR_GOOGLE_ENABLED !== "true") {
+      problems.push({
+        variable: "CALENDAR_GOOGLE_ENABLED",
+        message: "must be true to use CALENDAR_PROVIDER=google",
+      });
+    }
+    for (const [variable, value] of [
+      ["GOOGLE_CALENDAR_ID", google.calendarId],
+      ["GOOGLE_CLIENT_ID", google.clientId],
+      ["GOOGLE_CLIENT_SECRET", google.clientSecret],
+      ["GOOGLE_REFRESH_TOKEN", google.refreshToken],
+    ] as const) {
+      if (value === undefined) {
+        problems.push({ variable, message: "is required with CALENDAR_PROVIDER=google" });
+      }
+    }
   }
 
   if (problems.length > 0) throw new ConfigError(problems);
@@ -450,6 +547,34 @@ export function loadConfig(source: Record<string, string | undefined> = process.
       formTokenKey: env.FORM_TOKEN_KEY ?? "dev-only-form-token-key-not-for-production-use",
       recommendationAi: env.RECOMMENDATION_AI === "on",
       supportedMinBand: env.SUPPORTED_MIN_BAND,
+    },
+    workshops: {
+      ai: env.WORKSHOP_AI === "on",
+      aiCapMicros: toMicros(env.WORKSHOP_AI_CAP ?? env.INTERPRETATION_COST_CAP),
+      pdfRenderer: env.PDF_RENDERER ?? "fake",
+      minutes: { offer1: env.WORKSHOP_MINUTES_OFFER_1, offer6: env.WORKSHOP_MINUTES_OFFER_6 },
+      artifactMaxBytes: env.WORKSHOP_ARTIFACT_MAX_BYTES,
+      artifactKinds: commaList(env.WORKSHOP_ARTIFACT_KINDS),
+      uploadQuarantine: env.WORKSHOP_UPLOAD_QUARANTINE !== "false",
+      retentionMonths: env.WORKSHOP_RETENTION_MONTHS,
+      retentionJobEnabled: env.WORKSHOP_RETENTION_JOB_ENABLED === "true",
+      outputMaxChars: env.OUTPUT_MAX_CHARS,
+    },
+    calendar: {
+      provider: env.CALENDAR_PROVIDER,
+      google:
+        env.CALENDAR_PROVIDER === "google" &&
+        google.calendarId !== undefined &&
+        google.clientId !== undefined &&
+        google.clientSecret !== undefined &&
+        google.refreshToken !== undefined
+          ? {
+              calendarId: google.calendarId,
+              clientId: google.clientId,
+              clientSecret: google.clientSecret,
+              refreshToken: google.refreshToken,
+            }
+          : undefined,
     },
     secretValues: secretsFrom(env),
   };
